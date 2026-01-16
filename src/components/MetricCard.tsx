@@ -1,7 +1,10 @@
 import React from 'react';
 
-export const MetricCard = ({ label, value, icon: Icon, color, subtext }: { label: string, value: string, icon: React.ElementType, color: string, subtext?: string }) => (
-    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-24 sm:h-32">
+export const MetricCard = ({ label, value, icon: Icon, color, subtext, onClick }: { label: string, value: string, icon: React.ElementType, color: string, subtext?: string, onClick?: () => void }) => (
+    <div
+        onClick={onClick}
+        className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between h-24 sm:h-32 transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:border-indigo-200 active:scale-[0.98]' : ''}`}
+    >
         <div className="flex items-center justify-between">
             <span className="text-gray-500 text-xs font-medium uppercase tracking-wide">{label}</span>
             <Icon className={`w-4 h-4 ${color}`} />

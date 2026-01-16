@@ -17,9 +17,14 @@ import {
   LogOut,
   Sparkles,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Calendar,
   PieChart,
-  Award
+  Award,
+  Eye,
+  MousePointer,
+  DollarSign
 } from 'lucide-react';
 
 export const Icons = {
@@ -56,7 +61,12 @@ export const Icons = {
   LogOut,
   Sparkles,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Calendar,
   PieChart,
-  Award
+  Award,
+  Eye,
+  MousePointer,
+  DollarSign
 };

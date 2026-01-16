@@ -1,8 +1,7 @@
 import React from 'react';
 import { Icons } from './Icons';
 import { Button } from './Button';
-
-type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics';
+import { View } from '../types';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -48,11 +47,25 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote }: Layo
                         Investors
                     </button>
                     <button
+                        onClick={() => onViewChange('campaigns')}
+                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                        <Icons.Mail className={`w-5 h-5 mr-3 ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                        Campaigns
+                    </button>
+                    <button
                         onClick={() => onViewChange('analytics')}
                         className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'analytics' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
                         <Icons.TrendingUp className={`w-5 h-5 mr-3 ${currentView === 'analytics' ? 'text-indigo-600' : 'text-gray-400'}`} />
                         Analytics
+                    </button>
+                    <button
+                        onClick={() => onViewChange('settings')}
+                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'settings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                        <Icons.Settings className={`w-5 h-5 mr-3 ${currentView === 'settings' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                        Settings
                     </button>
                 </nav>
 

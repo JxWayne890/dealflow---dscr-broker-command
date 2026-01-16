@@ -6,7 +6,8 @@ export const Button = ({
     variant = 'primary',
     className = '',
     disabled = false,
-    icon: Icon
+    icon: Icon,
+    type = 'button'
 }: {
     children?: React.ReactNode;
     onClick?: () => void;
@@ -14,6 +15,7 @@ export const Button = ({
     className?: string;
     disabled?: boolean;
     icon?: React.ElementType;
+    type?: 'button' | 'submit' | 'reset';
 }) => {
     const baseStyle = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
     const sizeStyle = "px-4 py-2.5 text-sm";
@@ -28,6 +30,7 @@ export const Button = ({
 
     return (
         <button
+            type={type}
             onClick={onClick}
             disabled={disabled}
             className={`${baseStyle} ${sizeStyle} ${variants[variant]} ${className}`}

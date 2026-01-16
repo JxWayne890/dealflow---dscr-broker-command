@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Quote, QuoteStatus, DealType, BrokerProfile, EmailFormat, Investor } from '../types';
-import { generateQuoteEmail } from '../services/geminiService'; // We still use this to generate the *text* body content
+import { generateQuoteEmail } from '../services/geminiService';
 import { sendQuoteEmail } from '../services/emailService';
 import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
+import { DEFAULT_BROKER_PROFILE } from '../constants';
+import { useToast } from '../contexts/ToastContext';
 
 export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     onCancel: () => void,
@@ -13,7 +14,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     investors: Investor[],
     onAddInvestor: (investor: Investor) => void
 }) => {
-    const [step, setStep] = useState<1 | 2>(1);
+    const { showToast } = useToast();
+    const [step, setStep] = useState<1 | 2 | 3>(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
@@ -22,18 +24,23 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     const [emailFormat, setEmailFormat] = useState<EmailFormat>('html');
 
     // Profile State (Defaults for Demo)
-    const [profile, setProfile] = useState<BrokerProfile>({
-        name: 'Timothy Herro',
-        email: 'timothy@mastercleanhq.com',
-        phone: '(555) 123-4567',
-        title: 'Senior Loan Officer',
-        // Using placeholder images for the demo - User can change these in settings
-        logoUrl: 'https://i0.wp.com/timothyhero.com/wp-content/uploads/2022/06/logo-large-featured.png?fit=1200%2C675&ssl=1',
-        headshotUrl: 'https://bpimg.biggerpockets.com/no_overlay/uploads/social_user/user_avatar/1635688/1741049287-avatar-timhero.jpg?twic=v1/output=image/crop=288x288@0x0/cover=256x256&v=2',
-        website: 'www.herrocapital.com'
-    });
+    const [profile, setProfile] = useState<BrokerProfile>(DEFAULT_BROKER_PROFILE);
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const { ProfileService } = await import('../services/profileService');
+                const userProfile = await ProfileService.getProfile();
+                if (userProfile) setProfile(userProfile);
+            } catch (err) {
+                console.error('Failed to load profile', err);
+            }
+        };
+        loadProfile();
+    }, []);
 
     const [formData, setFormData] = useState<Partial<Quote>>({
+        id: Math.random().toString(36).substr(2, 9), // Pre-generate ID for stable links
         dealType: DealType.PURCHASE,
         propertyState: '',
         ltv: 75,
@@ -42,6 +49,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         followUpsEnabled: true,
         // Initial "Intro" message (not the full email anymore, just the custom part)
         notes: '',
+        rate: 7.5,
         emailBody: '', // This will store the *custom message* part, not the full HTML
     });
 
@@ -57,6 +65,23 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             setAvailableProperties([]);
         }
     }, [formData.investorId, investors]);
+
+    // Calculate Monthly Payment Automatically
+    useEffect(() => {
+        if (formData.loanAmount && formData.rate && formData.termYears) {
+            const principal = formData.loanAmount;
+            const monthlyRate = formData.rate / 100 / 12;
+            const numberOfPayments = formData.termYears * 12;
+
+            if (monthlyRate === 0) {
+                setFormData(prev => ({ ...prev, monthlyPayment: Math.round(principal / numberOfPayments) }));
+                return;
+            }
+
+            const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+            setFormData(prev => ({ ...prev, monthlyPayment: Math.round(payment * 100) / 100 }));
+        }
+    }, [formData.loanAmount, formData.rate, formData.termYears]);
 
     const handleGenerateEmail = () => {
         setIsGenerating(true);
@@ -76,25 +101,30 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     const handleSubmit = async () => {
         setIsSending(true);
 
+        // Generate the real schedule URL using the pre-generated ID
+        const scheduleUrl = `${window.location.origin}/?view=schedule&quoteId=${formData.id}`;
+        const formDataWithUrl = { ...formData, scheduleUrl };
+
         // Generate the FINAL payload based on format
         let finalContent = '';
         if (emailFormat === 'html') {
-            finalContent = generateHtmlEmail(formData, profile, formData.emailBody || '');
+            finalContent = generateHtmlEmail(formDataWithUrl, profile, formData.emailBody || '');
         } else {
-            finalContent = generatePlainText(formData, profile, formData.emailBody || '');
+            finalContent = generatePlainText(formDataWithUrl, profile, formData.emailBody || '');
         }
 
         // Attempt real email send
         let result: { success: boolean; error?: string } = { success: false };
         if (formData.investorEmail) {
-            result = await sendQuoteEmail(formData as Quote, finalContent);
+            result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
         }
 
         const newQuote: Quote = {
-            ...formData as Quote,
-            id: Math.random().toString(36).substr(2, 9),
+            ...formDataWithUrl as Quote,
+            id: formData.id || Math.random().toString(36).substr(2, 9),
             createdAt: new Date().toISOString(),
-            status: result.success ? QuoteStatus.SENT : QuoteStatus.DRAFT,
+            status: result.success ? QuoteStatus.ACTIVE : QuoteStatus.DRAFT,
+            emailHtml: emailFormat === 'html' ? finalContent : undefined,
             followUpSchedule: [
                 { id: Math.random().toString(36), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
                 { id: Math.random().toString(36), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
@@ -106,7 +136,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             // Success Logic
         } else {
             console.error("Email send failed:", result.error);
-            alert(`Email Sending Failed: ${result.error || 'Check server console'}\n\nNote: Check your Resend verify status or Sandbox limitations.`);
+            showToast(`Email Sending Failed: ${result.error || 'Check server console'}`, 'error');
         }
 
         // If this is a new investor (no ID selected but name exists), allow saving them
@@ -127,11 +157,18 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         }
 
         setIsSending(false);
-        onSave(newQuote);
+        if (result.success) {
+            // Update the form data with the final object so Step 3 can use it if needed (mostly generic info)
+            setFormData(newQuote);
+            setStep(3); // Show Success View
+        } else {
+            // Error handled above with alert
+        }
     };
 
     // Live HTML Preview
-    const htmlPreview = generateHtmlEmail(formData, profile, formData.emailBody || '');
+    const previewScheduleUrl = `${window.location.origin}/?view=schedule&quoteId=${formData.id}`;
+    const htmlPreview = generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl }, profile, formData.emailBody || '');
 
     return (
         <div className="flex flex-col h-full max-w-5xl mx-auto relative">
@@ -271,15 +308,84 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </div>
                             </Field>
 
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <Field label="LTV %">
                                     <Input type="number" placeholder="75" value={formData.ltv || ''} onChange={e => setFormData({ ...formData, ltv: Number(e.target.value) })} />
                                 </Field>
                                 <Field label="Rate %">
                                     <Input type="number" step="0.125" placeholder="7.5" value={formData.rate || ''} onChange={e => setFormData({ ...formData, rate: Number(e.target.value) })} />
                                 </Field>
+                                <Field label="Type">
+                                    <Select value={formData.rateType || 'Fixed'} onChange={e => setFormData({ ...formData, rateType: e.target.value as any })}>
+                                        <option value="Fixed">Fixed</option>
+                                        <option value="ARM">ARM</option>
+                                    </Select>
+                                </Field>
                                 <Field label="Term (Yr)">
                                     <Input type="number" placeholder="30" value={formData.termYears || ''} onChange={e => setFormData({ ...formData, termYears: Number(e.target.value) })} />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Lender Origination ($)">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            className="pl-7"
+                                            placeholder="0.00"
+                                            value={formData.originationFee || ''}
+                                            onChange={e => setFormData({ ...formData, originationFee: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </Field>
+                                <Field label="Underwriting Fee ($)">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            className="pl-7"
+                                            placeholder="0.00"
+                                            value={formData.uwFee || ''}
+                                            onChange={e => setFormData({ ...formData, uwFee: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Monthly P&I Payment">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            className="pl-7"
+                                            placeholder="0.00"
+                                            value={formData.monthlyPayment || ''}
+                                            onChange={e => setFormData({ ...formData, monthlyPayment: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1 italic leading-tight">Automatically calculated, but you can override if needed.</p>
+                                </Field>
+                                <Field label="Other Closing Fees">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            className="pl-7"
+                                            placeholder="0.00"
+                                            value={formData.closingFees || ''}
+                                            onChange={e => setFormData({ ...formData, closingFees: Number(e.target.value) })}
+                                        />
+                                    </div>
                                 </Field>
                             </div>
 
@@ -305,7 +411,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </Button>
                         </div>
                     </div>
-                ) : (
+                ) : step === 2 ? (
                     // Step 2: Review (Split View)
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full h-full">
 
@@ -404,7 +510,24 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                         </div>
 
                         {/* Send Button Block (Desktop) */}
-                        <div className="col-span-1 lg:col-span-2 hidden md:flex justify-end pt-4">
+                        <div className="col-span-1 lg:col-span-2 hidden md:flex justify-end pt-4 gap-3">
+                            <Button
+                                onClick={() => {
+                                    const draftQuote = {
+                                        ...formData,
+                                        id: formData.id || Math.random().toString(36).substr(2, 9),
+                                        createdAt: new Date().toISOString(),
+                                        status: QuoteStatus.DRAFT,
+                                        emailHtml: emailFormat === 'html' ? generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl } as Quote, profile, formData.emailBody || '') : undefined,
+                                        followUpSchedule: [] // No follow ups for drafts usually, or paused
+                                    };
+                                    onSave(draftQuote as Quote);
+                                }}
+                                variant="secondary"
+                                className="px-6"
+                            >
+                                Save as Draft
+                            </Button>
                             <Button
                                 onClick={handleSubmit}
                                 className="w-full md:w-auto px-8"
@@ -413,6 +536,38 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             >
                                 {isSending ? 'Sending...' : 'Send Quote Now'}
                             </Button>
+                        </div>
+                    </div>
+                ) : (
+                    // Step 3: Success View
+                    <div className="w-full h-full flex items-center justify-center">
+                        <div className="bg-white p-12 rounded-2xl shadow-xl text-center max-w-lg border border-gray-100 animate-in zoom-in-95 duration-300">
+                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Icons.CheckCircle className="w-10 h-10 text-green-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Quote Sent Successfully!</h2>
+                            <p className="text-gray-500 mb-8 text-lg">
+                                Your quote has been emailed to <strong>{formData.investorName}</strong> ({formData.investorEmail}).
+                            </p>
+                            <div className="space-y-3">
+                                <Button
+                                    onClick={() => onSave(formData as Quote)}
+                                    className="w-full justify-center py-4 text-base"
+                                >
+                                    Return to Dashboard
+                                </Button>
+                                <button
+                                    onClick={() => {
+                                        // Reset form to start a new one? Or maybe just go back to dash
+                                        // For now, let's just use the main button to leave. 
+                                        // But could offer "Create Another"
+                                        onSave(formData as Quote);
+                                    }}
+                                    className="text-sm text-gray-400 hover:text-gray-600"
+                                >
+                                    View Quote Details
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

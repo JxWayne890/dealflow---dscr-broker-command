@@ -6,11 +6,10 @@ export enum DealType {
 
 export enum QuoteStatus {
   DRAFT = 'Draft',
-  SENT = 'Sent',
-  VIEWED = 'Viewed',
-  REPLIED = 'Replied',
-  CLOSED_WON = 'Closed Won',
-  CLOSED_LOST = 'Closed Lost'
+  ACTIVE = 'Active',
+  FOLLOW_UP = 'Follow-up',
+  WON = 'Won',
+  LOST = 'Lost'
 }
 
 export interface Investor {
@@ -41,7 +40,12 @@ export interface Quote {
   loanAmount: number;
   ltv: number;
   rate: number;
+  rateType?: 'Fixed' | 'ARM'; // Default to Fixed if missing
   termYears: number;
+  originationFee?: number;
+  uwFee?: number;
+  monthlyPayment?: number;
+  closingFees?: number;
   notes?: string;
   emailBody?: string;
   status: QuoteStatus;
@@ -49,6 +53,8 @@ export interface Quote {
   lastInteractionAt?: string;
   followUpSchedule: FollowUpEvent[];
   followUpsEnabled: boolean;
+  emailHtml?: string;
+  scheduleUrl?: string;
 }
 
 export interface User {
@@ -72,6 +78,11 @@ export interface BrokerProfile {
   logoUrl?: string;
   headshotUrl?: string;
   title?: string;
+  company?: string;
 }
 
 export type EmailFormat = 'text' | 'html';
+
+export type QuoteFilter = 'all' | 'drafts' | 'active' | 'won' | 'lost' | 'needs_follow_up';
+
+export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor';
