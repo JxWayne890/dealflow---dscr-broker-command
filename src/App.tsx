@@ -43,7 +43,6 @@ export default function App() {
   const [currentQuoteFilter, setCurrentQuoteFilter] = useState<string>('all');
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [showNewQuoteModal, setShowNewQuoteModal] = useState(false);
 
   // Data State
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -85,7 +84,6 @@ export default function App() {
       setQuotes(prev => [saved, ...prev]);
       setCurrentView('dashboard');
       showToast('Quote saved successfully', 'success');
-      setShowNewQuoteModal(false);
     } catch (e) {
       console.error("Failed to save quote", e);
       showToast("Failed to save quote", 'error');
@@ -174,21 +172,12 @@ export default function App() {
         <Layout
           currentView={currentView}
           onViewChange={setCurrentView}
-          onNewQuote={() => setShowNewQuoteModal(true)}
+          onNewQuote={handleNewQuote}
         >
           {renderContent()}
         </Layout>
       ) : (
         <Login />
-      )}
-
-      {showNewQuoteModal && (
-        <NewQuote
-          investors={investors}
-          onAddInvestor={handleAddInvestor}
-          onCancel={() => setShowNewQuoteModal(false)}
-          onSave={handleSaveQuote}
-        />
       )}
     </>
   );
