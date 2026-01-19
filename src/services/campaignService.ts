@@ -240,7 +240,7 @@ export const campaignService = {
         };
     },
 
-    async triggerImmediateEmail(subscriptionId: string) {
+    async triggerImmediateEmail(subscriptionId: string, stepOrder?: number) {
         // 1. Fetch subscription with quote details
         const { data: sub, error: subError } = await supabase
             .from('campaign_subscriptions')
@@ -256,13 +256,13 @@ export const campaignService = {
         if (subError || !sub) throw new Error('Subscription not found');
         if (!sub.quotes) throw new Error('Quote not found for this subscription');
 
-        // 2. Fetch the current campaign step
-        const nextStepOrder = (sub.current_step_index || 0) + 1;
+        // 2. Identify the campaign step to send
+        const sendStepOrder = stepOrder || (sub.current_step_index || 0) + 1;
         const { data: step, error: stepError } = await supabase
             .from('campaign_steps')
             .select('*')
             .eq('campaign_id', sub.campaign_id)
-            .eq('order_index', nextStepOrder)
+            .eq('order_index', sendStepOrder)
             .single();
 
         if (stepError || !step) throw new Error('No step found for this campaign');
@@ -319,7 +319,7 @@ export const campaignService = {
 
         // 6. Update subscription for next step
         const now = new Date().toISOString();
-        const nextNextStepOrder = nextStepOrder + 1;
+        const nextNextStepOrder = sendStepOrder + 1;
         const { data: nextStep } = await supabase
             .from('campaign_steps')
             .select('delay_days')
@@ -328,7 +328,7 @@ export const campaignService = {
             .single();
 
         const updates: any = {
-            current_step_index: nextStepOrder,
+            current_step_index: sendStepOrder,
             last_email_sent_at: now,
         };
 

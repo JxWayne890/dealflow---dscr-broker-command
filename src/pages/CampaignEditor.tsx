@@ -26,6 +26,8 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showSendNowModal, setShowSendNowModal] = useState(false);
     const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+    const [selectedStepOrder, setSelectedStepOrder] = useState<number | null>(null);
+    const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
 
     useEffect(() => {
         if (campaignId) {
@@ -132,10 +134,13 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
     const handleSendNow = async () => {
         if (!selectedSubId) return;
         try {
-            await campaignService.triggerImmediateEmail(selectedSubId);
+            await campaignService.triggerImmediateEmail(selectedSubId, selectedStepOrder || undefined);
             showToast('Email triggered! It should arrive shortly.', 'success');
             setShowSendNowModal(false);
-            onBack(); // Refresh list effectively
+            setSelectedStepOrder(null);
+            // Refresh subs after send
+            const subscriptions = await campaignService.getCampaignSubscriptions(campaignId!);
+            setSubs(subscriptions || []);
         } catch (e) {
             showToast('Failed to trigger email', 'error');
             console.error(e);
@@ -352,58 +357,138 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                                 </tr>
                             ) : (
                                 subs.map((sub) => (
-                                    <tr key={sub.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{sub.quotes?.investorName || 'Unknown Investor'}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {sub.quotes?.dealType} • ${sub.quotes?.loanAmount?.toLocaleString()}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${sub.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                    sub.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                                                        'bg-red-100 text-red-800'}`}>
-                                                {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {sub.status === 'completed' ? (
-                                                <span className="text-gray-400 italic">Journey Complete</span>
-                                            ) : (
-                                                <div>
-                                                    <span className="font-medium text-gray-900">Step {sub.current_step_index + 1}</span>
-                                                    <span className="text-xs text-gray-500 block max-w-[200px] truncate" title={getPersonalizedSubject(
-                                                        steps[sub.current_step_index]?.subject_template || 'Unknown Step',
-                                                        sub
-                                                    )}>
-                                                        {getPersonalizedSubject(
+                                    <React.Fragment key={sub.id}>
+                                        <tr
+                                            className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                            onClick={() => setExpandedSubId(expandedSubId === sub.id ? null : sub.id)}
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <Icons.ChevronDown
+                                                        className={`w-4 h-4 mr-3 text-gray-400 transition-transform ${expandedSubId === sub.id ? 'rotate-180' : ''}`}
+                                                    />
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">{sub.quotes?.investorName || 'Unknown Investor'}</div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {sub.quotes?.dealType} • ${sub.quotes?.loanAmount?.toLocaleString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                        ${sub.status === 'active' ? 'bg-green-100 text-green-800' :
+                                                        sub.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                                                            'bg-red-100 text-red-800'}`}>
+                                                    {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {sub.status === 'completed' ? (
+                                                    <span className="text-gray-400 italic">Journey Complete</span>
+                                                ) : (
+                                                    <div>
+                                                        <span className="font-medium text-gray-900">Step {sub.current_step_index + 1}</span>
+                                                        <span className="text-xs text-gray-500 block max-w-[200px] truncate" title={getPersonalizedSubject(
                                                             steps[sub.current_step_index]?.subject_template || 'Unknown Step',
                                                             sub
-                                                        )}
+                                                        )}>
+                                                            {getPersonalizedSubject(
+                                                                steps[sub.current_step_index]?.subject_template || 'Unknown Step',
+                                                                sub
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div className="flex items-center justify-between group">
+                                                    <span>
+                                                        {sub.next_run_at ? new Date(sub.next_run_at).toLocaleDateString() : 'N/A'}
                                                     </span>
+                                                    {sub.status === 'active' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedSubId(sub.id);
+                                                                setSelectedStepOrder(null); // Default to next
+                                                                setShowSendNowModal(true);
+                                                            }}
+                                                            className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition flex items-center space-x-1 opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <Icons.Send size={12} />
+                                                            <span>Send Next</span>
+                                                        </button>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center space-x-4">
-                                            <div>
-                                                {new Date(sub.next_run_at).toLocaleDateString()}
-                                            </div>
-                                            {sub.status === 'active' && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedSubId(sub.id);
-                                                        setShowSendNowModal(true);
-                                                    }}
-                                                    className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition flex items-center space-x-1"
-                                                    title="Force send next email now"
-                                                >
-                                                    <Icons.Send size={12} />
-                                                    <span>Send Now</span>
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
+                                            </td>
+                                        </tr>
+                                        {expandedSubId === sub.id && (
+                                            <tr>
+                                                <td colSpan={4} className="px-6 py-4 bg-gray-50 border-t border-b border-gray-100">
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <h4 className="text-sm font-bold text-gray-700 uppercase tracking-tight">Timeline & Steps</h4>
+                                                            <p className="text-xs text-gray-500">Started on {new Date(sub.created_at).toLocaleDateString()}</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 gap-3">
+                                                            {steps.map((step, idx) => {
+                                                                const isCompleted = idx < sub.current_step_index;
+                                                                const isCurrent = idx === sub.current_step_index;
+                                                                const isFuture = idx > sub.current_step_index;
+
+                                                                // Calculate originally scheduled date
+                                                                // This is an estimate based on day offsets
+                                                                const totalOffset = steps.slice(0, idx + 1).reduce((acc, s) => acc + s.delay_days, 0);
+                                                                const estDate = new Date(sub.created_at);
+                                                                estDate.setDate(estDate.getDate() + totalOffset);
+
+                                                                return (
+                                                                    <div
+                                                                        key={idx}
+                                                                        className={`flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm ${isCurrent ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'}`}
+                                                                    >
+                                                                        <div className="flex items-center space-x-4">
+                                                                            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-green-50 border-green-500 text-green-600' : isCurrent ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                                                                                {isCompleted ? <Icons.CheckCircle size={16} /> : <span className="text-xs font-bold">{idx + 1}</span>}
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-sm font-medium text-gray-900">{step.subject_template}</p>
+                                                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                                                    <span>Delay: {step.delay_days}d</span>
+                                                                                    <span>•</span>
+                                                                                    <span>Scheduled: {estDate.toLocaleDateString()}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-2">
+                                                                            {isCompleted && (
+                                                                                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">Sent</span>
+                                                                            )}
+                                                                            {isCurrent && (
+                                                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">Up Next</span>
+                                                                            )}
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedSubId(sub.id);
+                                                                                    setSelectedStepOrder(idx + 1);
+                                                                                    setShowSendNowModal(true);
+                                                                                }}
+                                                                                className={`text-xs px-3 py-1.5 rounded-md font-medium transition ${isCurrent ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}
+                                                                            >
+                                                                                Send Now
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>
@@ -431,7 +516,10 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
 
             <Modal
                 isOpen={showSendNowModal}
-                onClose={() => setShowSendNowModal(false)}
+                onClose={() => {
+                    setShowSendNowModal(false);
+                    setSelectedStepOrder(null);
+                }}
                 title="Send Email Now"
                 primaryAction={{
                     label: 'Send Now',
@@ -439,10 +527,35 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                 }}
                 secondaryAction={{
                     label: 'Cancel',
-                    onClick: () => setShowSendNowModal(false)
+                    onClick: () => {
+                        setShowSendNowModal(false);
+                        setSelectedStepOrder(null);
+                    }
                 }}
             >
-                Are you sure you want to send the next scheduled email immediately? It will be sent within a few moments and the schedule will advance to the next step.
+                {selectedStepOrder ? (
+                    <div className="space-y-3">
+                        <p>Are you sure you want to send <strong>Step {selectedStepOrder}</strong> immediately?</p>
+                        {(() => {
+                            const sub = subs.find(s => s.id === selectedSubId);
+                            const step = steps[selectedStepOrder - 1];
+                            if (sub && step) {
+                                const totalOffset = steps.slice(0, selectedStepOrder).reduce((acc, s) => acc + s.delay_days, 0);
+                                const estDate = new Date(sub.created_at);
+                                estDate.setDate(estDate.getDate() + totalOffset);
+                                return (
+                                    <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">
+                                        This step was originally scheduled for {estDate.toLocaleDateString()} ({steps[selectedStepOrder - 1].delay_days} days after the previous event).
+                                    </p>
+                                );
+                            }
+                            return null;
+                        })()}
+                        <p className="text-sm text-gray-500">The campaign schedule will advance to the following step after this email is sent.</p>
+                    </div>
+                ) : (
+                    <p>Are you sure you want to send the next scheduled email immediately? It will be sent within a few moments and the schedule will advance to the next step.</p>
+                )}
             </Modal>
         </div>
 
