@@ -79,6 +79,7 @@ export interface BrokerProfile {
   headshotUrl?: string;
   title?: string;
   company?: string;
+  timezone?: string;
 }
 
 export type EmailFormat = 'text' | 'html';

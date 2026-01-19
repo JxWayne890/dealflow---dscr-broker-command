@@ -21,6 +21,7 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [active, setActive] = useState(false);
+    const [preferredRunTime, setPreferredRunTime] = useState('09:00');
 
     // Modal State
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -47,6 +48,7 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
             setName(camp.name);
             setDescription(camp.description || '');
             setActive(camp.is_active);
+            setPreferredRunTime(camp.preferred_run_time || '09:00');
 
             const s = await campaignService.getCampaignSteps(id);
             setSteps(s);
@@ -95,14 +97,16 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                 const newCamp = await campaignService.createCampaign({
                     name,
                     description,
-                    is_active: active
+                    is_active: active,
+                    preferred_run_time: preferredRunTime
                 });
                 currentId = newCamp?.id || null;
             } else {
                 await campaignService.updateCampaign(currentId, {
                     name,
                     description,
-                    is_active: active
+                    is_active: active,
+                    preferred_run_time: preferredRunTime
                 });
             }
 
@@ -252,6 +256,18 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                 placeholder="Internal notes about this campaign"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Send Time</label>
+                            <div className="flex items-center space-x-3">
+                                <input
+                                    type="time"
+                                    value={preferredRunTime}
+                                    onChange={(e) => setPreferredRunTime(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                <p className="text-xs text-gray-500">Emails will be scheduled at this time in your local timezone.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

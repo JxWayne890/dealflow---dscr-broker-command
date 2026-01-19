@@ -9,6 +9,7 @@ export interface Campaign {
     name: string;
     description: string;
     is_active: boolean;
+    preferred_run_time?: string;
     created_at: string;
 }
 
@@ -146,6 +147,70 @@ export const campaignService = {
         return data;
     },
 
+    /**
+     * Calculates the next run date/time based on delay, preferred runtime, and timezone.
+     */
+    calculateNextRunAt(delayDays: number, preferredTime: string = '09:00', timezone: string = 'UTC'): string {
+        const now = new Date();
+        const nextDate = new Date();
+        nextDate.setDate(now.getDate() + delayDays);
+
+        // Parse preferredTime (HH:mm)
+        const [hours, minutes] = preferredTime.split(':').map(Number);
+
+        // We want to create a date in the target timezone at the specific hour/minute
+        // Javascript's Date doesn't have native "create in this timezone" easily without offsets.
+        // A reliable way is to use Intl to see what the current offset is or construct a string.
+
+        try {
+            // Create a string that Date.parse will treat as the local time in that timezone
+            // Example: 2026-01-19T09:00:00.000 (Local)
+            const year = nextDate.getFullYear();
+            const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+            const day = String(nextDate.getDate()).padStart(2, '0');
+            const h = String(hours).padStart(2, '0');
+            const m = String(minutes).padStart(2, '0');
+
+            // Construct a local ISO-like string
+            const localString = `${year}-${month}-${day}T${h}:${m}:00`;
+
+            // Use Intl.DateTimeFormat to find the UTC equivalent
+            // This is slightly tricky, a simpler way is to use the fact that
+            // new Date().toLocaleString("en-US", {timeZone: "America/New_York"}) gives us the time there.
+
+            // For MVP/Robustness without external libs, we'll use a trick:
+            // 1. Create a Date object for the target time in UTC
+            let target = new Date(`${localString}Z`); // Temporary UTC anchor
+
+            // 2. Find the difference between UTC and the requested timezone at that moment
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hour12: false
+            });
+
+            const parts = formatter.formatToParts(target);
+            const getPart = (type: string) => parts.find(p => p.type === type)?.value;
+
+            const tzYear = Number(getPart('year'));
+            const tzMonth = Number(getPart('month'));
+            const tzDay = Number(getPart('day'));
+            const tzHour = Number(getPart('hour'));
+            const tzMin = Number(getPart('minute'));
+
+            const tzDate = new Date(Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin));
+            const diff = target.getTime() - tzDate.getTime();
+
+            // Adjust the original target by the difference to get the correct UTC time
+            return new Date(target.getTime() + diff).toISOString();
+        } catch (e) {
+            console.error('Error calculating timezone offset, falling back to UTC', e);
+            nextDate.setUTCHours(hours, minutes, 0, 0);
+            return nextDate.toISOString();
+        }
+    },
+
     async subscribeLead(campaignId: string, leadId: string) {
         const { data: steps, error: stepError } = await supabase
             .from('campaign_steps')
@@ -159,8 +224,20 @@ export const campaignService = {
 
         const firstStep = steps[0];
 
-        const nextRun = new Date();
-        nextRun.setDate(nextRun.getDate() + firstStep.delay_days);
+        // Fetch Campaign and Profile for settings
+        const { data: campaign } = await supabase
+            .from('campaigns')
+            .select('preferred_run_time, user_id')
+            .eq('id', campaignId)
+            .single();
+
+        const profile = await ProfileService.getProfile(); // Assuming this fetches current user's profile
+
+        const nextRun = this.calculateNextRunAt(
+            firstStep.delay_days,
+            campaign?.preferred_run_time || '09:00',
+            profile?.timezone || 'UTC'
+        );
 
         const { error } = await supabase
             .from('campaign_subscriptions')
@@ -169,7 +246,7 @@ export const campaignService = {
                 lead_id: leadId,
                 current_step_index: 0,
                 status: 'active',
-                next_run_at: nextRun.toISOString()
+                next_run_at: nextRun
             });
 
         if (error) throw error;
@@ -248,6 +325,10 @@ export const campaignService = {
                 *,
                 quotes (
                     *
+                ),
+                campaigns (
+                    preferred_run_time,
+                    user_id
                 )
             `)
             .eq('id', subscriptionId)
@@ -333,9 +414,12 @@ export const campaignService = {
         };
 
         if (nextStep) {
-            const nextRun = new Date();
-            nextRun.setDate(nextRun.getDate() + nextStep.delay_days);
-            updates.next_run_at = nextRun.toISOString();
+            const nextRun = this.calculateNextRunAt(
+                nextStep.delay_days,
+                (sub as any).campaigns.preferred_run_time || '09:00',
+                profile?.timezone || 'UTC'
+            );
+            updates.next_run_at = nextRun;
         } else {
             updates.status = 'completed';
             updates.next_run_at = null;

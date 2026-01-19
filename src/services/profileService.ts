@@ -50,7 +50,8 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     website: row.website || '',
     logoUrl: row.logo_url,
     headshotUrl: row.headshot_url,
-    title: row.title || ''
+    title: row.title || '',
+    timezone: row.timezone || 'UTC'
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
@@ -62,5 +63,6 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.logoUrl !== undefined) db.logo_url = profile.logoUrl;
     if (profile.headshotUrl !== undefined) db.headshot_url = profile.headshotUrl;
     if (profile.title !== undefined) db.title = profile.title;
+    if (profile.timezone !== undefined) db.timezone = profile.timezone;
     return db;
 };

@@ -246,6 +246,31 @@ export const Settings = () => {
                             />
                         </div>
                     </div>
+
+                    <div className="sm:col-span-3">
+                        <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">Timezone</label>
+                        <div className="mt-1">
+                            <select
+                                id="timezone"
+                                name="timezone"
+                                value={profile.timezone}
+                                onChange={e => setProfile({ ...profile, timezone: e.target.value })}
+                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 border"
+                            >
+                                <option value="UTC">UTC (Universal Coordinated Time)</option>
+                                <option value="America/New_York">Eastern Time (ET)</option>
+                                <option value="America/Chicago">Central Time (CT)</option>
+                                <option value="America/Denver">Mountain Time (MT)</option>
+                                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                <option value="America/Anchorage">Alaska Time (AKT)</option>
+                                <option value="Pacific/Honolulu">Hawaii-Aleutian Time (HAT)</option>
+                                <option value="Europe/London">London (GMT/BST)</option>
+                                <option value="Europe/Paris">Paris (CET/CEST)</option>
+                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="pt-5 border-t border-gray-200 flex justify-end">

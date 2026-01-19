@@ -6,42 +6,42 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Helper for amortization (Ported from finance.ts)
 const calculateAmortizationSchedule = (loanAmount: number, annualRate: number, termYears: number) => {
-    const monthlyRate = annualRate / 100 / 12;
-    const numberOfPayments = (termYears || 30) * 12;
-    // Basic payment formula
-    const power = Math.pow(1 + monthlyRate, numberOfPayments);
-    const monthlyPayment = loanAmount * (monthlyRate * power) / (power - 1);
+  const monthlyRate = annualRate / 100 / 12;
+  const numberOfPayments = (termYears || 30) * 12;
+  // Basic payment formula
+  const power = Math.pow(1 + monthlyRate, numberOfPayments);
+  const monthlyPayment = loanAmount * (monthlyRate * power) / (power - 1);
 
-    const schedule = [];
-    let remainingBalance = loanAmount;
-    for (let month = 1; month <= Math.min(numberOfPayments, 360); month++) {
-        const interest = remainingBalance * monthlyRate;
-        const principal = monthlyPayment - interest;
-        remainingBalance -= principal;
-        schedule.push({ principal, remainingBalance: Math.max(0, remainingBalance) });
-    }
-    return schedule;
+  const schedule = [];
+  let remainingBalance = loanAmount;
+  for (let month = 1; month <= Math.min(numberOfPayments, 360); month++) {
+    const interest = remainingBalance * monthlyRate;
+    const principal = monthlyPayment - interest;
+    remainingBalance -= principal;
+    schedule.push({ principal, remainingBalance: Math.max(0, remainingBalance) });
+  }
+  return schedule;
 };
 
 // Helper for professional HTML (Ported from emailTemplates.ts)
 const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
-    const bodyParagraphs = (messageBody || '').split('\n').filter(line => line.trim()).map(line =>
-        `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#374151;">${line}</p>`
-    ).join('');
-    const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here is the quote for your scenario.</p>`;
+  const bodyParagraphs = (messageBody || '').split('\n').filter(line => line.trim()).map(line =>
+    `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#374151;">${line}</p>`
+  ).join('');
+  const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here is the quote for your scenario.</p>`;
 
-    const schedule = calculateAmortizationSchedule(quote.loan_amount || 0, quote.rate || 0, quote.term_years || 30);
-    const firstYearPrincipal = schedule.slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0);
+  const schedule = calculateAmortizationSchedule(quote.loan_amount || 0, quote.rate || 0, quote.term_years || 30);
+  const firstYearPrincipal = schedule.slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0);
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
 <body style="margin:0;padding:0;font-family:Helvetica,Arial,sans-serif;background-color:#f3f4f6;color:#1f2937;">
@@ -112,160 +112,204 @@ const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
 </html>`;
 };
 
+const calculateNextRunAt = (delayDays: number, preferredTime: string = '09:00', timezone: string = 'UTC'): string => {
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + (delayDays || 0));
+
+  const [hours, minutes] = (preferredTime || '09:00').split(':').map(Number);
+
+  try {
+    const year = nextDate.getFullYear();
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    const h = String(hours).padStart(2, '0');
+    const m = String(minutes).padStart(2, '0');
+    const localString = `${year}-${month}-${day}T${h}:${m}:00`;
+
+    let target = new Date(`${localString}Z`);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    });
+
+    const parts = formatter.formatToParts(target);
+    const getPart = (type: string) => parts.find(p => p.type === type)?.value;
+    const tzYear = Number(getPart('year'));
+    const tzMonth = Number(getPart('month'));
+    const tzDay = Number(getPart('day'));
+    const tzHour = Number(getPart('hour'));
+    const tzMin = Number(getPart('minute'));
+
+    const tzDate = new Date(Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin));
+    const diff = target.getTime() - tzDate.getTime();
+    return new Date(target.getTime() + diff).toISOString();
+  } catch (e) {
+    nextDate.setUTCHours(hours, minutes, 0, 0);
+    return nextDate.toISOString();
+  }
+};
+
 serve(async (req) => {
-    if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-    try {
-        if (!RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY");
+  try {
+    if (!RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY");
 
-        const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-        // 1. Fetch due subscriptions
-        const { data: subscriptions, error: subError } = await supabase
-            .from('campaign_subscriptions')
-            .select(`
+    // 1. Fetch due subscriptions
+    const { data: subscriptions, error: subError } = await supabase
+      .from('campaign_subscriptions')
+      .select(`
                 id, lead_id, campaign_id, current_step_index, status,
-                campaigns ( name, user_id )
+                campaigns ( name, user_id, preferred_run_time )
             `)
-            .eq('status', 'active')
-            .lte('next_run_at', now);
+      .eq('status', 'active')
+      .lte('next_run_at', now);
 
-        if (subError) throw subError;
-        if (!subscriptions || subscriptions.length === 0) {
-            return new Response(JSON.stringify({ message: "No campaigns due" }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-        }
-
-        const results = [];
-
-        for (const sub of subscriptions) {
-            // 2. Fetch Lead Details
-            const { data: lead, error: leadError } = await supabase
-                .from('quotes')
-                .select('*')
-                .eq('id', sub.lead_id)
-                .single();
-
-            if (leadError || !lead) {
-                console.error(`Lead not found for sub ${sub.id}`);
-                await supabase.from('campaign_subscriptions').update({ status: 'failed', last_email_sent_at: now }).eq('id', sub.id);
-                continue;
-            }
-
-            // 3. Fetch Broker Profile
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', sub.campaigns.user_id)
-                .single();
-
-            // 4. Identify the Step
-            const nextStepOrder = (sub.current_step_index || 0) + 1;
-            const { data: step } = await supabase
-                .from('campaign_steps')
-                .select('*')
-                .eq('campaign_id', sub.campaign_id)
-                .eq('order_index', nextStepOrder)
-                .single();
-
-            if (!step) {
-                await supabase.from('campaign_subscriptions').update({ status: 'completed', last_email_sent_at: now }).eq('id', sub.id);
-                results.push({ subId: sub.id, status: 'completed_no_more_steps' });
-                continue;
-            }
-
-            // 5. Prepare Professional Email
-            let body = step.body_template || "";
-            let subject = step.subject_template || "";
-            const variables = {
-                firstName: lead.investor_name?.split(' ')[0] || "there",
-                fullName: lead.investor_name || "Investor",
-                address: lead.property_address || "Property",
-                dealType: lead.deal_type || "Deal",
-            };
-
-            for (const [key, value] of Object.entries(variables)) {
-                body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
-                subject = subject.replace(new RegExp(`{{${key}}}`, 'g'), value);
-            }
-
-            const html = generateHtmlEmail(lead, profile || {}, body);
-
-            // 6. Send Email
-            const fromName = profile?.name || 'DealFlow';
-            const fromPrefix = profile?.name ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '.') : 'deals';
-            const fromAddress = `${fromName} <${fromPrefix}@mastercleanhq.com>`;
-
-            const res = await fetch("https://api.resend.com/emails", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${RESEND_API_KEY}`,
-                },
-                body: JSON.stringify({
-                    from: fromAddress,
-                    to: [lead.investor_email],
-                    subject: subject,
-                    html: html,
-                    tags: [
-                        { name: "campaign_id", value: sub.campaign_id },
-                        { name: "lead_id", value: sub.lead_id },
-                        { name: "step_id", value: step.id }
-                    ]
-                }),
-            });
-
-            if (!res.ok) {
-                console.error(`Failed to send email for sub ${sub.id}`, await res.text());
-                continue;
-            }
-
-            // 7. Update Subscription for NEXT step
-            const nextNextStepOrder = nextStepOrder + 1;
-            const { data: nextStep } = await supabase
-                .from('campaign_steps')
-                .select('delay_days')
-                .eq('campaign_id', sub.campaign_id)
-                .eq('order_index', nextNextStepOrder)
-                .single();
-
-            let updates: any = {
-                current_step_index: nextStepOrder,
-                last_email_sent_at: now,
-            };
-
-            if (nextStep) {
-                const nextRun = new Date();
-                nextRun.setDate(nextRun.getDate() + (nextStep.delay_days || 0));
-                updates.next_run_at = nextRun.toISOString();
-            } else {
-                updates.status = 'completed';
-                updates.next_run_at = null;
-            }
-
-            await supabase.from('campaign_subscriptions').update(updates).eq('id', sub.id);
-            results.push({ subId: sub.id, status: 'sent', step: nextStepOrder });
-
-            // Log event
-            await supabase.from('campaign_events').insert({
-                campaign_id: sub.campaign_id,
-                step_id: step.id,
-                lead_id: sub.lead_id,
-                type: 'sent',
-                metadata: { automated: true }
-            });
-        }
-
-        return new Response(JSON.stringify({ success: true, results }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-
-    } catch (error) {
-        console.error("Error processing campaigns:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500,
-        });
+    if (subError) throw subError;
+    if (!subscriptions || subscriptions.length === 0) {
+      return new Response(JSON.stringify({ message: "No campaigns due" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    const results = [];
+
+    for (const sub of (subscriptions as any[])) {
+      // 2. Fetch Lead Details
+      const { data: lead, error: leadError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', sub.lead_id)
+        .single();
+
+      if (leadError || !lead) {
+        console.error(`Lead not found for sub ${sub.id}`);
+        await supabase.from('campaign_subscriptions').update({ status: 'failed', last_email_sent_at: now }).eq('id', sub.id);
+        continue;
+      }
+
+      // 3. Fetch Broker Profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', sub.campaigns.user_id)
+        .single();
+
+      // 4. Identify the Step
+      const nextStepOrder = (sub.current_step_index || 0) + 1;
+      const { data: step } = await supabase
+        .from('campaign_steps')
+        .select('*')
+        .eq('campaign_id', sub.campaign_id)
+        .eq('order_index', nextStepOrder)
+        .single();
+
+      if (!step) {
+        await supabase.from('campaign_subscriptions').update({ status: 'completed', last_email_sent_at: now }).eq('id', sub.id);
+        results.push({ subId: sub.id, status: 'completed_no_more_steps' });
+        continue;
+      }
+
+      // 5. Prepare Professional Email
+      let body = step.body_template || "";
+      let subject = step.subject_template || "";
+      const variables = {
+        firstName: lead.investor_name?.split(' ')[0] || "there",
+        fullName: lead.investor_name || "Investor",
+        address: lead.property_address || "Property",
+        dealType: lead.deal_type || "Deal",
+      };
+
+      for (const [key, value] of Object.entries(variables)) {
+        body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
+        subject = subject.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      }
+
+      const html = generateHtmlEmail(lead, profile || {}, body);
+
+      // 6. Send Email
+      const fromName = profile?.name || 'DealFlow';
+      const fromPrefix = profile?.name ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '.') : 'deals';
+      const fromAddress = `${fromName} <${fromPrefix}@mastercleanhq.com>`;
+
+      const emailPayload = {
+        from: fromAddress,
+        to: [lead.investor_email],
+        subject: subject,
+        html: html,
+        tags: [
+          { name: "campaign_id", value: sub.campaign_id },
+          { name: "lead_id", value: sub.lead_id },
+          { name: "step_id", value: step.id }
+        ]
+      };
+
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify(emailPayload),
+      });
+
+      if (!res.ok) {
+        console.error(`Failed to send email for sub ${sub.id}`, await res.text());
+        continue;
+      }
+
+      // 7. Update Subscription for NEXT step
+      const nextNextStepOrder = nextStepOrder + 1;
+      const { data: nextStep } = await supabase
+        .from('campaign_steps')
+        .select('delay_days')
+        .eq('campaign_id', sub.campaign_id)
+        .eq('order_index', nextNextStepOrder)
+        .single();
+
+      let updates: any = {
+        current_step_index: nextStepOrder,
+        last_email_sent_at: now,
+      };
+
+      if (nextStep) {
+        const nextRun = calculateNextRunAt(
+          nextStep.delay_days,
+          sub.campaigns.preferred_run_time || '09:00',
+          profile?.timezone || 'UTC'
+        );
+        updates.next_run_at = nextRun;
+      } else {
+        updates.status = 'completed';
+        updates.next_run_at = null;
+      }
+
+      await supabase.from('campaign_subscriptions').update(updates).eq('id', sub.id);
+      results.push({ subId: sub.id, status: 'sent', step: nextStepOrder });
+
+      // Log event
+      await supabase.from('campaign_events').insert({
+        campaign_id: sub.campaign_id,
+        step_id: step.id,
+        lead_id: sub.lead_id,
+        type: 'sent',
+        metadata: { automated: true }
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true, results }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (error) {
+    console.error("Error processing campaigns:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
 });
