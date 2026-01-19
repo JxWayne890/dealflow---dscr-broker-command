@@ -257,17 +257,37 @@ export const Settings = () => {
                                 onChange={e => setProfile({ ...profile, timezone: e.target.value })}
                                 className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 border"
                             >
-                                <option value="UTC">UTC (Universal Coordinated Time)</option>
-                                <option value="America/New_York">Eastern Time (ET)</option>
-                                <option value="America/Chicago">Central Time (CT)</option>
-                                <option value="America/Denver">Mountain Time (MT)</option>
-                                <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                                <option value="America/Anchorage">Alaska Time (AKT)</option>
-                                <option value="Pacific/Honolulu">Hawaii-Aleutian Time (HAT)</option>
-                                <option value="Europe/London">London (GMT/BST)</option>
-                                <option value="Europe/Paris">Paris (CET/CEST)</option>
-                                <option value="Asia/Tokyo">Tokyo (JST)</option>
-                                <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                                {[
+                                    { value: 'UTC', name: 'UTC' },
+                                    { value: 'America/New_York', name: 'Eastern Time' },
+                                    { value: 'America/Chicago', name: 'Central Time' },
+                                    { value: 'America/Denver', name: 'Mountain Time' },
+                                    { value: 'America/Los_Angeles', name: 'Pacific Time' },
+                                    { value: 'America/Anchorage', name: 'Alaska Time' },
+                                    { value: 'Pacific/Honolulu', name: 'Hawaii Time' },
+                                    { value: 'Europe/London', name: 'London' },
+                                    { value: 'Europe/Paris', name: 'Paris' },
+                                    { value: 'Asia/Tokyo', name: 'Tokyo' },
+                                    { value: 'Australia/Sydney', name: 'Sydney' }
+                                ].map(tz => {
+                                    let label = tz.name;
+                                    try {
+                                        const now = new Date();
+                                        const timeStr = now.toLocaleTimeString('en-US', {
+                                            timeZone: tz.value,
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        });
+                                        const parts = new Intl.DateTimeFormat('en-US', {
+                                            timeZone: tz.value,
+                                            timeZoneName: 'shortOffset'
+                                        }).formatToParts(now);
+                                        const offset = parts.find(p => p.type === 'timeZoneName')?.value || '';
+                                        label = `${tz.name} (${offset}) - ${timeStr}`;
+                                    } catch (e) { }
+                                    return <option key={tz.value} value={tz.value}>{label}</option>;
+                                })}
                             </select>
                         </div>
                     </div>
