@@ -1,5 +1,8 @@
 
 import { supabase } from '../lib/supabase';
+import { generateHtmlEmail } from '../utils/emailTemplates';
+import { ProfileService } from './profileService';
+import { sendQuoteEmail } from './emailService';
 
 export interface Campaign {
     id: string;
@@ -244,11 +247,7 @@ export const campaignService = {
             .select(`
                 *,
                 quotes (
-                    id,
-                    investor_name,
-                    investor_email,
-                    property_address,
-                    deal_type
+                    *
                 )
             `)
             .eq('id', subscriptionId)
@@ -269,8 +268,8 @@ export const campaignService = {
         if (stepError || !step) throw new Error('No step found for this campaign');
 
         // 3. Prepare email content with variable substitution
-        let body = step.body_template || '';
-        let subject = step.subject_template || '';
+        let bodyTemplate = step.body_template || '';
+        let subjectTemplate = step.subject_template || '';
 
         const variables: Record<string, string> = {
             firstName: sub.quotes.investor_name?.split(' ')[0] || 'there',
@@ -281,30 +280,44 @@ export const campaignService = {
 
         for (const [key, value] of Object.entries(variables)) {
             const regex = new RegExp(`{{${key}}}`, 'g');
-            body = body.replace(regex, value);
-            subject = subject.replace(regex, value);
+            bodyTemplate = bodyTemplate.replace(regex, value);
+            subjectTemplate = subjectTemplate.replace(regex, value);
         }
 
-        // 4. Send via API route (works on Vercel and locally with proxy)
-        const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to: sub.quotes.investor_email,
-                subject,
-                html: body,
-                text: body,
-                fromName: 'DealFlow',
-                fromPrefix: 'deals'
-            })
-        });
+        // 4. Get Agent Profile and Generate Professional HTML
+        const profile = await ProfileService.getProfile();
+        if (!profile) throw new Error('Broker profile not found. Please set up your profile in Settings.');
 
-        const result = await response.json();
+        // Map database quote row back to Quote type for generator
+        const quoteObj = {
+            id: sub.quotes.id,
+            investorName: sub.quotes.investor_name,
+            investorEmail: sub.quotes.investor_email,
+            propertyAddress: sub.quotes.property_address,
+            propertyState: sub.quotes.property_state,
+            loanAmount: sub.quotes.loan_amount,
+            ltv: sub.quotes.ltv,
+            rate: sub.quotes.rate,
+            termYears: sub.quotes.term_years,
+            rateType: sub.quotes.rate_type,
+            monthlyPayment: sub.quotes.monthly_payment,
+            closingFees: sub.quotes.closing_fees,
+            originationFee: sub.quotes.origination_fee,
+            uwFee: sub.quotes.uw_fee,
+            dealType: sub.quotes.deal_type,
+            scheduleUrl: `${window.location.origin}/?view=schedule&quoteId=${sub.quotes.id}`
+        };
+
+        const html = generateHtmlEmail(quoteObj, profile, bodyTemplate);
+
+        // 5. Send using the established email service (invokes Supabase 'send-email' function)
+        const result = await sendQuoteEmail(quoteObj as any, html, profile);
+
         if (!result.success) {
-            throw new Error(result.error || 'Failed to send email via local server');
+            throw new Error(result.error || 'Failed to send email');
         }
 
-        // 5. Update subscription for next step
+        // 6. Update subscription for next step
         const now = new Date().toISOString();
         const nextNextStepOrder = nextStepOrder + 1;
         const { data: nextStep } = await supabase
@@ -333,7 +346,7 @@ export const campaignService = {
             .update(updates)
             .eq('id', subscriptionId);
 
-        // 6. Log the event
+        // 7. Log the event
         await supabase.from('campaign_events').insert({
             campaign_id: sub.campaign_id,
             step_id: step.id,
