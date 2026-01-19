@@ -5,7 +5,11 @@ import { ProfileService } from '../services/profileService';
 import { uploadImageToImgBB } from '../lib/imgbb';
 import { BrokerProfile } from '../types';
 
-export const Settings = () => {
+interface SettingsProps {
+    onProfileUpdate: (profile: BrokerProfile) => void;
+}
+
+export const Settings = ({ onProfileUpdate }: SettingsProps) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState<BrokerProfile>({
@@ -61,6 +65,7 @@ export const Settings = () => {
         try {
             const updated = await ProfileService.updateProfile(profile);
             setProfile(updated);
+            onProfileUpdate(updated);
             setMessage({ type: 'success', text: 'Profile updated successfully' });
         } catch (error) {
             console.error('Failed to save profile:', error);
@@ -81,6 +86,7 @@ export const Settings = () => {
             // Save immediately to persist the URL
             const saved = await ProfileService.updateProfile(updatedProfile);
             setProfile(saved);
+            onProfileUpdate(saved);
             setMessage({ type: 'success', text: 'Image uploaded and saved!' });
         } catch (error: any) {
             console.error('Upload failed:', error);

@@ -14,10 +14,11 @@ import { Settings } from './pages/Settings';
 import { PublicSchedule } from './pages/PublicSchedule';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
-import { Investor } from './types';
 import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
+import { ProfileService } from './services/profileService';
 import { useToast } from './contexts/ToastContext';
+import { BrokerProfile, Investor } from './types';
 
 export default function App() {
   const { showToast } = useToast();
@@ -47,6 +48,7 @@ export default function App() {
   // Data State
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
+  const [profile, setProfile] = useState<BrokerProfile | null>(null);
   const [loadingData, setLoadingData] = useState(false);
 
   // Fetch Data on Session Change
@@ -55,10 +57,12 @@ export default function App() {
       setLoadingData(true);
       Promise.all([
         QuoteService.getQuotes(),
-        InvestorService.getInvestors()
-      ]).then(([fetchedQuotes, fetchedInvestors]) => {
+        InvestorService.getInvestors(),
+        ProfileService.getProfile()
+      ]).then(([fetchedQuotes, fetchedInvestors, fetchedProfile]) => {
         setQuotes(fetchedQuotes);
         setInvestors(fetchedInvestors);
+        setProfile(fetchedProfile);
       }).finally(() => setLoadingData(false));
     } else {
       setQuotes([]);
@@ -138,7 +142,7 @@ export default function App() {
       case 'analytics':
         return <Analytics quotes={quotes} investors={investors} />;
       case 'settings':
-        return <Settings />;
+        return <Settings onProfileUpdate={setProfile} />;
       case 'campaigns':
         return <Campaigns
           onEdit={(id) => { setSelectedCampaignId(id); setCurrentView('campaign_editor'); }}
@@ -173,6 +177,7 @@ export default function App() {
           currentView={currentView}
           onViewChange={setCurrentView}
           onNewQuote={handleNewQuote}
+          profile={profile}
         >
           {renderContent()}
         </Layout>

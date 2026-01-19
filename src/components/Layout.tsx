@@ -1,16 +1,20 @@
 import React from 'react';
 import { Icons } from './Icons';
 import { Button } from './Button';
-import { View } from '../types';
+import { View, BrokerProfile } from '../types';
 
 interface LayoutProps {
     children: React.ReactNode;
     currentView: View;
     onViewChange: (view: View) => void;
     onNewQuote: () => void;
+    profile: BrokerProfile | null;
 }
 
-export const Layout = ({ children, currentView, onViewChange, onNewQuote }: LayoutProps) => {
+export const Layout = ({ children, currentView, onViewChange, onNewQuote, profile }: LayoutProps) => {
+    const initials = profile?.name
+        ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase()
+        : '??';
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-indigo-100 flex flex-row">
@@ -75,11 +79,11 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote }: Layo
                     </Button>
                     <div className="mt-4 flex items-center gap-3 px-2 py-2">
                         <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 text-xs">
-                            JB
+                            {initials}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-gray-900">James Broker</p>
-                            <p className="text-xs text-gray-500">Pro Plan</p>
+                            <p className="text-sm font-medium text-gray-900">{profile?.name || 'Loading...'}</p>
+                            <p className="text-xs text-gray-500">{profile?.title || 'Pro Plan'}</p>
                         </div>
                     </div>
                 </div>
