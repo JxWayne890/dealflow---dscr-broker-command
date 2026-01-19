@@ -19,6 +19,21 @@ export const Settings = () => {
         headshotUrl: ''
     });
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [showTzDropdown, setShowTzDropdown] = useState(false);
+
+    const TIMEZONES = [
+        { value: 'UTC', name: 'UTC' },
+        { value: 'America/New_York', name: 'Eastern Time' },
+        { value: 'America/Chicago', name: 'Central Time' },
+        { value: 'America/Denver', name: 'Mountain Time' },
+        { value: 'America/Los_Angeles', name: 'Pacific Time' },
+        { value: 'America/Anchorage', name: 'Alaska Time' },
+        { value: 'Pacific/Honolulu', name: 'Hawaii Time' },
+        { value: 'Europe/London', name: 'London' },
+        { value: 'Europe/Paris', name: 'Paris' },
+        { value: 'Asia/Tokyo', name: 'Tokyo' },
+        { value: 'Australia/Sydney', name: 'Sydney' }
+    ];
 
     useEffect(() => {
         loadProfile();
@@ -248,47 +263,95 @@ export const Settings = () => {
                     </div>
 
                     <div className="sm:col-span-3">
-                        <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">Timezone</label>
-                        <div className="mt-1">
-                            <select
-                                id="timezone"
-                                name="timezone"
-                                value={profile.timezone}
-                                onChange={e => setProfile({ ...profile, timezone: e.target.value })}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 border"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setShowTzDropdown(!showTzDropdown)}
+                                className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2.5 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             >
-                                {[
-                                    { value: 'UTC', name: 'UTC' },
-                                    { value: 'America/New_York', name: 'Eastern Time' },
-                                    { value: 'America/Chicago', name: 'Central Time' },
-                                    { value: 'America/Denver', name: 'Mountain Time' },
-                                    { value: 'America/Los_Angeles', name: 'Pacific Time' },
-                                    { value: 'America/Anchorage', name: 'Alaska Time' },
-                                    { value: 'Pacific/Honolulu', name: 'Hawaii Time' },
-                                    { value: 'Europe/London', name: 'London' },
-                                    { value: 'Europe/Paris', name: 'Paris' },
-                                    { value: 'Asia/Tokyo', name: 'Tokyo' },
-                                    { value: 'Australia/Sydney', name: 'Sydney' }
-                                ].map(tz => {
-                                    let label = tz.name;
-                                    try {
-                                        const now = new Date();
-                                        const timeStr = now.toLocaleTimeString('en-US', {
-                                            timeZone: tz.value,
-                                            hour: 'numeric',
-                                            minute: '2-digit',
-                                            hour12: true
-                                        });
-                                        const parts = new Intl.DateTimeFormat('en-US', {
-                                            timeZone: tz.value,
-                                            timeZoneName: 'shortOffset'
-                                        }).formatToParts(now);
-                                        const offset = parts.find(p => p.type === 'timeZoneName')?.value || '';
-                                        label = `${tz.name} (${offset}) - ${timeStr}`;
-                                    } catch (e) { }
-                                    return <option key={tz.value} value={tz.value}>{label}</option>;
-                                })}
-                            </select>
+                                <span className="block truncate">
+                                    {(() => {
+                                        const tz = TIMEZONES.find(t => t.value === profile.timezone) || TIMEZONES[0];
+                                        try {
+                                            const now = new Date();
+                                            const timeStr = now.toLocaleTimeString('en-US', {
+                                                timeZone: tz.value,
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            });
+                                            const parts = new Intl.DateTimeFormat('en-US', {
+                                                timeZone: tz.value,
+                                                timeZoneName: 'shortOffset'
+                                            }).formatToParts(now);
+                                            const offset = parts.find(p => p.type === 'timeZoneName')?.value || '';
+                                            return `${tz.name} (${offset}) - ${timeStr}`;
+                                        } catch (e) {
+                                            return tz.name;
+                                        }
+                                    })()}
+                                </span>
+                                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <Icons.ChevronDown className="h-4 w-4 text-gray-400" />
+                                </span>
+                            </button>
+
+                            {showTzDropdown && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setShowTzDropdown(false)}
+                                    />
+                                    <div className="absolute z-20 mt-1 w-full bg-white shadow-xl max-h-60 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm border border-gray-100">
+                                        {TIMEZONES.map((tz) => {
+                                            let subLabel = '';
+                                            try {
+                                                const now = new Date();
+                                                const timeStr = now.toLocaleTimeString('en-US', {
+                                                    timeZone: tz.value,
+                                                    hour: 'numeric',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                });
+                                                const parts = new Intl.DateTimeFormat('en-US', {
+                                                    timeZone: tz.value,
+                                                    timeZoneName: 'shortOffset'
+                                                }).formatToParts(now);
+                                                const offset = parts.find(p => p.type === 'timeZoneName')?.value || '';
+                                                subLabel = `${offset} • ${timeStr}`;
+                                            } catch (e) { }
+
+                                            const isSelected = profile.timezone === tz.value;
+
+                                            return (
+                                                <div
+                                                    key={tz.value}
+                                                    onClick={() => {
+                                                        setProfile({ ...profile, timezone: tz.value });
+                                                        setShowTzDropdown(false);
+                                                    }}
+                                                    className={`cursor-pointer select-none relative py-3 pl-3 pr-9 border-b border-gray-50 last:border-0 hover:bg-indigo-50 transition-colors ${isSelected ? 'bg-indigo-50/50' : ''}`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className={`block truncate ${isSelected ? 'font-semibold text-indigo-700' : 'font-medium text-gray-900'}`}>
+                                                            {tz.name}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500 font-normal">
+                                                            {subLabel}
+                                                        </span>
+                                                    </div>
+                                                    {isSelected && (
+                                                        <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
+                                                            <Icons.CheckCircle className="h-4 w-4" />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
