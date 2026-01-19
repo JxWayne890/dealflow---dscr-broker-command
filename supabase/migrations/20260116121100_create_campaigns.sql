@@ -44,11 +44,14 @@ ALTER TABLE public.campaign_steps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaign_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Simple policies (allow all for authenticated users for now, to be refined)
+DROP POLICY IF EXISTS "Allow authenticated full access to campaigns" ON public.campaigns;
 CREATE POLICY "Allow authenticated full access to campaigns" ON public.campaigns
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow authenticated full access to campaign_steps" ON public.campaign_steps;
 CREATE POLICY "Allow authenticated full access to campaign_steps" ON public.campaign_steps
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow authenticated full access to campaign_subscriptions" ON public.campaign_subscriptions;
 CREATE POLICY "Allow authenticated full access to campaign_subscriptions" ON public.campaign_subscriptions
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
