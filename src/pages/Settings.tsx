@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { ProfileService } from '../services/profileService';
+import { InviteService } from '../services/inviteService';
 import { uploadImageToImgBB } from '../lib/imgbb';
 import { BrokerProfile } from '../types';
 
@@ -24,6 +25,8 @@ export const Settings = ({ onProfileUpdate }: SettingsProps) => {
     });
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [showTzDropdown, setShowTzDropdown] = useState(false);
+    const [joinCode, setJoinCode] = useState('');
+    const [joining, setJoining] = useState(false);
 
     const TIMEZONES = [
         { value: 'UTC', name: 'UTC' },
@@ -93,6 +96,28 @@ export const Settings = ({ onProfileUpdate }: SettingsProps) => {
             setMessage({ type: 'error', text: `Upload failed: ${error.message}` });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleJoinTeam = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!joinCode.trim()) return;
+
+        setJoining(true);
+        setMessage(null);
+        try {
+            await InviteService.claimInvite(joinCode);
+            const updated = await ProfileService.getProfile();
+            if (updated) {
+                setProfile(updated);
+                onProfileUpdate(updated);
+            }
+            setMessage({ type: 'success', text: 'Successfully joined the team!' });
+            setJoinCode('');
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.message || 'Failed to join team' });
+        } finally {
+            setJoining(false);
         }
     };
 
@@ -368,6 +393,37 @@ export const Settings = ({ onProfileUpdate }: SettingsProps) => {
                     </Button>
                 </div>
             </form>
+
+            {/* Join Team Section */}
+            {(!profile.role || profile.role === 'admin') && !profile.parentId && (
+                <div className="bg-white shadow rounded-lg p-6 space-y-6">
+                    <div className="border-b border-gray-200 pb-6">
+                        <h2 className="text-lg font-medium text-gray-900">Join a Team</h2>
+                        <p className="mt-1 text-sm text-gray-500">If you're an assistant, enter your invite code here to join an organization.</p>
+                    </div>
+
+                    <form onSubmit={handleJoinTeam} className="flex gap-4">
+                        <input
+                            type="text"
+                            placeholder="ENTER-CODE"
+                            value={joinCode}
+                            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                            className="max-w-xs shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 border uppercase font-mono"
+                        />
+                        <Button type="submit" disabled={joining || !joinCode}>
+                            {joining ? 'Joining...' : 'Join Team'}
+                        </Button>
+                    </form>
+                </div>
+            )}
+
+            {profile.role === 'assistant' && (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-6 text-center">
+                    <Icons.Users className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
+                    <h3 className="text-indigo-900 font-semibold">Assistant Account</h3>
+                    <p className="text-sm text-indigo-700">You are part of an organization. Your access is managed by your administrator.</p>
+                </div>
+            )}
         </div>
     );
 };

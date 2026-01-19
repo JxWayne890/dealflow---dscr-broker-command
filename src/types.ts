@@ -70,6 +70,14 @@ export interface DashboardMetrics {
   conversionRate: number;
 }
 
+export interface Permissions {
+  dashboard: boolean;
+  quotes: boolean;
+  investors: boolean;
+  campaigns: boolean;
+  analytics: boolean;
+}
+
 export interface BrokerProfile {
   name: string;
   email: string;
@@ -80,10 +88,13 @@ export interface BrokerProfile {
   title?: string;
   company?: string;
   timezone?: string;
+  role?: 'admin' | 'assistant';
+  parentId?: string;
+  permissions?: Permissions;
 }
 
 export type EmailFormat = 'text' | 'html';
 
 export type QuoteFilter = 'all' | 'drafts' | 'active' | 'won' | 'lost' | 'needs_follow_up';
 
-export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor';
+export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team';

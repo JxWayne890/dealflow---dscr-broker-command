@@ -39,6 +39,23 @@ export const ProfileService = {
         }
 
         return mapDbToProfile(data);
+    },
+
+    async getTeam(): Promise<BrokerProfile[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('parent_id', user.id);
+
+        if (error) {
+            console.error('Error fetching team:', error);
+            return [];
+        }
+
+        return data.map(mapDbToProfile);
     }
 };
 
@@ -51,7 +68,10 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     logoUrl: row.logo_url,
     headshotUrl: row.headshot_url,
     title: row.title || '',
-    timezone: row.timezone || 'UTC'
+    timezone: row.timezone || 'UTC',
+    role: row.role || 'admin',
+    parentId: row.parent_id,
+    permissions: row.permissions
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
@@ -64,5 +84,8 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.headshotUrl !== undefined) db.headshot_url = profile.headshotUrl;
     if (profile.title !== undefined) db.title = profile.title;
     if (profile.timezone !== undefined) db.timezone = profile.timezone;
+    if (profile.role !== undefined) db.role = profile.role;
+    if (profile.parentId !== undefined) db.parent_id = profile.parentId;
+    if (profile.permissions !== undefined) db.permissions = profile.permissions;
     return db;
 };

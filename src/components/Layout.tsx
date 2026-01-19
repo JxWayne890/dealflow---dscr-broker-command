@@ -29,41 +29,62 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    <button
-                        onClick={() => onViewChange('dashboard')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Icons.Home className={`w-5 h-5 mr-3 ${currentView === 'dashboard' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Dashboard
-                    </button>
-                    <button
-                        onClick={() => onViewChange('quotes')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'quotes' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Icons.FileText className={`w-5 h-5 mr-3 ${currentView === 'quotes' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Quotes
-                    </button>
-                    <button
-                        onClick={() => onViewChange('investors')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'investors' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Icons.Users className={`w-5 h-5 mr-3 ${currentView === 'investors' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Investors
-                    </button>
-                    <button
-                        onClick={() => onViewChange('campaigns')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Icons.Mail className={`w-5 h-5 mr-3 ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Campaigns
-                    </button>
-                    <button
-                        onClick={() => onViewChange('analytics')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'analytics' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        <Icons.TrendingUp className={`w-5 h-5 mr-3 ${currentView === 'analytics' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Analytics
-                    </button>
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.dashboard) && (
+                        <button
+                            onClick={() => onViewChange('dashboard')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.Home className={`w-5 h-5 mr-3 ${currentView === 'dashboard' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Dashboard
+                        </button>
+                    )}
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && (
+                        <button
+                            onClick={() => onViewChange('quotes')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'quotes' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.FileText className={`w-5 h-5 mr-3 ${currentView === 'quotes' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Quotes
+                        </button>
+                    )}
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.investors) && (
+                        <button
+                            onClick={() => onViewChange('investors')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'investors' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.Users className={`w-5 h-5 mr-3 ${currentView === 'investors' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Investors
+                        </button>
+                    )}
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.campaigns) && (
+                        <button
+                            onClick={() => onViewChange('campaigns')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.Mail className={`w-5 h-5 mr-3 ${currentView === 'campaigns' || currentView === 'campaign_editor' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Campaigns
+                        </button>
+                    )}
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.analytics) && (
+                        <button
+                            onClick={() => onViewChange('analytics')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'analytics' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.TrendingUp className={`w-5 h-5 mr-3 ${currentView === 'analytics' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Analytics
+                        </button>
+                    )}
+
+                    {(!profile?.role || profile.role === 'admin') && (
+                        <button
+                            onClick={() => onViewChange('team')}
+                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'team' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Icons.UserPlus className={`w-5 h-5 mr-3 ${currentView === 'team' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                            Team
+                        </button>
+                    )}
+
                     <button
                         onClick={() => onViewChange('settings')}
                         className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'settings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}

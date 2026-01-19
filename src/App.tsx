@@ -14,6 +14,7 @@ import { Settings } from './pages/Settings';
 import { PublicSchedule } from './pages/PublicSchedule';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
+import { Team } from './pages/Team';
 import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
 import { ProfileService } from './services/profileService';
@@ -153,6 +154,8 @@ export default function App() {
           campaignId={selectedCampaignId}
           onBack={() => { setSelectedCampaignId(null); setCurrentView('campaigns'); }}
         />;
+      case 'team':
+        return <Team />;
       default:
         return <Dashboard quotes={quotes} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} />;
     }

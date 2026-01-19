@@ -24,7 +24,10 @@ import {
   Award,
   Eye,
   MousePointer,
-  DollarSign
+  DollarSign,
+  UserPlus,
+  Zap,
+  Copy
 } from 'lucide-react';
 
 export const Icons = {
@@ -68,5 +71,8 @@ export const Icons = {
   Award,
   Eye,
   MousePointer,
-  DollarSign
+  DollarSign,
+  UserPlus,
+  Zap,
+  Copy
 };
