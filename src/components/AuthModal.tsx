@@ -84,19 +84,19 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
 
     const checkJoinCode = async (code: string) => {
         try {
+            // Use secure RPC to bypass RLS safely
             const { data, error } = await supabase
-                .from('profiles')
-                .select('company')
-                .eq('invite_code', code.toUpperCase())
-                .eq('role', 'admin')
-                .maybeSingle();
+                .rpc('check_invite_code', { lookup_code: code.toUpperCase() });
 
-            if (data?.company) {
-                setOrganizationName(data.company);
-                setCompany(data.company);
+            if (data && data.length > 0) {
+                setOrganizationName(data[0].company_name);
+                setCompany(data[0].company_name);
+            } else {
+                setOrganizationName(null);
             }
         } catch (e) {
             console.error('Code lookup failed', e);
+            setOrganizationName(null);
         }
     };
 
