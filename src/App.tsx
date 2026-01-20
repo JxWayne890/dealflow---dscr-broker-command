@@ -192,6 +192,7 @@ export default function App() {
             onUpdateInvestor={handleUpdateInvestor}
             onDeleteInvestor={handleDeleteInvestor}
             onBulkDeleteInvestors={handleBulkDeleteInvestors}
+            isAdmin={profile?.role === 'admin'}
           />
         );
       case 'analytics':
@@ -202,6 +203,7 @@ export default function App() {
         return <Campaigns
           onEdit={(id) => { setSelectedCampaignId(id); setCurrentView('campaign_editor'); }}
           onNew={() => { setSelectedCampaignId(null); setCurrentView('campaign_editor'); }}
+          isAdmin={profile?.role === 'admin'}
         />;
       case 'campaign_editor':
         return <CampaignEditor
@@ -244,7 +246,8 @@ export default function App() {
 
   // Determine if we should show forced onboarding
   // We check session AND if profile has loaded (or is still loading)
-  const isNewlyAuthenticated = !!session && !profile && loadingData;
+  // FIX: Don't show modal just because data is loading. Wait for profile.
+  const isNewlyAuthenticated = !!session && !profile && !loadingData;
   const needsOnboarding = !!session && !!profile && profile.onboardingStatus !== 'active';
   const showOnboarding = isNewlyAuthenticated || needsOnboarding;
 

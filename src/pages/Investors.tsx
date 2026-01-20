@@ -12,9 +12,10 @@ interface InvestorsProps {
     onUpdateInvestor: (id: string, updates: Partial<Investor>) => void;
     onDeleteInvestor: (id: string) => void;
     onBulkDeleteInvestors: (ids: string[]) => void;
+    isAdmin?: boolean;
 }
 
-export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDeleteInvestor, onBulkDeleteInvestors }: InvestorsProps) => {
+export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDeleteInvestor, onBulkDeleteInvestors, isAdmin = true }: InvestorsProps) => {
     const [showModal, setShowModal] = useState(false);
     const [editingInvestor, setEditingInvestor] = useState<Investor | null>(null);
     const [selectedInvestor, setSelectedInvestor] = useState<Investor | null>(null);
@@ -103,7 +104,7 @@ export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDelete
                     <p className="text-sm text-muted mt-1">Manage your network of capital partners.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {selectedIds.length > 0 && (
+                    {isAdmin && selectedIds.length > 0 && (
                         <button
                             onClick={handleBulkDelete}
                             className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all animate-in fade-in slide-in-from-right-4"
@@ -144,14 +145,16 @@ export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDelete
                 <table className="min-w-full divide-y divide-border/10">
                     <thead className="bg-foreground/5">
                         <tr>
-                            <th className="px-6 py-3 text-left w-10">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
-                                    checked={selectedIds.length === investors.length && investors.length > 0}
-                                    onChange={toggleSelectAll}
-                                />
-                            </th>
+                            {isAdmin && (
+                                <th className="px-6 py-3 text-left w-10">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
+                                        checked={selectedIds.length === investors.length && investors.length > 0}
+                                        onChange={toggleSelectAll}
+                                    />
+                                </th>
+                            )}
                             <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Company</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Contact</th>
@@ -172,14 +175,16 @@ export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDelete
                                     className={`hover:bg-foreground/5 transition-colors cursor-pointer ${selectedIds.includes(investor.id) ? 'bg-indigo-500/10' : ''}`}
                                     onClick={() => setSelectedInvestor(investor)}
                                 >
-                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
-                                            checked={selectedIds.includes(investor.id)}
-                                            onChange={(e) => toggleSelectOne(e as any, investor.id)}
-                                        />
-                                    </td>
+                                    {isAdmin && (
+                                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
+                                                checked={selectedIds.includes(investor.id)}
+                                                onChange={(e) => toggleSelectOne(e as any, investor.id)}
+                                            />
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="h-8 w-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold mr-3">
@@ -270,7 +275,7 @@ export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDelete
                         </div>
 
                         <div className="mt-8 flex justify-between items-center">
-                            {editingInvestor ? (
+                            {editingInvestor && isAdmin ? (
                                 <button
                                     onClick={handleDelete}
                                     className="text-xs font-semibold text-red-500 hover:text-red-400 flex items-center gap-1.5 px-2 py-1 hover:bg-red-500/10 rounded transition-colors"

@@ -7,9 +7,10 @@ import { useToast } from '../contexts/ToastContext';
 interface CampaignsProps {
     onEdit: (id: string) => void;
     onNew: () => void;
+    isAdmin?: boolean;
 }
 
-export function Campaigns({ onEdit, onNew }: CampaignsProps) {
+export function Campaigns({ onEdit, onNew, isAdmin = true }: CampaignsProps) {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [stats, setStats] = useState<Record<string, CampaignStats>>({});
     const [loading, setLoading] = useState(true);
@@ -90,7 +91,7 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                     <p className="text-muted">Manage your automated follow-up sequences</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    {selectedIds.size > 0 && (
+                    {isAdmin && selectedIds.size > 0 && (
                         <button
                             onClick={handleBulkDelete}
                             disabled={isDeleting}
@@ -100,12 +101,14 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                             <span>{isDeleting ? 'Deleting...' : `Delete (${selectedIds.size})`}</span>
                         </button>
                     )}
-                    <button
-                        onClick={toggleSelectAll}
-                        className="flex items-center space-x-2 px-4 py-2 bg-surface text-foreground rounded-lg hover:bg-foreground/5 transition border border-border/10"
-                    >
-                        <span>{selectedIds.size === campaigns.length && campaigns.length > 0 ? 'Deselect All' : 'Select All'}</span>
-                    </button>
+                    {isAdmin && (
+                        <button
+                            onClick={toggleSelectAll}
+                            className="flex items-center space-x-2 px-4 py-2 bg-surface text-foreground rounded-lg hover:bg-foreground/5 transition border border-border/10"
+                        >
+                            <span>{selectedIds.size === campaigns.length && campaigns.length > 0 ? 'Deselect All' : 'Select All'}</span>
+                        </button>
+                    )}
                     <button
                         onClick={onNew}
                         className="flex items-center space-x-2 px-4 py-2 bg-banana-400 text-slate-900 rounded-lg hover:bg-banana-500 transition shadow-sm font-medium"
@@ -146,13 +149,15 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                                 onClick={() => onEdit(campaign.id)}
                                 className={`bg-surface/30 backdrop-blur-xl rounded-xl border transition cursor-pointer group relative overflow-hidden ${selectedIds.has(campaign.id) ? 'border-banana-400 ring-2 ring-banana-400/20 shadow-md' : 'border-border/10 shadow-sm hover:shadow-md'}`}
                             >
-                                {/* Selection Checkbox */}
-                                <div
-                                    onClick={(e) => toggleSelection(e, campaign.id)}
-                                    className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectedIds.has(campaign.id) ? 'bg-banana-400 border-banana-400 text-slate-900' : 'bg-surface border-border/30'}`}
-                                >
-                                    {selectedIds.has(campaign.id) && <Icons.Check size={14} strokeWidth={3} />}
-                                </div>
+                                {/* Selection Checkbox - Admin Only */}
+                                {isAdmin && (
+                                    <div
+                                        onClick={(e) => toggleSelection(e, campaign.id)}
+                                        className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectedIds.has(campaign.id) ? 'bg-banana-400 border-banana-400 text-slate-900' : 'bg-surface border-border/30'}`}
+                                    >
+                                        {selectedIds.has(campaign.id) && <Icons.Check size={14} strokeWidth={3} />}
+                                    </div>
+                                )}
 
                                 <div className="p-6 pt-12">
                                     <div className="flex justify-between items-start mb-4">
