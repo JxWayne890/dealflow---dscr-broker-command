@@ -22,88 +22,21 @@ export const InviteService = {
     },
 
     async claimInvite(code: string): Promise<void> {
-        // Use getUser() directly for the most reliable current-user check
+        // 1. Get current User ID (Robust check)
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
         const cleanCode = code.toUpperCase().trim();
 
-        // 1. Check for organizational static code in profiles
-        const { data: adminProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, permissions')
-            .eq('invite_code', cleanCode)
-            .eq('role', 'admin')
-            .maybeSingle();
+        // 2. Call the Secure Backend Function (Bypasses RLS)
+        const { error } = await supabase.rpc('claim_invite', {
+            p_user_id: user.id,
+            p_invite_code: cleanCode
+        });
 
-        if (adminProfile) {
-            // Join using static organizational code
-            // 1. Fetch admin details to copy company info
-            const { data: adminDetails } = await supabase
-                .from('profiles')
-                .select('company, logo_url')
-                .eq('id', adminProfile.id)
-                .single();
-
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    role: 'assistant',
-                    parent_id: adminProfile.id,
-                    company: adminDetails?.company,
-                    logo_url: adminDetails?.logo_url,
-                    onboarding_status: 'active',
-                    permissions: {
-                        dashboard: true,
-                        quotes: true,
-                        investors: true,
-                        campaigns: true,
-                        analytics: true
-                    }
-                })
-                .eq('id', user.id);
-
-            if (updateError) throw updateError;
-            return;
-        }
-
-        // 2. Fallback to legacy specific invites (if any)
-        const { data: invite, error: fetchError } = await supabase
-            .from('invites')
-            .select('*')
-            .eq('code', cleanCode)
-            .eq('is_used', false)
-            .maybeSingle();
-
-        if (!adminProfile && (fetchError || !invite)) {
-            throw new Error('Invalid or expired invite code');
-        }
-
-        if (invite) {
-            // Fetch inviter details to copy company info
-            const { data: inviterDetails } = await supabase
-                .from('profiles')
-                .select('company, logo_url')
-                .eq('id', invite.broker_id)
-                .single();
-
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    role: 'assistant',
-                    parent_id: invite.broker_id,
-                    company: inviterDetails?.company,
-                    logo_url: inviterDetails?.logo_url,
-                    permissions: invite.permissions
-                })
-                .eq('id', user.id);
-
-            if (updateError) throw updateError;
-
-            await supabase
-                .from('invites')
-                .update({ is_used: true })
-                .eq('id', invite.id);
+        if (error) {
+            console.error('Invite Claim Verification Failed:', error);
+            throw new Error(error.message || 'Invalid invite code or verification failed');
         }
     }
 }
