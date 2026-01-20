@@ -25,16 +25,16 @@ serve(async (req) => {
     }
 
     try {
-        const { to, subject, html, text, fromName = "DealFlow", fromPrefix = "deals", quoteId }: EmailRequest = await req.json();
+        const { to, subject, html, text, fromName = "The OfferHero", fromPrefix = "deals", quoteId }: EmailRequest = await req.json();
 
         if (!RESEND_API_KEY) {
             throw new Error("Missing RESEND_API_KEY");
         }
 
         // Construct "From" address
-        // e.g. "John Doe <john.doe@mastercleanhq.com>"
+        // e.g. "John Doe <john.doe@theofferhero.com>"
         // NOTE: This domain must be verified in Resend.
-        const fromAddress = `${fromName} <${fromPrefix}@mastercleanhq.com>`;
+        const fromAddress = `${fromName} <${fromPrefix}@theofferhero.com>`;
 
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",

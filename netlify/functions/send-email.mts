@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend('re_59HGkUtF_64myzv2Pa6K8GYT2SMUFCDeb');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async (req: Request) => {
     if (req.method !== 'POST') {
@@ -12,7 +12,7 @@ export default async (req: Request) => {
         const { to, subject, html, text } = body;
 
         const { data, error } = await resend.emails.send({
-            from: 'DealFlow <deals@mastercleanhq.com>',
+            from: 'The OfferHero <deals@theofferhero.com>',
             to: [to],
             subject,
             html,

@@ -4,7 +4,7 @@ export const APP_NAME = "The OfferHero";
 
 export const DEFAULT_BROKER_PROFILE: BrokerProfile = {
   name: 'Timothy Herro',
-  email: 'timothy@mastercleanhq.com',
+  email: 'timothy@theofferhero.com',
   phone: '(555) 123-4567',
   title: 'Senior Loan Officer', // Restored original title
   logoUrl: 'https://i.imgur.com/hj4dC0Q.png',

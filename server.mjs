@@ -10,7 +10,7 @@ const app = express();
 const port = 3002;
 
 // Reverting to the hardcoded key that was working before
-const resend = new Resend('re_59HGkUtF_64myzv2Pa6K8GYT2SMUFCDeb');
+const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 app.use(cors());
@@ -54,7 +54,7 @@ app.post('/api/send-email', async (req, res) => {
   // Default to 'DealFlow' and 'deals' if not provided
   const safeName = fromName || 'DealFlow';
   const safePrefix = fromPrefix || 'deals';
-  const fromAddress = `${safeName} <${safePrefix}@mastercleanhq.com>`;
+  const fromAddress = `${safeName} <${safePrefix}@theofferhero.com>`;
 
   console.log('--- EMAIL SEND ATTEMPT ---');
   console.log(`FROM: ${fromAddress}`);
