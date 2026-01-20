@@ -51,13 +51,14 @@ export const InviteService = {
                     parent_id: adminProfile.id,
                     company: adminDetails?.company,
                     logo_url: adminDetails?.logo_url,
+                    onboarding_status: 'active',
                     permissions: {
                         dashboard: true,
                         quotes: true,
                         investors: true,
                         campaigns: true,
                         analytics: true
-                    } // Default to all permissions for static join
+                    }
                 })
                 .eq('id', user.id);
 

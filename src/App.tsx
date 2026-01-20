@@ -242,7 +242,13 @@ export default function App() {
     if (quote) return <PublicSchedule quote={quote} />;
   }
 
-  const showOnboarding = !!session && !!profile && profile.onboardingStatus !== 'active';
+  // Determine if we should show forced onboarding
+  // We check session AND if profile has loaded (or is still loading)
+  const isNewlyAuthenticated = !!session && !profile && loadingData;
+  const needsOnboarding = !!session && !!profile && profile.onboardingStatus !== 'active';
+  const showOnboarding = isNewlyAuthenticated || needsOnboarding;
+
+  const onboardingStatus = profile?.onboardingStatus || (isNewlyAuthenticated ? 'joined' : undefined);
 
   return (
     <>
@@ -261,7 +267,7 @@ export default function App() {
             <AuthModal
               isOpen={true}
               onClose={() => { }} // Cannot close until active
-              initialStatus={profile.onboardingStatus}
+              initialStatus={onboardingStatus}
             />
           )}
         </>

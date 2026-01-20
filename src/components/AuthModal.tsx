@@ -38,8 +38,24 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
 
+    // Initial data hydration
     useEffect(() => {
+        const hydrateProfile = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const existing = await ProfileService.getProfile();
+                if (existing) {
+                    setName(existing.name || '');
+                    setCompany(existing.company || '');
+                    setTitle(existing.title || '');
+                    setPhone(existing.phone || '');
+                    setWebsite(existing.website || '');
+                }
+            }
+        };
+
         if (isOpen) {
+            hydrateProfile();
             setIsSignUp(defaultMode === 'signup');
             setError(null);
             setMessage(null);
@@ -49,6 +65,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 setStep('join_type');
             } else if (initialStatus === 'pending_payment') {
                 setStep('payment');
+            } else if (initialStatus === 'joined') {
+                setStep('join_type');
             } else {
                 setStep('auth');
             }
@@ -88,6 +106,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         setError(null);
 
         if (isSignUp) {
+            console.log('Signing up user:', email);
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -103,7 +122,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 setError(error.message);
                 setLoading(false);
             } else if (data.user) {
-                // Move to onboarding type selection
+                console.log('Signup success, moving to join_type');
                 setStep('join_type');
                 setLoading(false);
             }
@@ -130,6 +149,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
     };
 
     const handleFinalOnboarding = async (type: 'admin' | 'assistant') => {
+        console.log('Finalizing onboarding for:', type);
         setLoading(true);
         setError(null);
 
@@ -140,9 +160,11 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                     setLoading(false);
                     return;
                 }
+                console.log('Claiming invite code:', joinCode);
                 await InviteService.claimInvite(joinCode);
             }
 
+            console.log('Updating profile data...');
             // Update profile with the rest of the info
             await ProfileService.updateProfile({
                 name,
@@ -155,13 +177,16 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
             });
 
             if (type === 'admin') {
+                console.log('Moving to payment');
                 setStep('payment');
             } else {
+                console.log('Assistant join complete');
                 showToast('Welcome to the team!', 'success');
                 onClose();
-                window.location.reload(); // Refresh to load app state
+                setTimeout(() => window.location.reload(), 500); // Small delay to show toast
             }
         } catch (e: any) {
+            console.error('Onboarding error detailed:', e);
             setError(e.message || 'Onboarding failed. Please try again.');
         } finally {
             setLoading(false);
