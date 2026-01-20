@@ -164,11 +164,19 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                     return;
                 }
                 console.log('Claiming invite code:', joinCode, 'for user:', pendingUserId);
-                await InviteService.claimInvite(joinCode, pendingUserId);
+                // Pass all profile data to the backend - it handles everything for assistants
+                await InviteService.claimInvite(joinCode, pendingUserId, { name, phone, title: 'Assistant' });
+
+                // For assistants, the backend sets everything - just show success and reload
+                console.log('Assistant join complete');
+                showToast('Welcome to the team!', 'success');
+                onClose();
+                setTimeout(() => window.location.reload(), 500);
+                return; // Exit early - no need for ProfileService
             }
 
+            // For admins, continue with the normal flow
             console.log('Updating profile data...');
-            // Update profile with the rest of the info
             await ProfileService.updateProfile({
                 name,
                 company,
@@ -176,18 +184,11 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 phone,
                 website,
                 role: type,
-                onboardingStatus: type === 'admin' ? 'pending_payment' : 'active'
+                onboardingStatus: 'pending_payment'
             });
 
-            if (type === 'admin') {
-                console.log('Moving to payment');
-                setStep('payment');
-            } else {
-                console.log('Assistant join complete');
-                showToast('Welcome to the team!', 'success');
-                onClose();
-                setTimeout(() => window.location.reload(), 500); // Small delay to show toast
-            }
+            console.log('Moving to payment');
+            setStep('payment');
         } catch (e: any) {
             console.error('Onboarding error detailed:', e);
             setError(e.message || 'Onboarding failed. Please try again.');
