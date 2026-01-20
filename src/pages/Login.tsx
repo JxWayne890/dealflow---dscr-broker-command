@@ -72,7 +72,7 @@ export const Login = () => {
                 <div className="absolute bottom-[-10%] left-[20%] w-[900px] h-[900px] bg-slate-900/50 rounded-full blur-[150px] opacity-40" />
 
                 {/* Decorative Grid/Noise */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] brightness-75 contrast-125 mix-blend-overlay"></div>
             </div>
 
@@ -115,24 +115,24 @@ export const Login = () => {
                     {/* Decorative Top Accent */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent via-banana-400/50 to-transparent"></div>
 
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/5 border border-banana-400/10 text-banana-400 text-xs font-bold tracking-widest uppercase mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-sm">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/5 border border-banana-400/10 text-banana-400 text-xs font-bold tracking-widest uppercase mb-10 backdrop-blur-sm">
                         <Icons.Sparkles className="w-3.5 h-3.5" />
                         <span>The Next Generation of Loan Software</span>
                     </div>
 
-                    <h1 className="text-6xl sm:text-8xl font-black text-white tracking-tighter mb-10 leading-[0.95] animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                    <h1 className="text-6xl sm:text-8xl font-black text-white tracking-tighter mb-10 leading-[0.95]">
                         The Mortgage <br className="hidden md:block" />
                         Broker's <br className="hidden md:block" />
-                        <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-banana-200 via-banana-400 to-banana-100 pb-2">
+                        <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-banana-300 via-banana-400 to-banana-300 pb-2">
                             Unfair Advantage
                         </span>
                     </h1>
 
-                    <p className="text-xl sm:text-2xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-14 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 font-medium">
+                    <p className="text-xl sm:text-2xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-14 font-medium">
                         Command your entire pipeline, automate high-touch outreach, and close deals faster. Built exclusively for elite producers.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <Button
                             onClick={() => openAuth('signup')}
                             className="h-16 px-10 text-xl bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-[0_0_50px_-10px_rgba(250,204,21,0.5)] hover:shadow-[0_0_80px_-10px_rgba(250,204,21,0.7)] hover:scale-[1.05] active:scale-[0.95] transition-all w-full sm:w-auto border-none"
