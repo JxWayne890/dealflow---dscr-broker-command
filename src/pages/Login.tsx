@@ -688,7 +688,7 @@ export const Login = () => {
                         {/* Elite Producer Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-b from-banana-400/20 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-white/5' : 'border-slate-200'} border flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-banana-50/50 border-banana-200/50 shadow-xl'} border backdrop-blur-sm flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Elite Producer</h3>
                                     <div className="flex items-baseline gap-1">
@@ -729,7 +729,7 @@ export const Login = () => {
                         {/* Private Ownership Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-b from-white/10 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-white/10' : 'border-slate-200'} border flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-900/20 border-white/10 shadow-2xl backdrop-blur-sm' : 'bg-white/60 border-slate-200 shadow-lg backdrop-blur-sm'} border flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <div className={`inline-block px-3 py-1 rounded-lg ${isDarkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} text-[10px] font-black tracking-widest uppercase mb-3`}>Personal License</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Private Ownership</h3>
@@ -771,7 +771,7 @@ export const Login = () => {
                         {/* Commercial License Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-br from-banana-400/30 via-transparent to-banana-400/30 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-2 border-banana-400/20' : 'border-2 border-banana-400/30'} flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-950/60 border-2 border-banana-400/20 shadow-[0_0_50px_-20px_rgba(250,204,21,0.3)]' : 'bg-white/80 border-2 border-banana-400/30 shadow-[0_20px_50px_-10px_rgba(250,204,21,0.2)]'} backdrop-blur-md flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <div className="inline-block px-3 py-1 rounded-lg bg-banana-400 text-slate-950 text-[10px] font-black tracking-widest uppercase mb-3 shadow-[0_0_20px_-5px_rgba(250,204,21,0.5)]">Full Rights</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Commercial License</h3>
