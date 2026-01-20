@@ -13,7 +13,7 @@ export const Login = () => {
     const handleSubscribe = async () => {
         setIsSubscribing(true);
         try {
-            const response = await fetch('http://localhost:3002/api/create-checkout-session', {
+            const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
