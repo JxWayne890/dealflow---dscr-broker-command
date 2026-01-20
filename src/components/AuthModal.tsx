@@ -15,7 +15,7 @@ interface AuthModalProps {
     initialStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
 }
 
-type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment';
+type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment' | 'email_confirmation';
 
 export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus }: AuthModalProps) => {
     const { showToast } = useToast();
@@ -167,22 +167,10 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 // Pass all profile data to the backend - it handles everything for assistants
                 await InviteService.claimInvite(joinCode, pendingUserId, { name, phone, title: 'Assistant' });
 
-                // Now sign them in so they have a session
-                console.log('Assistant profile created, signing in...');
-                const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-                if (signInError) {
-                    console.error('Auto sign-in failed:', signInError);
-                    setError('Account created! Please sign in manually.');
-                    setLoading(false);
-                    return;
-                }
-
-                // Successfully signed in - show success and reload to dashboard
-                console.log('Assistant join complete');
-                showToast('Welcome to the team!', 'success');
-                onClose();
-                setTimeout(() => window.location.reload(), 500);
+                // Show email confirmation step
+                console.log('Assistant profile created, showing email confirmation...');
+                setStep('email_confirmation');
+                setLoading(false);
                 return; // Exit early - no need for ProfileService
             }
 
@@ -485,6 +473,38 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                             {loading ? 'Redirecting...' : 'Activate Now'}
                         </Button>
                         <p className="mt-4 text-[10px] text-muted uppercase tracking-widest">Secure Payment via Stripe</p>
+                    </div>
+                )}
+
+                {step === 'email_confirmation' && (
+                    <div className="text-center py-8">
+                        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Icons.Mail className="w-10 h-10 text-emerald-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-foreground mb-3">Check Your Email!</h3>
+                        <p className="text-muted text-sm mb-6 px-4">
+                            We've sent a confirmation link to <span className="text-foreground font-semibold">{email}</span>.
+                        </p>
+                        <p className="text-muted text-sm mb-8 px-4">
+                            Click the link in your email to verify your account, then come back and sign in to access your team's dashboard.
+                        </p>
+
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
+                            <p className="text-emerald-400 text-sm font-medium flex items-center justify-center gap-2">
+                                <Icons.CheckCircle className="w-4 h-4" />
+                                You've joined: {organizationName}
+                            </p>
+                        </div>
+
+                        <Button
+                            className="w-full bg-banana-400 text-slate-900 font-bold"
+                            onClick={() => {
+                                onClose();
+                                window.location.reload();
+                            }}
+                        >
+                            Got it, I'll check my email
+                        </Button>
                     </div>
                 )}
             </div>
