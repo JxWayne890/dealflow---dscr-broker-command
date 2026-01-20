@@ -73,7 +73,7 @@ export const Login = () => {
                 <div className={`absolute bottom-[-10%] left-[20%] w-[900px] h-[900px] ${isDarkMode ? 'bg-slate-900/50' : 'bg-banana-400/5'} rounded-full blur-[150px] opacity-40`} />
 
                 {/* Decorative Grid/Noise */}
-                <div className={`absolute inset-0 ${isDarkMode ? 'bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]' : 'bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)]'} bg-[size:40px_40px]`}></div>
+                <div className={`absolute inset-0 ${isDarkMode ? 'bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)]' : 'bg-[linear-gradient(to_right,#0000000d_1px,transparent_1px),linear-gradient(to_bottom,#0000000d_1px,transparent_1px)]'} bg-[size:40px_40px]`}></div>
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] brightness-75 contrast-125 mix-blend-overlay"></div>
             </div>
 
@@ -116,7 +116,7 @@ export const Login = () => {
                 </div>
             </nav>
 
-            <main className="relative z-10 px-6 pb-24">
+            <main className={`relative z-10 ${isDarkMode ? 'bg-slate-950/20' : 'bg-zinc-50/20'} transition-colors duration-500`}>
 
                 {/* Hero Section */}
                 <div className="max-w-5xl mx-auto text-center pt-24 pb-40 relative">
@@ -191,7 +191,7 @@ export const Login = () => {
             </main>
 
             {/* Dashboard Preview Section */}
-            <section className={`relative py-32 ${isDarkMode ? 'bg-slate-950' : 'bg-white border-y border-slate-100'}`}>
+            <section className={`relative py-32 ${isDarkMode ? 'bg-slate-950/40' : 'bg-white/40'} backdrop-blur-sm border-y ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col lg:flex-row items-center gap-16">
                         {/* Text Content */}
@@ -253,10 +253,9 @@ export const Login = () => {
             </section>
 
 
-            {/* Quotes & Automation Deep Dive */}
-            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-900' : 'bg-zinc-50'} overflow-hidden`}>
-                <div className="max-w-7xl mx-auto px-6 space-y-32">
-
+            {/* Pipeline Section */}
+            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-900/60' : 'bg-zinc-100/60'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 1: The Pipeline Command */}
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -294,7 +293,12 @@ export const Login = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Automation Heart Section */}
+            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-950/80' : 'bg-white/80'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 2: The Heart of the App */}
                     <div className="flex flex-col lg:flex-row items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -330,7 +334,15 @@ export const Login = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Investor Partner Section */}
+            <section className={`relative py-32 ${isDarkMode ? 'bg-slate-900/60' : 'bg-zinc-50/60'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                {/* Secondary Glows */}
+                <div className={`absolute top-1/2 left-[-10%] w-[600px] h-[600px] ${isDarkMode ? 'bg-banana-400/5' : 'bg-banana-400/5'} rounded-full blur-[120px] opacity-30 pointer-events-none`} />
+
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 3: Investor Management */}
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -368,7 +380,12 @@ export const Login = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Deal Insight Section */}
+            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-950/90' : 'bg-zinc-100/90'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 4: Deep Deal Insights (Modal) */}
                     <div className="flex flex-col lg:flex-row items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -403,7 +420,12 @@ export const Login = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Campaign Engine Section */}
+            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-900/70' : 'bg-white/70'} backdrop-blur-md overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 5: Campaign Management */}
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -441,7 +463,15 @@ export const Login = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Sequence Editor Section */}
+            <section className={`relative py-32 ${isDarkMode ? 'bg-slate-950/60' : 'bg-zinc-100/40'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                {/* Tertiary Glow */}
+                <div className={`absolute bottom-0 right-[-10%] w-[500px] h-[500px] ${isDarkMode ? 'bg-banana-400/5' : 'bg-banana-400/5'} rounded-full blur-[100px] opacity-20 pointer-events-none`} />
+
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 6: Sequence Editor Carousel */}
                     <div className="flex flex-col lg:flex-row items-center gap-16">
                         <div className="flex-1 space-y-6">
@@ -524,9 +554,14 @@ export const Login = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
+            {/* Analytics Intelligence Section */}
+            <section className={`relative py-24 ${isDarkMode ? 'bg-slate-900/80' : 'bg-zinc-100/80'} backdrop-blur-md overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                <div className="max-w-7xl mx-auto px-6">
                     {/* Part 7: Campaign Intelligence & Settings */}
-                    <div className="flex flex-col lg:flex-row-reverse items-center gap-16 mt-32">
+                    <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="flex-1 space-y-6">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/10 border border-banana-400/20 text-banana-400 text-sm font-medium">
                                 <Icons.Settings className="w-4 h-4" />
@@ -609,7 +644,7 @@ export const Login = () => {
                 </div>
             </section>
             {/* Pricing Section */}
-            <section id="pricing" className={`relative py-32 ${isDarkMode ? 'bg-slate-900/50' : 'bg-white border-y border-slate-100'}`}>
+            <section id="pricing" className={`relative py-32 ${isDarkMode ? 'bg-slate-900/60' : 'bg-white/60'} backdrop-blur-md border-y ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-20">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/10 border border-banana-400/20 text-banana-400 text-sm font-medium mb-6">
@@ -753,7 +788,7 @@ export const Login = () => {
                 </div>
             </section>
 
-            <footer className={`relative z-10 ${isDarkMode ? 'border-white/5 bg-slate-950/50' : 'border-slate-100 bg-white/50'} border-t py-12 mt-20 backdrop-blur-xl`}>
+            <footer className={`relative z-10 ${isDarkMode ? 'border-white/5 bg-slate-950/40' : 'border-slate-100 bg-white/40'} border-t py-12 mt-20 backdrop-blur-xl mb-20`}>
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className={`flex items-center gap-2 ${isDarkMode ? 'opacity-50 text-white' : 'opacity-80 text-slate-950'}`}>
                         <Icons.TrendingUp className="w-5 h-5" />
