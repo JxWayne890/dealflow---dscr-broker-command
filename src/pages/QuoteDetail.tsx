@@ -215,7 +215,7 @@ export const QuoteDetail = ({
                                                             href={`https://www.zillow.com/homes/${encodeURIComponent(`${quote.propertyAddress} ${quote.propertyCity} ${quote.propertyState} ${quote.propertyZip}`.trim())}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex items-center justify-center p-1.5 bg-surface border border-border/10 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
+                                                            className="inline-flex items-center justify-center p-1.5 bg-surface dark:bg-white border border-border/10 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
                                                             title="Research on Zillow"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >

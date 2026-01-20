@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Logo } from './Logo';
 import { Icons } from './Icons';
 import { Button } from './Button';
+import { supabase } from '../lib/supabase';
 import { View, BrokerProfile } from '../types';
 
 interface LayoutProps {
@@ -41,6 +42,10 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
             document.documentElement.classList.remove('dark');
             localStorage.setItem('theme', 'light');
         }
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
     };
 
     const NavItem = ({ view, icon: Icon, label }: { view: View, icon: any, label: string }) => {
@@ -137,6 +142,13 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                             ) : (
                                 <Icons.Moon className="w-5 h-5 text-muted group-hover:text-foreground transition-colors" />
                             )}
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="p-3 rounded-2xl border border-transparent hover:bg-red-500/10 hover:border-red-500/20 flex items-center justify-center transition-all group"
+                            title="Log Out"
+                        >
+                            <Icons.LogOut className="w-5 h-5 text-muted group-hover:text-red-500 transition-colors" />
                         </button>
                     </div>
                 </div>
