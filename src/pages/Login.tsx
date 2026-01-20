@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { AuthModal } from '../components/AuthModal';
@@ -10,6 +10,16 @@ export const Login = () => {
     const [activeManagementSlide, setActiveManagementSlide] = useState(0); // For Management Carousel
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(true);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        containerRef.current.style.setProperty('--mouse-x', `${x}px`);
+        containerRef.current.style.setProperty('--mouse-y', `${y}px`);
+    };
 
     const handleSubscribe = async () => {
         setIsSubscribing(true);
@@ -64,9 +74,32 @@ export const Login = () => {
     );
 
     return (
-        <div className={`min-h-screen ${isDarkMode ? 'bg-slate-950' : 'bg-zinc-50'} text-foreground font-sans relative selection:bg-banana-500/30 transition-colors duration-500`}>
+        <div
+            ref={containerRef}
+            onMouseMove={handleMouseMove}
+            className={`min-h-screen ${isDarkMode ? 'bg-slate-950' : 'bg-zinc-50'} text-foreground font-sans relative selection:bg-banana-500/30 transition-colors duration-500 overflow-x-hidden`}
+        >
             {/* Background Effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                {/* Interactive Mouse Glow Background */}
+                <div
+                    className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+                    style={{
+                        background: `radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), ${isDarkMode ? 'rgba(250, 204, 21, 0.04)' : 'rgba(250, 204, 21, 0.08)'}, transparent 80%)`,
+                    }}
+                />
+
+                {/* Grid Flare Effect (Grid lines glow gold around mouse) */}
+                <div
+                    className="absolute inset-0 pointer-events-none z-10"
+                    style={{
+                        background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(250, 204, 21, ${isDarkMode ? '0.3' : '0.25'}), transparent 80%)`,
+                        maskImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
+                        WebkitMaskImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
+                        maskSize: '40px 40px',
+                        WebkitMaskSize: '40px 40px'
+                    }}
+                />
                 {/* Main Brand Glows */}
                 <div className={`absolute top-[-10%] left-[-10%] w-[800px] h-[800px] ${isDarkMode ? 'bg-banana-500/10' : 'bg-banana-400/10'} rounded-full blur-[120px] opacity-40 mix-blend-screen animate-pulse duration-[10s]`} />
                 <div className={`absolute top-[10%] right-[-5%] w-[600px] h-[600px] ${isDarkMode ? 'bg-banana-400/5' : 'bg-banana-400/5'} rounded-full blur-[100px] opacity-30 mix-blend-screen`} />
