@@ -167,7 +167,18 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 // Pass all profile data to the backend - it handles everything for assistants
                 await InviteService.claimInvite(joinCode, pendingUserId, { name, phone, title: 'Assistant' });
 
-                // For assistants, the backend sets everything - just show success and reload
+                // Now sign them in so they have a session
+                console.log('Assistant profile created, signing in...');
+                const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+                if (signInError) {
+                    console.error('Auto sign-in failed:', signInError);
+                    setError('Account created! Please sign in manually.');
+                    setLoading(false);
+                    return;
+                }
+
+                // Successfully signed in - show success and reload to dashboard
                 console.log('Assistant join complete');
                 showToast('Welcome to the team!', 'success');
                 onClose();
