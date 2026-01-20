@@ -155,7 +155,7 @@ export const Login = () => {
                 <div className="max-w-5xl mx-auto text-center pt-24 pb-40 relative">
                     <div className="flex flex-col items-center mb-10">
                         <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-banana-400/80">
+                            <span className="text-sm font-black tracking-[0.2em] uppercase text-banana-400">
                                 The Next Generation of Loan Software
                             </span>
                         </div>
@@ -731,7 +731,7 @@ export const Login = () => {
                             <div className="absolute -inset-px bg-gradient-to-b from-white/10 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-900/20 border-white/10 shadow-2xl backdrop-blur-sm' : 'bg-white/60 border-slate-200 shadow-lg backdrop-blur-sm'} border flex flex-col h-full`}>
                                 <div className="mb-8">
-                                    <div className={`inline-block px-3 py-1 rounded-lg ${isDarkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} text-[10px] font-black tracking-widest uppercase mb-3`}>Personal License</div>
+                                    <div className={`inline-block px-3 py-1 rounded-lg ${isDarkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} text-xs font-black tracking-widest uppercase mb-3`}>Personal License</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Private Ownership</h3>
                                     <div className="flex items-baseline gap-1">
                                         <span className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} tracking-widest uppercase italic`}>Contact Us</span>
@@ -773,7 +773,7 @@ export const Login = () => {
                             <div className="absolute -inset-px bg-gradient-to-br from-banana-400/30 via-transparent to-banana-400/30 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                             <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-950/60 border-2 border-banana-400/20 shadow-[0_0_50px_-20px_rgba(250,204,21,0.3)]' : 'bg-white/80 border-2 border-banana-400/30 shadow-[0_20px_50px_-10px_rgba(250,204,21,0.2)]'} backdrop-blur-md flex flex-col h-full`}>
                                 <div className="mb-8">
-                                    <div className="inline-block px-3 py-1 rounded-lg bg-banana-400 text-slate-950 text-[10px] font-black tracking-widest uppercase mb-3 shadow-[0_0_20px_-5px_rgba(250,204,21,0.5)]">Full Rights</div>
+                                    <div className="inline-block px-3 py-1 rounded-lg bg-banana-400 text-slate-950 text-xs font-black tracking-widest uppercase mb-3 shadow-[0_0_20px_-5px_rgba(250,204,21,0.5)]">Full Rights</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Commercial License</h3>
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-3xl font-black text-banana-400 tracking-widest uppercase italic">Contact Us</span>
