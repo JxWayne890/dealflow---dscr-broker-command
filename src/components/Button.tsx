@@ -21,11 +21,11 @@ export const Button = ({
     const sizeStyle = "px-5 py-2.5 text-sm";
 
     const variants = {
-        primary: "bg-banana-400 text-surface hover:bg-banana-500 hover:shadow-lg hover:shadow-banana-400/20 border border-transparent",
-        secondary: "bg-surface/50 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 hover:border-white/20 shadow-lg shadow-black/10",
-        danger: "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30",
-        ghost: "bg-transparent text-slate-400 hover:text-white hover:bg-white/5",
-        outline: "bg-transparent border border-white/10 text-slate-300 hover:border-banana-400 hover:text-banana-400 hover:bg-banana-400/5"
+        primary: "bg-banana-400 text-slate-950 hover:bg-banana-500 hover:shadow-lg hover:shadow-banana-400/20 border border-transparent",
+        secondary: "bg-foreground/5 backdrop-blur-md border border-border/10 text-foreground hover:bg-foreground/10 hover:border-border/20 shadow-lg shadow-black/5",
+        danger: "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30",
+        ghost: "bg-transparent text-muted hover:text-foreground hover:bg-foreground/5",
+        outline: "bg-transparent border border-border/10 text-muted hover:border-banana-400 hover:text-banana-400 hover:bg-banana-400/5"
     };
 
     return (

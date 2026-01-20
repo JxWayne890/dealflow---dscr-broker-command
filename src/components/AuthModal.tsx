@@ -82,7 +82,12 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
-                options: { data: { name } },
+                options: {
+                    data: {
+                        name: name,
+                        full_name: name
+                    }
+                },
             });
 
             if (error) {

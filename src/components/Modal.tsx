@@ -42,7 +42,7 @@ export function Modal({ isOpen, onClose, title, children, primaryAction, seconda
                                     {title}
                                 </h3>
                                 <div className="mt-4">
-                                    <div className="text-sm text-muted">
+                                    <div className="text-sm">
                                         {children}
                                     </div>
                                 </div>

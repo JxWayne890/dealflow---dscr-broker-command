@@ -12,6 +12,14 @@ export const Login = () => {
     const [isDarkMode, setIsDarkMode] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [isDarkMode]);
+
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
