@@ -56,6 +56,16 @@ export const ProfileService = {
         }
 
         return data.map(mapDbToProfile);
+    },
+
+    async getOrganizationId(): Promise<string | null> {
+        const profile = await this.getProfile();
+        if (!profile) return null;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        return profile.parentId || user.id;
     }
 };
 
@@ -71,7 +81,8 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     timezone: row.timezone || 'UTC',
     role: row.role || 'admin',
     parentId: row.parent_id,
-    permissions: row.permissions
+    permissions: row.permissions,
+    inviteCode: row.invite_code
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
@@ -87,5 +98,6 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.role !== undefined) db.role = profile.role;
     if (profile.parentId !== undefined) db.parent_id = profile.parentId;
     if (profile.permissions !== undefined) db.permissions = profile.permissions;
+    if (profile.inviteCode !== undefined) db.invite_code = profile.inviteCode;
     return db;
 };

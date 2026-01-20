@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Investor } from '../types';
+import { InvestorDetailModal } from '../components/InvestorDetailModal';
 
 interface InvestorsProps {
     investors: Investor[];
@@ -11,6 +12,7 @@ interface InvestorsProps {
 
 export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
     const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedInvestor, setSelectedInvestor] = useState<Investor | null>(null);
     const [newInvestor, setNewInvestor] = useState<Partial<Investor>>({});
 
     const handleSave = () => {
@@ -58,7 +60,11 @@ export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
                             </tr>
                         ) : (
                             investors.map((investor) => (
-                                <tr key={investor.id} className="hover:bg-gray-50 transition-colors">
+                                <tr
+                                    key={investor.id}
+                                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                    onClick={() => setSelectedInvestor(investor)}
+                                >
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
@@ -150,6 +156,13 @@ export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Detail Modal */}
+            {selectedInvestor && (
+                <InvestorDetailModal
+                    investor={selectedInvestor}
+                    onClose={() => setSelectedInvestor(null)}
+                />
             )}
         </div>
     );

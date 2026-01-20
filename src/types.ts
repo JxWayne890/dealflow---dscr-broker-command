@@ -6,6 +6,8 @@ export enum DealType {
 
 export enum QuoteStatus {
   DRAFT = 'Draft',
+  SENT = 'Sent',
+  VIEWED = 'Viewed',
   ACTIVE = 'Active',
   FOLLOW_UP = 'Follow-up',
   WON = 'Won',
@@ -91,6 +93,7 @@ export interface BrokerProfile {
   role?: 'admin' | 'assistant';
   parentId?: string;
   permissions?: Permissions;
+  inviteCode?: string;
 }
 
 export type EmailFormat = 'text' | 'html';

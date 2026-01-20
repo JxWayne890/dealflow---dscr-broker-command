@@ -27,7 +27,9 @@ import {
   DollarSign,
   UserPlus,
   Zap,
-  Copy
+  Copy,
+  Phone,
+  Check
 } from 'lucide-react';
 
 export const Icons = {
@@ -74,5 +76,7 @@ export const Icons = {
   DollarSign,
   UserPlus,
   Zap,
-  Copy
+  Copy,
+  Phone,
+  Check
 };

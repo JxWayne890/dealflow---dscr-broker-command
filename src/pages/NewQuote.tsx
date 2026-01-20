@@ -7,6 +7,7 @@ import { sendQuoteEmail } from '../services/emailService';
 import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
 import { DEFAULT_BROKER_PROFILE } from '../constants';
 import { useToast } from '../contexts/ToastContext';
+import { ProfileService } from '../services/profileService';
 
 export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     onCancel: () => void,
@@ -29,7 +30,6 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     useEffect(() => {
         const loadProfile = async () => {
             try {
-                const { ProfileService } = await import('../services/profileService');
                 const userProfile = await ProfileService.getProfile();
                 if (userProfile) setProfile(userProfile);
             } catch (err) {

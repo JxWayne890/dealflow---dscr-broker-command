@@ -2,7 +2,7 @@
 import React from 'react';
 import { Icons } from '../components/Icons';
 import { MetricCard } from '../components/MetricCard';
-import { Quote, Investor } from '../types';
+import { Quote, Investor, QuoteStatus } from '../types';
 
 interface AnalyticsProps {
     quotes: Quote[];
@@ -13,7 +13,7 @@ export const Analytics = ({ quotes, investors }: AnalyticsProps) => {
     // Calculate simple metrics
     const totalVolume = quotes.reduce((acc, q) => acc + q.loanAmount, 0);
     const avgLtv = quotes.length > 0 ? quotes.reduce((acc, q) => acc + q.ltv, 0) / quotes.length : 0;
-    const closedDeals = quotes.filter(q => q.status === 'Closed Won').length;
+    const closedDeals = quotes.filter(q => q.status === QuoteStatus.WON).length;
     const conversionRate = quotes.length > 0 ? (closedDeals / quotes.length) * 100 : 0;
 
     // Simple mock data for "Activity Over Time" chart

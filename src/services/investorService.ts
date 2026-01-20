@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Investor } from '../types';
+import { ProfileService } from './profileService';
 
 export const InvestorService = {
     async getInvestors(): Promise<Investor[]> {
@@ -17,12 +18,12 @@ export const InvestorService = {
     },
 
     async createInvestor(investor: Partial<Investor>): Promise<Investor> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
+        const orgId = await ProfileService.getOrganizationId();
+        if (!orgId) throw new Error('User not authenticated');
 
         const dbInvestor = {
             ...mapInvestorToDb(investor),
-            user_id: user.id
+            user_id: orgId
         };
 
         const { data, error } = await supabase

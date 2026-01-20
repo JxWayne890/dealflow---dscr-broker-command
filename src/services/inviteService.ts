@@ -25,32 +25,65 @@ export const InviteService = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
-        // 1. Find invite
+        const cleanCode = code.toUpperCase().trim();
+
+        // 1. Check for organizational static code in profiles
+        const { data: adminProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, permissions')
+            .eq('invite_code', cleanCode)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+        if (adminProfile) {
+            // Join using static organizational code
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                    role: 'assistant',
+                    parent_id: adminProfile.id,
+                    permissions: {
+                        dashboard: true,
+                        quotes: true,
+                        investors: true,
+                        campaigns: true,
+                        analytics: true
+                    } // Default to all permissions for static join
+                })
+                .eq('id', user.id);
+
+            if (updateError) throw updateError;
+            return;
+        }
+
+        // 2. Fallback to legacy specific invites (if any)
         const { data: invite, error: fetchError } = await supabase
             .from('invites')
             .select('*')
-            .eq('code', code.toUpperCase())
+            .eq('code', cleanCode)
             .eq('is_used', false)
-            .single();
+            .maybeSingle();
 
-        if (fetchError || !invite) throw new Error('Invalid or expired invite code');
+        if (!adminProfile && (fetchError || !invite)) {
+            throw new Error('Invalid or expired invite code');
+        }
 
-        // 2. Update profile
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-                role: 'assistant',
-                parent_id: invite.broker_id,
-                permissions: invite.permissions
-            })
-            .eq('id', user.id);
+        if (invite) {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                    role: 'assistant',
+                    parent_id: invite.broker_id,
+                    permissions: invite.permissions
+                })
+                .eq('id', user.id);
 
-        if (updateError) throw updateError;
+            if (updateError) throw updateError;
 
-        // 3. Mark invite as used
-        await supabase
-            .from('invites')
-            .update({ is_used: true })
-            .eq('id', invite.id);
+            await supabase
+                .from('invites')
+                .update({ is_used: true })
+                .eq('id', invite.id);
+        }
     }
 }

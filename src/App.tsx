@@ -143,7 +143,7 @@ export default function App() {
       case 'analytics':
         return <Analytics quotes={quotes} investors={investors} />;
       case 'settings':
-        return <Settings onProfileUpdate={setProfile} />;
+        return <Settings onProfileUpdate={setProfile} currentProfile={profile} />;
       case 'campaigns':
         return <Campaigns
           onEdit={(id) => { setSelectedCampaignId(id); setCurrentView('campaign_editor'); }}
@@ -155,7 +155,7 @@ export default function App() {
           onBack={() => { setSelectedCampaignId(null); setCurrentView('campaigns'); }}
         />;
       case 'team':
-        return <Team />;
+        return <Team profile={profile} />;
       default:
         return <Dashboard quotes={quotes} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} />;
     }

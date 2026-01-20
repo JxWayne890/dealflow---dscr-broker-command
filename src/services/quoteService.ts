@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Quote, QuoteStatus } from '../types';
+import { ProfileService } from './profileService';
 
 export const QuoteService = {
     async getQuotes(): Promise<Quote[]> {
@@ -35,12 +36,12 @@ export const QuoteService = {
     },
 
     async createQuote(quote: Partial<Quote>): Promise<Quote> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
+        const orgId = await ProfileService.getOrganizationId();
+        if (!orgId) throw new Error('User not authenticated');
 
         const dbQuote = {
             ...mapQuoteToDb(quote),
-            user_id: user.id
+            user_id: orgId
         };
 
         // Remove ID to let DB generate it, or use the one provided if we want client-side ID generation (UUID)
@@ -75,6 +76,22 @@ export const QuoteService = {
         }
 
         return mapDbToQuote(data);
+    }
+    ,
+
+    async getQuotesByInvestorId(investorId: string): Promise<Quote[]> {
+        const { data, error } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('investor_id', investorId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching investor quotes:', error);
+            return [];
+        }
+
+        return data.map(mapDbToQuote);
     }
 };
 

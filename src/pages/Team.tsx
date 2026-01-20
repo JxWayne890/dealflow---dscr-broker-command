@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { ProfileService } from '../services/profileService';
@@ -6,18 +7,11 @@ import { InviteService } from '../services/inviteService';
 import { BrokerProfile, Permissions } from '../types';
 import { useToast } from '../contexts/ToastContext';
 
-export const Team = () => {
+export const Team = ({ profile }: { profile: BrokerProfile | null }) => {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [team, setTeam] = useState<BrokerProfile[]>([]);
-    const [inviteCode, setInviteCode] = useState<string | null>(null);
-    const [permissions, setPermissions] = useState<Permissions>({
-        dashboard: true,
-        quotes: true,
-        investors: true,
-        campaigns: true,
-        analytics: true
-    });
+    const [updating, setUpdating] = useState<string | null>(null);
 
     useEffect(() => {
         loadTeam();
@@ -34,74 +28,83 @@ export const Team = () => {
         }
     };
 
-    const handleCreateInvite = async () => {
-        try {
-            const code = await InviteService.createInvite(permissions);
-            setInviteCode(code);
-            showToast('Invite code generated!', 'success');
-        } catch (error) {
-            showToast('Failed to create invite', 'error');
+    const copyInviteCode = () => {
+        if (profile?.inviteCode) {
+            navigator.clipboard.writeText(profile.inviteCode);
+            showToast('Code copied to clipboard', 'success');
         }
     };
 
-    const copyInviteCode = () => {
-        if (inviteCode) {
-            navigator.clipboard.writeText(inviteCode);
-            showToast('Code copied to clipboard', 'success');
+    const handleUpdatePermissions = async (memberEmail: string, key: keyof Permissions, value: boolean) => {
+        setUpdating(memberEmail);
+        try {
+            const member = team.find(m => m.email === memberEmail);
+            if (!member) return;
+
+            const newPermissions = { ...member.permissions, [key]: value } as Permissions;
+
+            // Note: We need a way to update assistant profile. 
+            // Since we use organization_id RLS, admin can update profiles with same org_id if policy allows.
+            // Let's assume ProfileService needs an updateAssistant method or similar.
+            // For now, let's just do the DB update here or extend ProfileService.
+            const { error } = await supabase
+                .from('profiles')
+                .update({ permissions: newPermissions })
+                .eq('email', memberEmail);
+
+            if (error) throw error;
+
+            setTeam(prev => prev.map(m => m.email === memberEmail ? { ...m, permissions: newPermissions } : m));
+            showToast('Permissions updated', 'success');
+        } catch (error) {
+            console.error('Update failed:', error);
+            showToast('Failed to update permissions', 'error');
+        } finally {
+            setUpdating(null);
         }
     };
 
     if (loading) return <div className="p-8 text-gray-500">Loading team...</div>;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
-            </div>
-
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Invite Section */}
-                <div className="md:col-span-1 bg-white shadow rounded-lg p-6 space-y-4">
+                {/* Organization Invite Code Section */}
+                <div className="md:col-span-1 bg-white shadow rounded-lg p-6 space-y-4 border border-indigo-100 ring-4 ring-indigo-50/50">
                     <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                         <Icons.UserPlus className="w-5 h-5 text-indigo-600" />
                         Invite Assistant
                     </h2>
-                    <p className="text-sm text-gray-500">Create an invite code with specific permissions.</p>
+                    <p className="text-sm text-gray-500">Share this permanent organizational code with your team members to grant them access.</p>
 
-                    <div className="space-y-3 pt-2">
-                        {Object.keys(permissions).map((key) => (
-                            <label key={key} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={permissions[key as keyof Permissions]}
-                                    onChange={(e) => setPermissions({ ...permissions, [key]: e.target.checked })}
-                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                />
-                                <span className="text-sm font-medium text-gray-700 capitalize">{key}</span>
-                            </label>
-                        ))}
+                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center animate-in fade-in slide-in-from-top-2">
+                        <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider mb-1">Your Organization Code</p>
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl font-mono font-bold text-indigo-900 tracking-widest">{profile?.inviteCode || '...'}</span>
+                            <button onClick={copyInviteCode} className="p-1 hover:bg-indigo-100 rounded text-indigo-600">
+                                <Icons.Copy className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-indigo-400 mt-2 italic capitalize">This code stays with your organization forever</p>
                     </div>
 
-                    <Button
-                        onClick={handleCreateInvite}
-                        className="w-full justify-center mt-4"
-                        icon={Icons.Zap}
-                    >
-                        Generate Code
-                    </Button>
-
-                    {inviteCode && (
-                        <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center animate-in fade-in slide-in-from-top-2">
-                            <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider mb-1">Your Invite Code</p>
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="text-2xl font-mono font-bold text-indigo-900 tracking-widest">{inviteCode}</span>
-                                <button onClick={copyInviteCode} className="p-1 hover:bg-indigo-100 rounded text-indigo-600">
-                                    <Icons.Copy className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <p className="text-[10px] text-indigo-400 mt-2 italic">Share this code with your assistant</p>
-                        </div>
-                    )}
+                    <div className="pt-4 border-t border-gray-100">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">How it works</h3>
+                        <ul className="text-xs text-gray-500 space-y-2">
+                            <li className="flex gap-2">
+                                <span className="text-indigo-500 font-bold">1.</span>
+                                <span>Assistant goes to Settings</span>
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-indigo-500 font-bold">2.</span>
+                                <span>Enters this code in "Join Team"</span>
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-indigo-500 font-bold">3.</span>
+                                <span>They appear in your list below</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 {/* Team List */}
@@ -128,15 +131,19 @@ export const Team = () => {
                                                 <p className="text-xs text-gray-500">{member.email}</p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-1">
-                                            {member.permissions && Object.entries(member.permissions)
-                                                .filter(([_, enabled]) => enabled)
-                                                .map(([key]) => (
-                                                    <span key={key} className="px-2 py-0.5 bg-gray-100 text-[10px] font-medium text-gray-600 rounded-full capitalize">
-                                                        {key}
-                                                    </span>
-                                                ))
-                                            }
+                                        <div className="flex items-center gap-2">
+                                            {member.permissions && Object.entries(member.permissions).map(([key, enabled]) => (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => handleUpdatePermissions(member.email, key as keyof Permissions, !enabled)}
+                                                    disabled={updating === member.email}
+                                                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${enabled
+                                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                                >
+                                                    {key}
+                                                </button>
+                                            ))}
                                         </div>
                                     </li>
                                 ))}

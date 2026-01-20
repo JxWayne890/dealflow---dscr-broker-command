@@ -80,9 +80,13 @@ export const campaignService = {
     },
 
     async createCampaign(campaign: Partial<Campaign>) {
+        const orgId = await ProfileService.getOrganizationId();
         const { data, error } = await supabase
             .from('campaigns')
-            .insert(campaign)
+            .insert({
+                ...campaign,
+                user_id: orgId
+            })
             .select()
             .single();
 
@@ -107,6 +111,16 @@ export const campaignService = {
             .from('campaigns')
             .delete()
             .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    async deleteCampaigns(ids: string[]) {
+        if (ids.length === 0) return;
+        const { error } = await supabase
+            .from('campaigns')
+            .delete()
+            .in('id', ids);
 
         if (error) throw error;
     },

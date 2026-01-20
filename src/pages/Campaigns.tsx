@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { campaignService, Campaign, CampaignStats } from '../services/campaignService';
 import { Icons } from '../components/Icons';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface CampaignsProps {
     onEdit: (id: string) => void;
@@ -11,6 +13,10 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [stats, setStats] = useState<Record<string, CampaignStats>>({});
     const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadCampaigns();
@@ -20,6 +26,7 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
         try {
             const data = await campaignService.getCampaigns();
             setCampaigns(data);
+            setSelectedIds(new Set()); // Reset on reload
 
             // Load stats for all
             const statsMap: Record<string, CampaignStats> = {};
@@ -36,6 +43,45 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
         }
     };
 
+    const toggleSelection = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        const next = new Set(selectedIds);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        setSelectedIds(next);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === campaigns.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(campaigns.map(c => c.id)));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        setShowConfirmDelete(true);
+    };
+
+    const executeBulkDelete = async () => {
+        setShowConfirmDelete(false);
+        setIsDeleting(true);
+        try {
+            await campaignService.deleteCampaigns(Array.from(selectedIds));
+            await loadCampaigns();
+            showToast(`Successfully deleted ${selectedIds.size} campaign(s)`, 'success');
+        } catch (error) {
+            console.error('Bulk delete failed', error);
+            showToast('Failed to delete some campaigns.', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
@@ -43,13 +89,31 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                     <h1 className="text-2xl font-bold text-gray-900">Email Campaigns</h1>
                     <p className="text-gray-500">Manage your automated follow-up sequences</p>
                 </div>
-                <button
-                    onClick={onNew}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                    <Icons.Plus size={20} />
-                    <span>New Campaign</span>
-                </button>
+                <div className="flex items-center space-x-3">
+                    {selectedIds.size > 0 && (
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={isDeleting}
+                            className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition border border-red-200"
+                        >
+                            <Icons.XCircle size={20} />
+                            <span>{isDeleting ? 'Deleting...' : `Delete (${selectedIds.size})`}</span>
+                        </button>
+                    )}
+                    <button
+                        onClick={toggleSelectAll}
+                        className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition border border-gray-200"
+                    >
+                        <span>{selectedIds.size === campaigns.length && campaigns.length > 0 ? 'Deselect All' : 'Select All'}</span>
+                    </button>
+                    <button
+                        onClick={onNew}
+                        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
+                    >
+                        <Icons.Plus size={20} />
+                        <span>New Campaign</span>
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -80,9 +144,17 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                             <div
                                 key={campaign.id}
                                 onClick={() => onEdit(campaign.id)}
-                                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer group"
+                                className={`bg-white rounded-xl border transition cursor-pointer group relative overflow-hidden ${selectedIds.has(campaign.id) ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md' : 'border-gray-200 shadow-sm hover:shadow-md'}`}
                             >
-                                <div className="p-6">
+                                {/* Selection Checkbox */}
+                                <div
+                                    onClick={(e) => toggleSelection(e, campaign.id)}
+                                    className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectedIds.has(campaign.id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/80 border-gray-300'}`}
+                                >
+                                    {selectedIds.has(campaign.id) && <Icons.Check size={14} strokeWidth={3} />}
+                                </div>
+
+                                <div className="p-6 pt-12">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className={`p-3 rounded-lg ${campaign.is_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
                                             <Icons.Mail size={24} />
@@ -124,6 +196,17 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                     })}
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={showConfirmDelete}
+                title="Delete Campaigns"
+                message={`Are you sure you want to delete ${selectedIds.size} campaign(s)? This action cannot be undone.`}
+                confirmLabel="Delete"
+                onConfirm={executeBulkDelete}
+                onCancel={() => setShowConfirmDelete(false)}
+                variant="danger"
+                loading={isDeleting}
+            />
         </div>
     );
 }

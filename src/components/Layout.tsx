@@ -75,38 +75,30 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                         </button>
                     )}
 
-                    {(!profile?.role || profile.role === 'admin') && (
-                        <button
-                            onClick={() => onViewChange('team')}
-                            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'team' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Icons.UserPlus className={`w-5 h-5 mr-3 ${currentView === 'team' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                            Team
-                        </button>
+                </nav>
+
+                <div className="p-4 border-t border-gray-100 flex flex-col gap-4">
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && (
+                        <Button onClick={onNewQuote} className="w-full justify-center shadow-lg" icon={Icons.Plus}>
+                            New Quote
+                        </Button>
                     )}
 
                     <button
                         onClick={() => onViewChange('settings')}
-                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${currentView === 'settings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        className={`group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 border border-transparent hover:bg-white hover:shadow-md hover:border-gray-100 ${currentView === 'settings' ? 'bg-white shadow-md border-gray-100 ring-2 ring-indigo-50' : 'bg-gray-50/50 hover:scale-[1.02]'}`}
                     >
-                        <Icons.Settings className={`w-5 h-5 mr-3 ${currentView === 'settings' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        Settings
-                    </button>
-                </nav>
-
-                <div className="p-4 border-t border-gray-100">
-                    <Button onClick={onNewQuote} className="w-full justify-center shadow-lg" icon={Icons.Plus}>
-                        New Quote
-                    </Button>
-                    <div className="mt-4 flex items-center gap-3 px-2 py-2">
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 text-xs">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold border transition-all duration-200 ${currentView === 'settings' ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm' : 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-inner group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-700 group-hover:shadow-sm'}`}>
                             {initials}
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-gray-900">{profile?.name || 'Loading...'}</p>
-                            <p className="text-xs text-gray-500">{profile?.title || 'Pro Plan'}</p>
+                        <div className="flex-1 text-left min-w-0">
+                            <p className={`text-sm font-semibold truncate transition-colors ${currentView === 'settings' ? 'text-indigo-900' : 'text-gray-900'}`}>{profile?.name || 'Loading...'}</p>
+                            <div className="flex items-center justify-between gap-1">
+                                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider truncate">{profile?.title || 'Broker'}</p>
+                                <Icons.Settings className={`w-3.5 h-3.5 transition-all duration-300 ${currentView === 'settings' ? 'text-indigo-600 rotate-90 scale-110' : 'text-gray-400 group-hover:rotate-45'}`} />
+                            </div>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </aside>
 
@@ -128,14 +120,16 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                             <span className="text-[10px] font-medium">Home</span>
                         </button>
 
-                        <div className="relative -top-6">
-                            <button
-                                onClick={onNewQuote}
-                                className="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 active:scale-95 transition-transform ring-4 ring-gray-50"
-                            >
-                                <Icons.Plus className="w-6 h-6" />
-                            </button>
-                        </div>
+                        {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && (
+                            <div className="relative -top-6">
+                                <button
+                                    onClick={onNewQuote}
+                                    className="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 active:scale-95 transition-transform ring-4 ring-gray-50"
+                                >
+                                    <Icons.Plus className="w-6 h-6" />
+                                </button>
+                            </div>
+                        )}
 
                         <button
                             onClick={() => onViewChange('quotes')}
