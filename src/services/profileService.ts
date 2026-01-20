@@ -82,7 +82,8 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     role: row.role || 'admin',
     parentId: row.parent_id,
     permissions: row.permissions,
-    inviteCode: row.invite_code
+    inviteCode: row.invite_code,
+    onboardingStatus: row.onboarding_status
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
@@ -99,5 +100,6 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.parentId !== undefined) db.parent_id = profile.parentId;
     if (profile.permissions !== undefined) db.permissions = profile.permissions;
     if (profile.inviteCode !== undefined) db.invite_code = profile.inviteCode;
+    if (profile.onboardingStatus !== undefined) db.onboarding_status = profile.onboardingStatus;
     return db;
 };

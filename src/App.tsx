@@ -15,6 +15,7 @@ import { PublicSchedule } from './pages/PublicSchedule';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
 import { Team } from './pages/Team';
+import { AuthModal } from './components/AuthModal';
 import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
 import { ProfileService } from './services/profileService';
@@ -241,17 +242,29 @@ export default function App() {
     if (quote) return <PublicSchedule quote={quote} />;
   }
 
+  const showOnboarding = !!session && !!profile && profile.onboardingStatus !== 'active';
+
   return (
     <>
       {session ? (
-        <Layout
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          onNewQuote={handleNewQuote}
-          profile={profile}
-        >
-          {renderContent()}
-        </Layout>
+        <>
+          <Layout
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            onNewQuote={handleNewQuote}
+            profile={profile}
+          >
+            {renderContent()}
+          </Layout>
+
+          {showOnboarding && (
+            <AuthModal
+              isOpen={true}
+              onClose={() => { }} // Cannot close until active
+              initialStatus={profile.onboardingStatus}
+            />
+          )}
+        </>
       ) : (
         <Login />
       )}

@@ -96,6 +96,7 @@ export interface BrokerProfile {
   parentId?: string;
   permissions?: Permissions;
   inviteCode?: string;
+  onboardingStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
 }
 
 export type EmailFormat = 'text' | 'html';

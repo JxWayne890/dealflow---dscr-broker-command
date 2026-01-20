@@ -11,11 +11,12 @@ interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     defaultMode?: 'signin' | 'signup';
+    initialStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
 }
 
 type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment';
 
-export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModalProps) => {
+export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus }: AuthModalProps) => {
     const { showToast } = useToast();
     const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
     const [step, setStep] = useState<AuthStep>('auth');
@@ -40,11 +41,19 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
     useEffect(() => {
         if (isOpen) {
             setIsSignUp(defaultMode === 'signup');
-            setStep('auth');
             setError(null);
             setMessage(null);
+
+            // If resuming from an abandoned session
+            if (initialStatus === 'pending_setup') {
+                setStep('join_type');
+            } else if (initialStatus === 'pending_payment') {
+                setStep('payment');
+            } else {
+                setStep('auth');
+            }
         }
-    }, [isOpen, defaultMode]);
+    }, [isOpen, defaultMode, initialStatus]);
 
     // Handle Join Code lookup
     useEffect(() => {
@@ -109,6 +118,17 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
         }
     };
 
+    const handleStepTransition = async (nextStep: AuthStep, statusUpdate?: string) => {
+        if (statusUpdate) {
+            try {
+                await ProfileService.updateProfile({ onboardingStatus: statusUpdate as any });
+            } catch (e) {
+                console.error("Failed to update status", e);
+            }
+        }
+        setStep(nextStep);
+    };
+
     const handleFinalOnboarding = async (type: 'admin' | 'assistant') => {
         setLoading(true);
         setError(null);
@@ -130,7 +150,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
                 title,
                 phone,
                 website,
-                role: type
+                role: type,
+                onboardingStatus: type === 'admin' ? 'pending_payment' : 'active'
             });
 
             if (type === 'admin') {
@@ -150,6 +171,9 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
     const handleStartSubscription = async () => {
         setLoading(true);
         try {
+            // Final status update before redirect
+            await ProfileService.updateProfile({ onboardingStatus: 'pending_payment' });
+
             const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -245,7 +269,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
                     <div className="space-y-4">
                         <p className="text-muted text-sm text-center mb-6">Choose how you want to use OfferHero.</p>
                         <button
-                            onClick={() => setStep('producer_setup')}
+                            onClick={() => handleStepTransition('producer_setup', 'pending_setup')}
                             className="w-full p-6 bg-surface border border-border/10 rounded-2xl hover:border-banana-400/50 hover:bg-banana-400/5 transition-all text-left group"
                         >
                             <div className="flex items-center gap-4 mb-2">
@@ -258,7 +282,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
                         </button>
 
                         <button
-                            onClick={() => setStep('assistant_setup')}
+                            onClick={() => handleStepTransition('assistant_setup', 'pending_setup')}
                             className="w-full p-6 bg-surface border border-border/10 rounded-2xl hover:border-indigo-400/50 hover:bg-indigo-400/5 transition-all text-left group"
                         >
                             <div className="flex items-center gap-4 mb-2">
