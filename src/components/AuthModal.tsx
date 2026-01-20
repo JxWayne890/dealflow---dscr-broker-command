@@ -6,6 +6,7 @@ import { Icons } from './Icons';
 import { ProfileService } from '../services/profileService';
 import { InviteService } from '../services/inviteService';
 import { useToast } from '../contexts/ToastContext';
+import { formatPhoneNumber } from '../utils/formatters';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -361,7 +362,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                                 <input
                                     type="text"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
                                     className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
                                     placeholder="(555) 000-0000"
                                 />
@@ -408,7 +409,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                                     <input
                                         type="text"
                                         value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
+                                        onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
                                         className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
                                         placeholder="(555) 000-0000"
                                     />
