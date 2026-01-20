@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
+import { supabase } from '../lib/supabase';
 import { ProfileService } from '../services/profileService';
 import { InviteService } from '../services/inviteService';
 import { uploadImageToImgBB } from '../lib/imgbb';
@@ -133,9 +134,18 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Settings</h1>
-                <p className="text-muted">Manage your profile and team organization.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Settings</h1>
+                    <p className="text-muted">Manage your profile and team organization.</p>
+                </div>
+                <button
+                    onClick={() => supabase.auth.signOut()}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold text-sm"
+                >
+                    <Icons.LogOut className="w-4 h-4" />
+                    Sign Out Account
+                </button>
             </div>
 
             {/* Tab Navigation */}
