@@ -333,12 +333,17 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                                 className="block w-full px-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-center text-2xl font-mono tracking-widest uppercase"
                                 placeholder="XXXXXX"
                             />
-                            {organizationName && (
+                            {organizationName ? (
                                 <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2 text-emerald-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
                                     <Icons.CheckCircle className="w-4 h-4" />
                                     Joining: <span className="font-bold">{organizationName}</span>
                                 </div>
-                            )}
+                            ) : joinCode.length === 6 && !loading ? (
+                                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+                                    <Icons.AlertCircle className="w-4 h-4" />
+                                    Invalid or unrecognized code
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
