@@ -351,10 +351,9 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                                 <label className="block text-sm font-medium text-muted mb-1.5">Job Title</label>
                                 <input
                                     type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
-                                    placeholder="Assistant"
+                                    value="Assistant"
+                                    disabled
+                                    className="block w-full px-4 py-2 bg-slate-100/50 border border-border/10 rounded-xl text-slate-500 cursor-not-allowed text-sm"
                                 />
                             </div>
                             <div>
