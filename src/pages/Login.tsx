@@ -669,7 +669,7 @@ export const Login = () => {
                 </div>
             </section>
             {/* Pricing Section */}
-            <section id="pricing" className={`relative py-32 ${isDarkMode ? 'bg-slate-900/60' : 'bg-white/60'} backdrop-blur-md border-y ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+            <section id="pricing" className="relative py-32">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-20">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/10 border border-banana-400/20 text-banana-400 text-sm font-medium mb-6">
@@ -688,7 +688,7 @@ export const Login = () => {
                         {/* Elite Producer Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-b from-banana-400/20 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-950 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-xl'} border flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-white/5' : 'border-slate-200'} border flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Elite Producer</h3>
                                     <div className="flex items-baseline gap-1">
@@ -729,7 +729,7 @@ export const Login = () => {
                         {/* Private Ownership Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-b from-white/10 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-900/40 border-white/10 shadow-2xl backdrop-blur-xl' : 'bg-slate-50 border-slate-200 shadow-lg'} border flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-white/10' : 'border-slate-200'} border flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <div className={`inline-block px-3 py-1 rounded-lg ${isDarkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} text-[10px] font-black tracking-widest uppercase mb-3`}>Personal License</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Private Ownership</h3>
@@ -771,7 +771,7 @@ export const Login = () => {
                         {/* Commercial License Tier */}
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-br from-banana-400/30 via-transparent to-banana-400/30 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
-                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-950 border-2 border-banana-400/20 shadow-[0_0_50px_-20px_rgba(250,204,21,0.3)]' : 'bg-white border-2 border-banana-400/30 shadow-[0_20px_50px_-10px_rgba(250,204,21,0.2)]'} flex flex-col h-full`}>
+                            <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'border-2 border-banana-400/20' : 'border-2 border-banana-400/30'} flex flex-col h-full`}>
                                 <div className="mb-8">
                                     <div className="inline-block px-3 py-1 rounded-lg bg-banana-400 text-slate-950 text-[10px] font-black tracking-widest uppercase mb-3 shadow-[0_0_20px_-5px_rgba(250,204,21,0.5)]">Full Rights</div>
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Commercial License</h3>
@@ -813,7 +813,7 @@ export const Login = () => {
                 </div>
             </section>
 
-            <footer className={`relative z-10 ${isDarkMode ? 'border-white/5 bg-slate-950/40' : 'border-slate-100 bg-white/40'} border-t py-12 mt-20 backdrop-blur-xl mb-20`}>
+            <footer className={`relative z-10 ${isDarkMode ? 'border-white/5' : 'border-slate-100'} border-t py-12 mt-20 mb-20`}>
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className={`flex items-center gap-2 ${isDarkMode ? 'opacity-50 text-white' : 'opacity-80 text-slate-950'}`}>
                         <Icons.TrendingUp className="w-5 h-5" />
