@@ -113,7 +113,6 @@ export const Login = () => {
                 {/* Hero Section */}
                 <div className="max-w-5xl mx-auto text-center pt-24 pb-40 relative">
                     <div className="flex flex-col items-center mb-10">
-                        <div className="w-px h-12 bg-gradient-to-b from-transparent to-banana-400/50 mb-4"></div>
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black tracking-[0.3em] uppercase text-banana-400/80">
                                 The Next Generation of Loan Software
