@@ -85,7 +85,7 @@ export const Login = () => {
                 <div
                     className="absolute inset-0 pointer-events-none transition-opacity duration-300"
                     style={{
-                        background: `radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), ${isDarkMode ? 'rgba(250, 204, 21, 0.04)' : 'rgba(250, 204, 21, 0.08)'}, transparent 80%)`,
+                        background: `radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), ${isDarkMode ? 'rgba(250, 204, 21, 0.04)' : 'rgba(15, 23, 42, 0.05)'}, transparent 80%)`,
                     }}
                 />
 
@@ -93,7 +93,7 @@ export const Login = () => {
                 <div
                     className="absolute inset-0 pointer-events-none z-10"
                     style={{
-                        background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(250, 204, 21, ${isDarkMode ? '0.3' : '0.25'}), transparent 80%)`,
+                        background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), ${isDarkMode ? 'rgba(250, 204, 21, 0.3)' : 'rgba(15, 23, 42, 0.2)'}, transparent 80%)`,
                         maskImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
                         WebkitMaskImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
                         maskSize: '40px 40px',
