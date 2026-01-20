@@ -3,17 +3,17 @@ import { QuoteStatus } from '../types';
 
 export const StatusBadge = ({ status, onClick }: { status: QuoteStatus, onClick?: (e: React.MouseEvent) => void }) => {
     const styles = {
-        [QuoteStatus.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
-        [QuoteStatus.ACTIVE]: "bg-blue-50 text-blue-700 border-blue-200",
-        [QuoteStatus.FOLLOW_UP]: "bg-amber-50 text-amber-700 border-amber-200",
-        [QuoteStatus.WON]: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        [QuoteStatus.LOST]: "bg-red-50 text-red-700 border-red-200",
+        [QuoteStatus.DRAFT]: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+        [QuoteStatus.ACTIVE]: "bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.1)]",
+        [QuoteStatus.FOLLOW_UP]: "bg-orange-500/10 text-orange-400 border-orange-500/20 shadow-[0_0_8px_rgba(249,115,22,0.1)]",
+        [QuoteStatus.WON]: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]",
+        [QuoteStatus.LOST]: "bg-red-500/10 text-red-400 border-red-500/20",
     };
 
     return (
         <span
             onClick={onClick}
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${styles[status]} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border backdrop-blur-md transition-all ${styles[status]} ${onClick ? 'cursor-pointer hover:bg-opacity-20 active:scale-95' : ''}`}
         >
             {status}
         </span>

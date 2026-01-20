@@ -1,5 +1,6 @@
 import { Quote, BrokerProfile } from '../types';
 import { calculateAmortizationSchedule } from './finance';
+import { formatPhoneNumber } from './formatters';
 
 export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile, messageBody: string): string => {
   // Basic formatting for the message body (newlines to <br>)
@@ -136,7 +137,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                     <div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.title || 'Loan Broker'}</div>
                       ${profile.company ? `<div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.company}</div>` : ''}
                       <div style="color:#6b7280;font-size:14px;margin-top:6px;">
-                        ${profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${profile.phone}</a>` : ''}
+                        ${profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${formatPhoneNumber(profile.phone)}</a>` : ''}
                         ${profile.phone && profile.website ? '&nbsp;&nbsp;|&nbsp;&nbsp;' : ''}
                         ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color:#6b7280;text-decoration:none;">Website</a>` : ''}
                       </div>
@@ -145,7 +146,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
               </table>
 
               <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
-                © ${new Date().getFullYear()} ${profile.name}. All rights reserved.<br />
+                © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.<br />
                 Rates and terms subject to change based on market conditions.
               </div>
 
@@ -181,7 +182,7 @@ Let me know if these terms work for you.
 Best,
 ${profile.name}
 ${profile.title}
-${profile.phone || ''}
+${profile.phone ? formatPhoneNumber(profile.phone) : ''}
 ${profile.website || ''}
 `;
 };

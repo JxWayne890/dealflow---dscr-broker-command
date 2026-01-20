@@ -38,6 +38,46 @@ export const InvestorService = {
         }
 
         return mapDbToInvestor(data);
+    },
+
+    async updateInvestor(id: string, updates: Partial<Investor>): Promise<Investor> {
+        const { data, error } = await supabase
+            .from('investors')
+            .update(mapInvestorToDb(updates))
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating investor:', error);
+            throw error;
+        }
+
+        return mapDbToInvestor(data);
+    },
+
+    async deleteInvestor(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('investors')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting investor:', error);
+            throw error;
+        }
+    },
+
+    async deleteInvestors(ids: string[]): Promise<void> {
+        const { error } = await supabase
+            .from('investors')
+            .delete()
+            .in('id', ids);
+
+        if (error) {
+            console.error('Error bulk deleting investors:', error);
+            throw error;
+        }
     }
 };
 

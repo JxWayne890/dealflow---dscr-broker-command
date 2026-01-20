@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS public.quotes (
   investor_name text,
   investor_email text,
   property_address text,
+  property_city text,
+  property_zip text,
   property_state text,
   deal_type text,
   loan_amount numeric,

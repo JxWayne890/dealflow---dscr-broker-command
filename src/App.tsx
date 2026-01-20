@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
-import { Quote, QuoteStatus, View } from './types';
+import { Quote, QuoteStatus, View, Investor } from './types';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -19,7 +19,7 @@ import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
 import { ProfileService } from './services/profileService';
 import { useToast } from './contexts/ToastContext';
-import { BrokerProfile, Investor } from './types';
+import { BrokerProfile } from './types';
 
 export default function App() {
   const { showToast } = useToast();
@@ -105,6 +105,41 @@ export default function App() {
       showToast("Failed to save investor", 'error');
     }
   };
+  const handleUpdateInvestor = async (id: string, updates: Partial<Investor>) => {
+    // Optimistic update
+    setInvestors(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
+    try {
+      await InvestorService.updateInvestor(id, updates);
+      showToast('Investor updated successfully', 'success');
+    } catch (e) {
+      console.error("Failed to update investor", e);
+      showToast("Failed to update investor", 'error');
+    }
+  };
+
+  const handleDeleteInvestor = async (id: string) => {
+    // Optimistic update
+    setInvestors(prev => prev.filter(inv => inv.id !== id));
+    try {
+      await InvestorService.deleteInvestor(id);
+      showToast('Investor removed', 'success');
+    } catch (e) {
+      console.error("Failed to delete investor", e);
+      showToast("Failed to remove investor", 'error');
+    }
+  };
+
+  const handleBulkDeleteInvestors = async (ids: string[]) => {
+    // Optimistic update
+    setInvestors(prev => prev.filter(inv => !ids.includes(inv.id)));
+    try {
+      await InvestorService.deleteInvestors(ids);
+      showToast(`${ids.length} investors removed`, 'success');
+    } catch (e) {
+      console.error("Failed to bulk delete investors", e);
+      showToast("Failed to remove investors", 'error');
+    }
+  };
 
   const handleUpdateStatus = async (id: string, status: QuoteStatus) => {
     // Optimistic update
@@ -119,6 +154,16 @@ export default function App() {
     }
   };
 
+  const handleUpdateQuote = async (id: string, updates: Partial<Quote>) => {
+    setQuotes(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q));
+    try {
+      await QuoteService.updateQuote(id, updates);
+    } catch (e) {
+      console.error("Failed to update quote", e);
+      showToast("Failed to update quote", 'error');
+    }
+  };
+
   const selectedQuote = quotes.find(q => q.id === selectedQuoteId);
 
   const renderContent = () => {
@@ -130,18 +175,26 @@ export default function App() {
 
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard quotes={quotes} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} />;
+        return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} />;
       case 'quotes':
-        return <QuotesList quotes={quotes} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
+        return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
       case 'new_quote':
         return <NewQuote investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
         if (!selectedQuote) return null; // Should ideally handle 404
-        return <QuoteDetail quote={selectedQuote} onBack={() => setCurrentView('dashboard')} onUpdateStatus={handleUpdateStatus} />;
+        return <QuoteDetail quote={selectedQuote} onBack={() => setCurrentView('dashboard')} onUpdateStatus={handleUpdateStatus} onUpdateQuote={handleUpdateQuote} />;
       case 'investors':
-        return <Investors investors={investors} onAddInvestor={handleAddInvestor} />;
+        return (
+          <Investors
+            investors={investors}
+            onAddInvestor={handleAddInvestor}
+            onUpdateInvestor={handleUpdateInvestor}
+            onDeleteInvestor={handleDeleteInvestor}
+            onBulkDeleteInvestors={handleBulkDeleteInvestors}
+          />
+        );
       case 'analytics':
-        return <Analytics quotes={quotes} investors={investors} />;
+        return <Analytics quotes={quotes} investors={investors} onViewQuote={handleViewQuote} />;
       case 'settings':
         return <Settings onProfileUpdate={setProfile} currentProfile={profile} />;
       case 'campaigns':
@@ -157,12 +210,27 @@ export default function App() {
       case 'team':
         return <Team profile={profile} />;
       default:
-        return <Dashboard quotes={quotes} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} />;
+        return (
+          <Dashboard
+            quotes={quotes}
+            investors={investors}
+            onViewQuote={handleViewQuote}
+            onNewQuote={handleNewQuote}
+            onNavigate={(view, filter) => {
+              setCurrentView(view);
+              if (filter) {
+                const newParams = new URLSearchParams(window.location.search);
+                newParams.set('filter', filter);
+                window.history.pushState(null, '', `?${newParams.toString()}`);
+              }
+            }}
+          />
+        );
     }
   };
 
   if (isLoadingAuth) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-400">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-background text-muted">Loading...</div>;
   }
 
   // Handle Public Links (e.g. Schedule) without requiring login

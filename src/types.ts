@@ -37,6 +37,8 @@ export interface Quote {
   investorName: string; // Denormalized for speed
   investorEmail: string;
   propertyAddress?: string;
+  propertyCity?: string;
+  propertyZip?: string;
   propertyState: string;
   dealType: DealType;
   loanAmount: number;

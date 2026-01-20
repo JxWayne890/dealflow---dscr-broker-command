@@ -54,7 +54,7 @@ export const QuoteService = {
             .single();
 
         if (error) {
-            console.error('Error creating quote:', error);
+            console.error('Supabase error inserting quote:', error);
             throw error;
         }
 
@@ -76,8 +76,11 @@ export const QuoteService = {
         }
 
         return mapDbToQuote(data);
-    }
-    ,
+    },
+
+    async toggleFollowUps(id: string, enabled: boolean): Promise<Quote> {
+        return this.updateQuote(id, { followUpsEnabled: enabled });
+    },
 
     async getQuotesByInvestorId(investorId: string): Promise<Quote[]> {
         const { data, error } = await supabase
@@ -102,6 +105,8 @@ const mapDbToQuote = (row: any): Quote => ({
     investorName: row.investor_name,
     investorEmail: row.investor_email,
     propertyAddress: row.property_address,
+    propertyCity: row.property_city,
+    propertyZip: row.property_zip,
     propertyState: row.property_state,
     dealType: row.deal_type,
     loanAmount: row.loan_amount,
@@ -126,21 +131,28 @@ const mapDbToQuote = (row: any): Quote => ({
 
 const mapQuoteToDb = (quote: Partial<Quote>): any => {
     const db: any = {};
-    if (quote.investorId !== undefined) db.investor_id = quote.investorId;
+
+    // Clean up numeric values and UUIDs
+    const cleanUuid = (val?: string) => (val && val.trim() !== '' && val !== 'undefined') ? val : null;
+    const cleanNum = (val?: number) => (val !== undefined && !isNaN(val)) ? val : null;
+
+    if (quote.investorId !== undefined) db.investor_id = cleanUuid(quote.investorId);
     if (quote.investorName !== undefined) db.investor_name = quote.investorName;
     if (quote.investorEmail !== undefined) db.investor_email = quote.investorEmail;
     if (quote.propertyAddress !== undefined) db.property_address = quote.propertyAddress;
+    if (quote.propertyCity !== undefined) db.property_city = quote.propertyCity;
+    if (quote.propertyZip !== undefined) db.property_zip = quote.propertyZip;
     if (quote.propertyState !== undefined) db.property_state = quote.propertyState;
     if (quote.dealType !== undefined) db.deal_type = quote.dealType;
-    if (quote.loanAmount !== undefined) db.loan_amount = quote.loanAmount;
-    if (quote.ltv !== undefined) db.ltv = quote.ltv;
-    if (quote.rate !== undefined) db.rate = quote.rate;
+    if (quote.loanAmount !== undefined) db.loan_amount = cleanNum(quote.loanAmount);
+    if (quote.ltv !== undefined) db.ltv = cleanNum(quote.ltv);
+    if (quote.rate !== undefined) db.rate = cleanNum(quote.rate);
     if (quote.rateType !== undefined) db.rate_type = quote.rateType;
-    if (quote.termYears !== undefined) db.term_years = quote.termYears;
-    if (quote.originationFee !== undefined) db.origination_fee = quote.originationFee;
-    if (quote.uwFee !== undefined) db.uw_fee = quote.uwFee;
-    if (quote.monthlyPayment !== undefined) db.monthly_payment = quote.monthlyPayment;
-    if (quote.closingFees !== undefined) db.closing_fees = quote.closingFees;
+    if (quote.termYears !== undefined) db.term_years = cleanNum(quote.termYears);
+    if (quote.originationFee !== undefined) db.origination_fee = cleanNum(quote.originationFee);
+    if (quote.uwFee !== undefined) db.uw_fee = cleanNum(quote.uwFee);
+    if (quote.monthlyPayment !== undefined) db.monthly_payment = cleanNum(quote.monthlyPayment);
+    if (quote.closingFees !== undefined) db.closing_fees = cleanNum(quote.closingFees);
     if (quote.notes !== undefined) db.notes = quote.notes;
     if (quote.emailBody !== undefined) db.email_body = quote.emailBody;
     if (quote.status !== undefined) db.status = quote.status;
@@ -148,14 +160,6 @@ const mapQuoteToDb = (quote: Partial<Quote>): any => {
     if (quote.followUpSchedule !== undefined) db.follow_up_schedule = quote.followUpSchedule;
     if (quote.emailHtml !== undefined) db.email_html = quote.emailHtml;
     if (quote.scheduleUrl !== undefined) db.schedule_url = quote.scheduleUrl;
-    // user_id is handled by RLS policies generally, but might need to be explicit if inserting
-    // Actually, usually we insert with `auth.uid()` if we have a trigger,
-    // OR we pass it from session. For now, relying on Supabase to set it might require a trigger
-    // or we must pass it. The API usually requires it if column is not nullable.
-    // Let's assume we pass it from the Service caller or context for now, OR rely on backend trigger.
-    // The policy "Users can insert own quotes" checks (auth.uid() = user_id), so we MUST send user_id.
-    // I'll add user_id injection in the Service method if session is available, or rely on caller?
 
-    // Better: Helper to get current user
     return db;
 };

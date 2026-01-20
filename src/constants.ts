@@ -1,13 +1,13 @@
 import { Quote, QuoteStatus, DealType, Investor, BrokerProfile } from './types';
 
-export const APP_NAME = "DealFlow";
+export const APP_NAME = "The OfferHero";
 
 export const DEFAULT_BROKER_PROFILE: BrokerProfile = {
   name: 'Timothy Herro',
   email: 'timothy@mastercleanhq.com',
   phone: '(555) 123-4567',
-  title: 'Senior Loan Officer',
-  logoUrl: 'https://i0.wp.com/timothyhero.com/wp-content/uploads/2022/06/logo-large-featured.png?fit=1200%2C675&ssl=1',
+  title: 'Senior Loan Officer', // Restored original title
+  logoUrl: 'https://i.imgur.com/hj4dC0Q.png',
   headshotUrl: 'https://bpimg.biggerpockets.com/no_overlay/uploads/social_user/user_avatar/1635688/1741049287-avatar-timhero.jpg?twic=v1/output=image/crop=288x288@0x0/cover=256x256&v=2',
   website: 'www.herrocapital.com'
 };

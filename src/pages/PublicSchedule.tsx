@@ -139,7 +139,7 @@ export const PublicSchedule = ({ quote }: { quote: Quote }) => {
                 </div>
 
                 <div className="text-center text-gray-400 text-xs mb-12">
-                    <p>© {new Date().getFullYear()} DealFlow DSCR. All figures are estimates based on standard amortization formulas.</p>
+                    <p>© {new Date().getFullYear()} The OfferHero. All figures are estimates based on standard amortization formulas.</p>
                 </div>
             </div>
         </div>

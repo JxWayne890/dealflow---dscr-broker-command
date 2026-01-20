@@ -51,6 +51,7 @@ export interface CampaignSubscription {
     quotes?: {
         id: string;
         investorName: string;
+        investorEmail: string;
         dealType: string;
         loanAmount: number;
         propertyAddress: string;
@@ -285,6 +286,7 @@ export const campaignService = {
                 quotes (
                     id,
                     investor_name, 
+                    investor_email,
                     deal_type,
                     loan_amount,
                     property_address
@@ -300,6 +302,7 @@ export const campaignService = {
             quotes: sub.quotes ? {
                 id: sub.quotes.id,
                 investorName: sub.quotes.investor_name,
+                investorEmail: sub.quotes.investor_email,
                 dealType: sub.quotes.deal_type,
                 loanAmount: sub.quotes.loan_amount,
                 propertyAddress: sub.quotes.property_address
@@ -362,7 +365,10 @@ export const campaignService = {
 
         if (stepError || !step) throw new Error('No step found for this campaign');
 
-        // 3. Prepare email content with variable substitution
+        // 3. Get Agent Profile and Prepare content
+        const profile = await ProfileService.getProfile();
+        if (!profile) throw new Error('Broker profile not found. Please set up your profile in Settings.');
+
         let bodyTemplate = step.body_template || '';
         let subjectTemplate = step.subject_template || '';
 
@@ -371,6 +377,8 @@ export const campaignService = {
             fullName: sub.quotes.investor_name || 'Investor',
             address: sub.quotes.property_address || 'Property',
             dealType: sub.quotes.deal_type || 'Deal',
+            senderName: profile.name || '',
+            companyName: profile.company || ''
         };
 
         for (const [key, value] of Object.entries(variables)) {
@@ -379,11 +387,7 @@ export const campaignService = {
             subjectTemplate = subjectTemplate.replace(regex, value);
         }
 
-        // 4. Get Agent Profile and Generate Professional HTML
-        const profile = await ProfileService.getProfile();
-        if (!profile) throw new Error('Broker profile not found. Please set up your profile in Settings.');
-
-        // Map database quote row back to Quote type for generator
+        // 4. Map database quote row back to Quote type for generator
         const quoteObj = {
             id: sub.quotes.id,
             investorName: sub.quotes.investor_name,

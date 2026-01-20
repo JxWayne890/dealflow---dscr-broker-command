@@ -1,31 +1,97 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Investor } from '../types';
 import { InvestorDetailModal } from '../components/InvestorDetailModal';
+import { formatPhoneNumber } from '../utils/formatters';
 
 interface InvestorsProps {
     investors: Investor[];
     onAddInvestor: (investor: Investor) => void;
+    onUpdateInvestor: (id: string, updates: Partial<Investor>) => void;
+    onDeleteInvestor: (id: string) => void;
+    onBulkDeleteInvestors: (ids: string[]) => void;
 }
 
-export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
-    const [showAddModal, setShowAddModal] = useState(false);
+export const Investors = ({ investors, onAddInvestor, onUpdateInvestor, onDeleteInvestor, onBulkDeleteInvestors }: InvestorsProps) => {
+    const [showModal, setShowModal] = useState(false);
+    const [editingInvestor, setEditingInvestor] = useState<Investor | null>(null);
     const [selectedInvestor, setSelectedInvestor] = useState<Investor | null>(null);
-    const [newInvestor, setNewInvestor] = useState<Partial<Investor>>({});
+    const [formData, setFormData] = useState<Partial<Investor>>({});
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredInvestors = useMemo(() => {
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return investors;
+
+        return investors.filter(inv =>
+            inv.name.toLowerCase().includes(query) ||
+            inv.email.toLowerCase().includes(query) ||
+            (inv.company && inv.company.toLowerCase().includes(query)) ||
+            (inv.phone && inv.phone.replace(/[^0-9]/g, '').includes(query.replace(/[^0-9]/g, ''))) ||
+            (inv.phone && inv.phone.toLowerCase().includes(query))
+        );
+    }, [investors, searchQuery]);
+
+    const handleOpenAdd = () => {
+        setEditingInvestor(null);
+        setFormData({});
+        setShowModal(true);
+    };
+
+    const handleOpenEdit = (e: React.MouseEvent, investor: Investor) => {
+        e.stopPropagation();
+        setEditingInvestor(investor);
+        setFormData(investor);
+        setShowModal(true);
+    };
 
     const handleSave = () => {
-        if (newInvestor.name && newInvestor.email) {
-            onAddInvestor({
-                id: Math.random().toString(36).substr(2, 9),
-                name: newInvestor.name,
-                email: newInvestor.email,
-                company: newInvestor.company,
-                phone: newInvestor.phone
-            } as Investor);
-            setShowAddModal(false);
-            setNewInvestor({});
+        if (formData.name && formData.email) {
+            if (editingInvestor) {
+                onUpdateInvestor(editingInvestor.id, formData);
+            } else {
+                onAddInvestor({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: formData.name,
+                    email: formData.email,
+                    company: formData.company,
+                    phone: formData.phone
+                } as Investor);
+            }
+            setShowModal(false);
+            setFormData({});
+        }
+    };
+
+    const handleDelete = () => {
+        if (editingInvestor && window.confirm(`Are you sure you want to remove ${editingInvestor.name}?`)) {
+            onDeleteInvestor(editingInvestor.id);
+            setShowModal(false);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === investors.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(investors.map(inv => inv.id));
+        }
+    };
+
+    const toggleSelectOne = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (window.confirm(`Are you sure you want to remove ${selectedIds.length} investors?`)) {
+            onBulkDeleteInvestors(selectedIds);
+            setSelectedIds([]);
         }
     };
 
@@ -33,55 +99,109 @@ export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Investors</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage your network of capital partners.</p>
+                    <h1 className="text-2xl font-bold text-foreground">Investors</h1>
+                    <p className="text-sm text-muted mt-1">Manage your network of capital partners.</p>
                 </div>
-                <Button icon={Icons.Plus} onClick={() => setShowAddModal(true)}>
-                    Add Investor
-                </Button>
+                <div className="flex items-center gap-3">
+                    {selectedIds.length > 0 && (
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all animate-in fade-in slide-in-from-right-4"
+                        >
+                            <Icons.Trash className="w-4 h-4" />
+                            Delete ({selectedIds.length})
+                        </button>
+                    )}
+                    <Button icon={Icons.Plus} onClick={handleOpenAdd}>
+                        Add Investor
+                    </Button>
+                </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            {/* Search Bar */}
+            <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted group-focus-within:text-banana-400 transition-colors">
+                    <Icons.Search className="w-5 h-5" />
+                </div>
+                <input
+                    type="text"
+                    placeholder="Search by name, company, email, or phone (area code)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-11 pr-4 py-3 bg-surface border border-border/10 rounded-2xl shadow-sm focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50 font-medium"
+                />
+                {searchQuery && (
+                    <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted hover:text-foreground transition-colors"
+                    >
+                        <Icons.XCircle className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
+
+            <div className="bg-surface/30 backdrop-blur-xl rounded-xl border border-border/10 shadow-sm overflow-hidden">
+                <table className="min-w-full divide-y divide-border/10">
+                    <thead className="bg-foreground/5">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th className="px-6 py-3 text-left w-10">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
+                                    checked={selectedIds.length === investors.length && investors.length > 0}
+                                    onChange={toggleSelectAll}
+                                />
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Company</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Contact</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {investors.length === 0 ? (
+                    <tbody className="bg-transparent divide-y divide-border/10">
+                        {filteredInvestors.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                                    No investors found. Add your first one!
+                                <td colSpan={5} className="px-6 py-12 text-center text-muted">
+                                    {searchQuery ? `No investors matching "${searchQuery}"` : 'No investors found. Add your first one!'}
                                 </td>
                             </tr>
                         ) : (
-                            investors.map((investor) => (
+                            filteredInvestors.map((investor) => (
                                 <tr
                                     key={investor.id}
-                                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                    className={`hover:bg-foreground/5 transition-colors cursor-pointer ${selectedIds.includes(investor.id) ? 'bg-indigo-500/10' : ''}`}
                                     onClick={() => setSelectedInvestor(investor)}
                                 >
+                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-border/30 text-banana-400 focus:ring-banana-400 h-4 w-4 cursor-pointer bg-surface"
+                                            checked={selectedIds.includes(investor.id)}
+                                            onChange={(e) => toggleSelectOne(e as any, investor.id)}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
+                                            <div className="h-8 w-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold mr-3">
                                                 {investor.name.charAt(0)}
                                             </div>
-                                            <div className="text-sm font-medium text-gray-900">{investor.name}</div>
+                                            <div className="text-sm font-medium text-foreground">{investor.name}</div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                                         {investor.company || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{investor.email}</div>
-                                        <div className="text-xs text-gray-500">{investor.phone}</div>
+                                        <div className="text-sm text-foreground">{investor.email}</div>
+                                        <div className="text-xs text-muted">{formatPhoneNumber(investor.phone)}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                        <button
+                                            onClick={(e) => handleOpenEdit(e, investor)}
+                                            className="text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1 rounded-lg transition-colors border border-transparent"
+                                        >
+                                            Edit
+                                        </button>
                                     </td>
                                 </tr>
                             ))
@@ -91,68 +211,86 @@ export const Investors = ({ investors, onAddInvestor }: InvestorsProps) => {
             </div>
 
             {/* Simple Modal */}
-            {showAddModal && (
+            {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md relative z-10 p-6 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+                    <div className="bg-surface rounded-xl border border-border/10 shadow-2xl w-full max-w-md relative z-10 p-6 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-gray-900">New Investor</h3>
-                            <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+                            <h3 className="text-lg font-bold text-foreground">
+                                {editingInvestor ? 'Edit Investor' : 'New Investor'}
+                            </h3>
+                            <button onClick={() => setShowModal(false)} className="text-muted hover:text-foreground">
                                 <Icons.X className="w-5 h-5" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Full Name</label>
                                 <input
-                                    className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    className="block w-full rounded-lg bg-background border-border/10 border px-3 py-2 shadow-sm focus:border-banana-400 focus:ring-banana-400 sm:text-sm text-foreground placeholder:text-muted/50"
                                     placeholder="e.g. Sarah Smith"
-                                    value={newInvestor.name || ''}
-                                    onChange={e => setNewInvestor({ ...newInvestor, name: e.target.value })}
+                                    value={formData.name || ''}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Company (Optional)</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Company (Optional)</label>
                                 <input
-                                    className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    className="block w-full rounded-lg bg-background border-border/10 border px-3 py-2 shadow-sm focus:border-banana-400 focus:ring-banana-400 sm:text-sm text-foreground placeholder:text-muted/50"
                                     placeholder="e.g. Horizon Capital"
-                                    value={newInvestor.company || ''}
-                                    onChange={e => setNewInvestor({ ...newInvestor, company: e.target.value })}
+                                    value={formData.company || ''}
+                                    onChange={e => setFormData({ ...formData, company: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Email</label>
                                 <input
                                     type="email"
-                                    className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    className="block w-full rounded-lg bg-background border-border/10 border px-3 py-2 shadow-sm focus:border-banana-400 focus:ring-banana-400 sm:text-sm text-foreground placeholder:text-muted/50"
                                     placeholder="sarah@example.com"
-                                    value={newInvestor.email || ''}
-                                    onChange={e => setNewInvestor({ ...newInvestor, email: e.target.value })}
+                                    value={formData.email || ''}
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                                <label className="block text-sm font-medium text-muted mb-1">Phone (Optional)</label>
                                 <input
                                     type="tel"
-                                    className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    className="block w-full rounded-lg bg-background border-border/10 border px-3 py-2 shadow-sm focus:border-banana-400 focus:ring-banana-400 sm:text-sm text-foreground placeholder:text-muted/50"
                                     placeholder="(555) 123-4567"
-                                    value={newInvestor.phone || ''}
-                                    onChange={e => setNewInvestor({ ...newInvestor, phone: e.target.value })}
+                                    value={formData.phone || ''}
+                                    onChange={e => {
+                                        const formatted = formatPhoneNumber(e.target.value);
+                                        setFormData({ ...formData, phone: formatted });
+                                    }}
+                                    maxLength={14}
                                 />
                             </div>
                         </div>
 
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowAddModal(false)}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg border border-gray-300"
-                            >
-                                Cancel
-                            </button>
-                            <Button onClick={handleSave} disabled={!newInvestor.name || !newInvestor.email}>
-                                Save Investor
-                            </Button>
+                        <div className="mt-8 flex justify-between items-center">
+                            {editingInvestor ? (
+                                <button
+                                    onClick={handleDelete}
+                                    className="text-xs font-semibold text-red-500 hover:text-red-400 flex items-center gap-1.5 px-2 py-1 hover:bg-red-500/10 rounded transition-colors"
+                                >
+                                    <Icons.Trash className="w-3.5 h-3.5" />
+                                    Delete Investor
+                                </button>
+                            ) : <div />}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/5 rounded-lg border border-border/10"
+                                >
+                                    Cancel
+                                </button>
+                                <Button onClick={handleSave} disabled={!formData.name || !formData.email}>
+                                    {editingInvestor ? 'Save Changes' : 'Create Investor'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

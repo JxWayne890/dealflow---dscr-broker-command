@@ -222,11 +222,14 @@ serve(async (req) => {
         fullName: lead.investor_name || "Investor",
         address: lead.property_address || "Property",
         dealType: lead.deal_type || "Deal",
+        senderName: profile?.name || "",
+        companyName: profile?.company || ""
       };
 
       for (const [key, value] of Object.entries(variables)) {
-        body = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
-        subject = subject.replace(new RegExp(`{{${key}}}`, 'g'), value);
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        body = body.replace(regex, value);
+        subject = subject.replace(regex, value);
       }
 
       const html = generateHtmlEmail(lead, profile || {}, body);

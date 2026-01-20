@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Quote, QuoteStatus, DealType, BrokerProfile, EmailFormat, Investor } from '../types';
@@ -87,12 +87,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         setIsGenerating(true);
         // Simulate a brief delay
         setTimeout(() => {
-            // For the new template system, we just want a nice intro message.
-            const intro = formData.notes
-                ? `Great connecting with you.I've crunched the numbers for your scenario in ${formData.propertyState}. Based on the details provided, we can offer the following terms:`
-                : `Great connecting with you. Based on the details provided, here is the quote for your scenario in ${formData.propertyState}:`;
+            const intro = `Great connecting with you. I've crunched the numbers for your scenario in ${formData.propertyState}. Based on the details provided, we can offer the following terms:`;
 
-            setFormData(prev => ({ ...prev, emailBody: intro }));
+            // Compose final content with intro and user notes
+            const finalContent = formData.notes
+                ? `${intro}\n\n${formData.notes}`
+                : intro;
+
+            setFormData(prev => ({ ...prev, emailBody: finalContent }));
             setIsGenerating(false);
             setStep(2);
         }, 500);
@@ -176,17 +178,17 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             {/* Header / Nav */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <button onClick={step === 1 ? onCancel : () => setStep(1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100">
+                    <button onClick={step === 1 ? onCancel : () => setStep(1)} className="p-2 -ml-2 text-muted hover:text-foreground rounded-full hover:bg-foreground/5 transition-colors">
                         <Icons.ChevronLeft className="w-6 h-6" />
                     </button>
-                    <h1 className="text-xl font-bold ml-2">
+                    <h1 className="text-xl font-bold ml-2 text-foreground">
                         {step === 1 ? 'New Deal Quote' : 'Review & Send'}
                     </h1>
                 </div>
                 {step === 2 && (
                     <button
                         onClick={() => setShowSettings(!showSettings)}
-                        className="text-sm font-medium text-gray-600 hover:text-indigo-600 flex items-center bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
+                        className="text-sm font-medium text-muted hover:text-foreground flex items-center bg-surface border border-border/10 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
                     >
                         <Icons.Settings className="w-4 h-4 mr-2" />
                         Profile Settings
@@ -199,8 +201,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                 {step === 1 ? (
                     // Step 1: Data Entry form (Unchanged mostly)
                     <div className="w-full max-w-2xl mx-auto space-y-6">
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-6 border-b border-gray-100 pb-2">Investor Details</h3>
+                        <div className="bg-surface/30 backdrop-blur-xl p-6 rounded-xl border border-border/10 shadow-sm">
+                            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-6 border-b border-border/10 pb-2">Investor Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Select Investor">
                                     <Select
@@ -231,7 +233,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </Field>
                                 <Field label="Or Create New">
                                     <div className="flex items-center pt-2">
-                                        <span className="text-xs text-gray-500">Edit details below to create new contact</span>
+                                        <span className="text-xs text-muted">Edit details below to create new contact</span>
                                     </div>
                                 </Field>
                             </div>
@@ -246,8 +248,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-6 border-b border-gray-100 pb-2">Deal Terms</h3>
+                        <div className="bg-surface/30 backdrop-blur-xl p-6 rounded-xl border border-border/10 shadow-sm">
+                            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-6 border-b border-border/10 pb-2">Deal Terms</h3>
 
                             {/* Property Selection */}
                             <Field label="Property Address">
@@ -271,27 +273,48 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         </Select>
 
                                         {(!formData.propertyAddress || !availableProperties.includes(formData.propertyAddress)) && (
-                                            <Input
-                                                placeholder="e.g. 123 Main St"
+                                            <AddressAutocomplete
                                                 value={formData.propertyAddress || ''}
-                                                onChange={e => setFormData({ ...formData, propertyAddress: e.target.value })}
-                                                className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm mt-2"
+                                                onChange={(val, state, city, zip) => {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        propertyAddress: val,
+                                                        propertyState: state || prev.propertyState,
+                                                        propertyCity: city || prev.propertyCity,
+                                                        propertyZip: zip || prev.propertyZip
+                                                    }));
+                                                }}
                                             />
                                         )}
                                     </div>
                                 ) : (
-                                    <Input
-                                        placeholder="e.g. 123 Main St"
+                                    <AddressAutocomplete
                                         value={formData.propertyAddress || ''}
-                                        onChange={e => setFormData({ ...formData, propertyAddress: e.target.value })}
+                                        onChange={(val, state, city, zip) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                propertyAddress: val,
+                                                propertyState: state || prev.propertyState,
+                                                propertyCity: city || prev.propertyCity,
+                                                propertyZip: zip || prev.propertyZip
+                                            }));
+                                        }}
                                     />
                                 )}
                             </Field>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Field label="State">
-                                    <Input placeholder="TX" value={formData.propertyState || ''} onChange={e => setFormData({ ...formData, propertyState: e.target.value.toUpperCase() })} maxLength={2} />
+                                <Field label="City">
+                                    <Input placeholder="e.g. Dallas" value={formData.propertyCity || ''} onChange={e => setFormData({ ...formData, propertyCity: e.target.value })} />
                                 </Field>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field label="State">
+                                        <Input placeholder="TX" value={formData.propertyState || ''} onChange={e => setFormData({ ...formData, propertyState: e.target.value.toUpperCase() })} maxLength={2} />
+                                    </Field>
+                                    <Field label="Zip">
+                                        <Input placeholder="75201" value={formData.propertyZip || ''} onChange={e => setFormData({ ...formData, propertyZip: e.target.value })} />
+                                    </Field>
+                                </div>
                                 <Field label="Type">
                                     <Select value={formData.dealType} onChange={e => setFormData({ ...formData, dealType: e.target.value as DealType })}>
                                         {Object.values(DealType).map(t => <option key={t} value={t}>{t}</option>)}
@@ -300,12 +323,11 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </div>
 
                             <Field label="Loan Amount">
-                                <div className="relative rounded-md shadow-sm">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <span className="text-gray-500 sm:text-sm">$</span>
-                                    </div>
-                                    <Input type="number" className="pl-7" placeholder="0.00" value={formData.loanAmount || ''} onChange={e => setFormData({ ...formData, loanAmount: Number(e.target.value) })} />
-                                </div>
+                                <CurrencyInput
+                                    value={formData.loanAmount || 0}
+                                    onChange={val => setFormData({ ...formData, loanAmount: val })}
+                                    placeholder="0.00"
+                                />
                             </Field>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -328,70 +350,42 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Lender Origination ($)">
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            className="pl-7"
-                                            placeholder="0.00"
-                                            value={formData.originationFee || ''}
-                                            onChange={e => setFormData({ ...formData, originationFee: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                    <CurrencyInput
+                                        value={formData.originationFee || 0}
+                                        onChange={val => setFormData({ ...formData, originationFee: val })}
+                                        placeholder="0.00"
+                                    />
                                 </Field>
                                 <Field label="Underwriting Fee ($)">
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            className="pl-7"
-                                            placeholder="0.00"
-                                            value={formData.uwFee || ''}
-                                            onChange={e => setFormData({ ...formData, uwFee: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                    <CurrencyInput
+                                        value={formData.uwFee || 0}
+                                        onChange={val => setFormData({ ...formData, uwFee: val })}
+                                        placeholder="0.00"
+                                    />
                                 </Field>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Monthly P&I Payment">
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            className="pl-7"
-                                            placeholder="0.00"
-                                            value={formData.monthlyPayment || ''}
-                                            onChange={e => setFormData({ ...formData, monthlyPayment: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <p className="text-[10px] text-gray-400 mt-1 italic leading-tight">Automatically calculated, but you can override if needed.</p>
+                                    <CurrencyInput
+                                        value={formData.monthlyPayment || 0}
+                                        onChange={val => setFormData({ ...formData, monthlyPayment: val })}
+                                        placeholder="0.00"
+                                    />
+                                    <p className="text-[10px] text-muted/60 mt-1 italic leading-tight">Automatically calculated, but you can override if needed.</p>
                                 </Field>
                                 <Field label="Other Closing Fees">
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="text-gray-500 sm:text-sm">$</span>
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            className="pl-7"
-                                            placeholder="0.00"
-                                            value={formData.closingFees || ''}
-                                            onChange={e => setFormData({ ...formData, closingFees: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                    <CurrencyInput
+                                        value={formData.closingFees || 0}
+                                        onChange={val => setFormData({ ...formData, closingFees: val })}
+                                        placeholder="0.00"
+                                    />
                                 </Field>
                             </div>
 
                             <Field label="Notes (Optional)">
                                 <textarea
-                                    className="block w-full rounded-lg border-gray-300 border px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow"
                                     rows={3}
                                     placeholder="Key selling points or context..."
                                     value={formData.notes || ''}
@@ -418,18 +412,18 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                         {/* Left: Editor & Controls */}
                         <div className="flex flex-col gap-6 h-full">
                             {/* Format Toggle */}
-                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                                <span className="font-semibold text-gray-700">Email Format</span>
-                                <div className="bg-gray-100 p-1 rounded-lg flex">
+                            <div className="bg-surface/30 backdrop-blur-xl p-4 rounded-xl border border-border/10 shadow-sm flex items-center justify-between">
+                                <span className="font-semibold text-foreground">Email Format</span>
+                                <div className="bg-foreground/5 p-1 rounded-lg flex">
                                     <button
                                         onClick={() => setEmailFormat('text')}
-                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'text' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'text' ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}
                                     >
                                         Text
                                     </button>
                                     <button
                                         onClick={() => setEmailFormat('html')}
-                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'html' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'html' ? 'bg-surface text-banana-600 dark:text-banana-400 shadow-sm' : 'text-muted hover:text-foreground'}`}
                                     >
                                         Professional HTML
                                     </button>
@@ -437,46 +431,46 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </div>
 
                             {/* Message Editor */}
-                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col">
-                                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-                                    Message Body <span className="text-gray-400 font-normal normal-case">(Introduction & Notes)</span>
+                            <div className="bg-surface/30 backdrop-blur-xl p-6 rounded-xl border border-border/10 shadow-sm flex-1 flex flex-col">
+                                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">
+                                    Message Body <span className="text-muted font-normal normal-case">(Introduction & Notes)</span>
                                 </h3>
                                 <textarea
-                                    className="w-full flex-1 p-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-base leading-relaxed"
+                                    className="w-full flex-1 p-4 rounded-lg bg-transparent border border-border/10 shadow-sm text-foreground placeholder:text-muted/50 focus:ring-2 focus:ring-banana-400 focus:border-transparent resize-none text-base leading-relaxed"
                                     placeholder="Enter your message here..."
                                     value={formData.emailBody}
                                     onChange={(e) => setFormData({ ...formData, emailBody: e.target.value })}
                                 />
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-muted mt-2">
                                     {emailFormat === 'html'
                                         ? "Note: The deal details, header, and footer will be added automatically to the standard template."
                                         : "Note: Standard plain text format will include deal terms at the bottom."}
                                 </p>
                             </div>
 
-                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                <h3 className="text-sm font-semibold text-gray-900 mb-4">Automated Follow-Up Plan</h3>
+                            <div className="bg-surface/30 backdrop-blur-xl p-6 rounded-xl border border-border/10 shadow-sm">
+                                <h3 className="text-sm font-semibold text-foreground mb-4">Automated Follow-Up Plan</h3>
                                 <div className="space-y-4">
-                                    <div className="flex items-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                        <Icons.Calendar className="w-4 h-4 mr-3 text-indigo-500" />
+                                    <div className="flex items-center text-sm text-muted bg-foreground/5 p-3 rounded-lg border border-border/10">
+                                        <Icons.Calendar className="w-4 h-4 mr-3 text-banana-600 dark:text-banana-400" />
                                         <span>Wait 2 days → <strong>Follow Up #1</strong></span>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                        <Icons.Calendar className="w-4 h-4 mr-3 text-indigo-500" />
+                                    <div className="flex items-center text-sm text-muted bg-foreground/5 p-3 rounded-lg border border-border/10">
+                                        <Icons.Calendar className="w-4 h-4 mr-3 text-banana-600 dark:text-banana-400" />
                                         <span>Wait 5 days → <strong>Follow Up #2</strong></span>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                        <Icons.Calendar className="w-4 h-4 mr-3 text-indigo-500" />
+                                    <div className="flex items-center text-sm text-muted bg-foreground/5 p-3 rounded-lg border border-border/10">
+                                        <Icons.Calendar className="w-4 h-4 mr-3 text-banana-600 dark:text-banana-400" />
                                         <span>Wait 10 days → <strong>Final Check-in</strong></span>
                                     </div>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700">Enable Auto Follow-up</span>
+                                <div className="mt-6 pt-4 border-t border-border/10 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-foreground">Enable Auto Follow-up</span>
                                     <button
                                         onClick={() => setFormData(prev => ({ ...prev, followUpsEnabled: !prev.followUpsEnabled }))}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.followUpsEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.followUpsEnabled ? 'bg-banana-400' : 'bg-foreground/10'}`}
                                     >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.followUpsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${formData.followUpsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
                             </div>
@@ -541,12 +535,12 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                 ) : (
                     // Step 3: Success View
                     <div className="w-full h-full flex items-center justify-center">
-                        <div className="bg-white p-12 rounded-2xl shadow-xl text-center max-w-lg border border-gray-100 animate-in zoom-in-95 duration-300">
-                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Icons.CheckCircle className="w-10 h-10 text-green-600" />
+                        <div className="bg-surface/30 backdrop-blur-xl p-12 rounded-2xl shadow-xl text-center max-w-lg border border-border/10 animate-in zoom-in-95 duration-300">
+                            <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Icons.CheckCircle className="w-10 h-10 text-emerald-500" />
                             </div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Quote Sent Successfully!</h2>
-                            <p className="text-gray-500 mb-8 text-lg">
+                            <h2 className="text-3xl font-bold text-foreground mb-2">Quote Sent Successfully!</h2>
+                            <p className="text-muted mb-8 text-lg">
                                 Your quote has been emailed to <strong>{formData.investorName}</strong> ({formData.investorEmail}).
                             </p>
                             <div className="space-y-3">
@@ -563,7 +557,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         // But could offer "Create Another"
                                         onSave(formData as Quote);
                                     }}
-                                    className="text-sm text-gray-400 hover:text-gray-600"
+                                    className="text-sm text-muted hover:text-foreground hover:underline transition-colors"
                                 >
                                     View Quote Details
                                 </button>
@@ -577,10 +571,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             {showSettings && (
                 <div className="absolute inset-0 z-50 flex justify-end">
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
-                    <div className="relative w-full max-w-sm bg-white h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
+                    <div className="relative w-full max-w-sm bg-surface h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300 border-l border-border/10">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-gray-900">Broker Profile</h2>
-                            <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600">
+                            <h2 className="text-lg font-bold text-foreground">Broker Profile</h2>
+                            <button onClick={() => setShowSettings(false)} className="text-muted hover:text-foreground">
                                 <Icons.X className="w-6 h-6" />
                             </button>
                         </div>
@@ -614,7 +608,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             )}
 
             {/* Mobile Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-8 z-10 md:hidden">
+            <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border/10 p-4 pb-8 z-10 md:hidden">
                 <div className="max-w-md mx-auto flex gap-3">
                     {step === 1 ? (
                         <Button
@@ -641,24 +635,164 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     );
 };
 
+// Address Autocomplete Component
+const AddressAutocomplete = ({ value, onChange }: { value: string, onChange: (val: string, state?: string, city?: string, zip?: string) => void }) => {
+    const [query, setQuery] = useState(value);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showResults, setShowResults] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setShowResults(false);
+            }
+        };
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setShowResults(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+    useEffect(() => {
+        setQuery(value);
+    }, [value]);
+
+    useEffect(() => {
+        if (!query || query.length < 3 || loading) {
+            setSuggestions([]);
+            return;
+        }
+
+        const timeoutId = setTimeout(async () => {
+            setLoading(true);
+            try {
+                const response = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&filter=countrycode:us&apiKey=${apiKey}`);
+                const data = await response.json();
+                setSuggestions(data.features || []);
+                setShowResults(true);
+            } catch (error) {
+                console.error('Geoapify error:', error);
+            } finally {
+                setLoading(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [query]);
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <Input
+                placeholder="e.g. 123 Main St"
+                value={query}
+                onChange={(e) => {
+                    setQuery(e.target.value);
+                    if (!e.target.value) onChange('');
+                }}
+                onFocus={() => setShowResults(suggestions.length > 0)}
+            />
+
+            {showResults && suggestions.length > 0 && (
+                <div className="absolute z-[100] w-full mt-1 bg-surface border border-border/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {suggestions.map((s, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-banana-400/10 transition-colors border-b border-border/5 last:border-0 flex flex-col"
+                            onClick={() => {
+                                const props = s.properties;
+                                const fullAddress = props.address_line1 || props.formatted;
+                                const state = props.state_code || props.state;
+                                const city = props.city;
+                                const zip = props.postcode;
+                                setQuery(fullAddress);
+                                onChange(fullAddress, state, city, zip);
+                                setShowResults(false);
+                            }}
+                        >
+                            <span className="text-sm font-bold text-foreground">{s.properties.address_line1}</span>
+                            <span className="text-xs text-muted">{s.properties.address_line2}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {loading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Icons.RefreshCw className="w-4 h-4 text-banana-400 animate-spin" />
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Extracted UI Components to prevent re-render focus issues
 const Field = ({ label, children }: { label: string, children?: React.ReactNode }) => (
     <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-muted mb-1">{label}</label>
         {children}
     </div>
 );
 
 const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input className="block w-full rounded-lg border-gray-300 border px-3 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" {...props} />
+    <input className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow" {...props} />
 );
+
+const CurrencyInput = ({ value, onChange, placeholder }: { value: number, onChange: (val: number) => void, placeholder?: string }) => {
+    const format = (num: number) => {
+        if (!num && num !== 0) return '';
+        return new Intl.NumberFormat('en-US').format(num);
+    };
+
+    const [displayValue, setDisplayValue] = useState(format(value));
+
+    useEffect(() => {
+        setDisplayValue(format(value));
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value.replace(/,/g, '');
+        if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+            const numValue = Number(rawValue);
+            onChange(numValue);
+            setDisplayValue(e.target.value); // Temporarily keep what they typed for cursor stability
+        }
+    };
+
+    return (
+        <div className="relative rounded-md shadow-sm">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <span className="text-muted sm:text-sm px-0.5">$</span>
+            </div>
+            <input
+                type="text"
+                className="block w-full rounded-lg bg-surface border-border/10 border pl-7 pr-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow"
+                placeholder={placeholder}
+                value={displayValue}
+                onChange={handleChange}
+            />
+        </div>
+    );
+};
 
 const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
     <div className="relative">
-        <select className="block w-full appearance-none rounded-lg border-gray-300 border px-3 py-2.5 pr-8 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white" {...props}>
+        <select className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-3 py-2.5 pr-8 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow" {...props}>
             {props.children}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
             <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
         </div>
     </div>

@@ -86,15 +86,15 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Email Campaigns</h1>
-                    <p className="text-gray-500">Manage your automated follow-up sequences</p>
+                    <h1 className="text-2xl font-bold text-foreground">Email Campaigns</h1>
+                    <p className="text-muted">Manage your automated follow-up sequences</p>
                 </div>
                 <div className="flex items-center space-x-3">
                     {selectedIds.size > 0 && (
                         <button
                             onClick={handleBulkDelete}
                             disabled={isDeleting}
-                            className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition border border-red-200"
+                            className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition border border-red-500/20"
                         >
                             <Icons.XCircle size={20} />
                             <span>{isDeleting ? 'Deleting...' : `Delete (${selectedIds.size})`}</span>
@@ -102,13 +102,13 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                     )}
                     <button
                         onClick={toggleSelectAll}
-                        className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition border border-gray-200"
+                        className="flex items-center space-x-2 px-4 py-2 bg-surface text-foreground rounded-lg hover:bg-foreground/5 transition border border-border/10"
                     >
                         <span>{selectedIds.size === campaigns.length && campaigns.length > 0 ? 'Deselect All' : 'Select All'}</span>
                     </button>
                     <button
                         onClick={onNew}
-                        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
+                        className="flex items-center space-x-2 px-4 py-2 bg-banana-400 text-slate-900 rounded-lg hover:bg-banana-500 transition shadow-sm font-medium"
                     >
                         <Icons.Plus size={20} />
                         <span>New Campaign</span>
@@ -118,18 +118,18 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
 
             {loading ? (
                 <div className="flex justify-center py-12">
-                    <Icons.RefreshCw className="animate-spin text-gray-400" size={32} />
+                    <Icons.RefreshCw className="animate-spin text-muted" size={32} />
                 </div>
             ) : campaigns.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <div className="inline-flex p-4 rounded-full bg-blue-50 text-blue-600 mb-4">
+                <div className="text-center py-12 bg-surface/30 backdrop-blur-xl rounded-xl border border-border/10 shadow-sm">
+                    <div className="inline-flex p-4 rounded-full bg-banana-400/10 text-banana-600 dark:text-banana-400 mb-4">
                         <Icons.Mail size={32} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
-                    <p className="text-gray-500 mb-6">Create your first automated follow-up sequence.</p>
+                    <h3 className="text-lg font-medium text-foreground mb-2">No campaigns yet</h3>
+                    <p className="text-muted mb-6">Create your first automated follow-up sequence.</p>
                     <button
                         onClick={onNew}
-                        className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        className="inline-flex items-center space-x-2 px-4 py-2 bg-banana-400 text-slate-900 rounded-lg hover:bg-banana-500 transition font-medium"
                     >
                         <Icons.Plus size={20} />
                         <span>Create Campaign</span>
@@ -144,49 +144,49 @@ export function Campaigns({ onEdit, onNew }: CampaignsProps) {
                             <div
                                 key={campaign.id}
                                 onClick={() => onEdit(campaign.id)}
-                                className={`bg-white rounded-xl border transition cursor-pointer group relative overflow-hidden ${selectedIds.has(campaign.id) ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md' : 'border-gray-200 shadow-sm hover:shadow-md'}`}
+                                className={`bg-surface/30 backdrop-blur-xl rounded-xl border transition cursor-pointer group relative overflow-hidden ${selectedIds.has(campaign.id) ? 'border-banana-400 ring-2 ring-banana-400/20 shadow-md' : 'border-border/10 shadow-sm hover:shadow-md'}`}
                             >
                                 {/* Selection Checkbox */}
                                 <div
                                     onClick={(e) => toggleSelection(e, campaign.id)}
-                                    className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectedIds.has(campaign.id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/80 border-gray-300'}`}
+                                    className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${selectedIds.has(campaign.id) ? 'bg-banana-400 border-banana-400 text-slate-900' : 'bg-surface border-border/30'}`}
                                 >
                                     {selectedIds.has(campaign.id) && <Icons.Check size={14} strokeWidth={3} />}
                                 </div>
 
                                 <div className="p-6 pt-12">
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className={`p-3 rounded-lg ${campaign.is_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
+                                        <div className={`p-3 rounded-lg ${campaign.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-foreground/5 text-muted'}`}>
                                             <Icons.Mail size={24} />
                                         </div>
-                                        <div className={`px-2 py-1 rounded text-xs font-medium ${campaign.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                        <div className={`px-2 py-1 rounded text-xs font-medium ${campaign.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-foreground/5 text-muted'}`}>
                                             {campaign.is_active ? 'Active' : 'Draft'}
                                         </div>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition">
+                                    <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-banana-400 transition">
                                         {campaign.name}
                                     </h3>
-                                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                                    <p className="text-sm text-muted mb-4 line-clamp-2">
                                         {campaign.description || 'No description'}
                                     </p>
 
                                     {/* Stats Grid */}
-                                    <div className="grid grid-cols-3 gap-2 py-3 border-t border-gray-100">
+                                    <div className="grid grid-cols-3 gap-2 py-3 border-t border-border/10">
                                         <div>
-                                            <p className="text-xs text-gray-400 uppercase font-semibold">Sent</p>
-                                            <p className="font-bold text-gray-800">{s.total_sent}</p>
+                                            <p className="text-xs text-muted uppercase font-semibold">Sent</p>
+                                            <p className="font-bold text-foreground">{s.total_sent}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-gray-400 uppercase font-semibold">Open</p>
-                                            <p className="font-bold text-gray-800">{s.open_rate}%</p>
+                                            <p className="text-xs text-muted uppercase font-semibold">Open</p>
+                                            <p className="font-bold text-foreground">{s.open_rate}%</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-gray-400 uppercase font-semibold">Click</p>
-                                            <p className="font-bold text-gray-800">{s.click_rate}%</p>
+                                            <p className="text-xs text-muted uppercase font-semibold">Click</p>
+                                            <p className="font-bold text-foreground">{s.click_rate}%</p>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center text-xs text-gray-400 mt-2">
+                                    <div className="flex items-center text-xs text-muted mt-2">
                                         <Icons.Clock size={12} className="mr-1" />
                                         Created {new Date(campaign.created_at).toLocaleDateString()}
                                     </div>

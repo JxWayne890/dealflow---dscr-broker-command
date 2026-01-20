@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icons } from '../components/Icons';
 import { StatusBadge } from '../components/StatusBadge';
-import { Quote, QuoteStatus } from '../types';
+import { Quote, QuoteStatus, View, Investor } from '../types';
 
 import { StatusDropdown } from '../components/StatusDropdown';
 
@@ -10,7 +10,7 @@ type SortConfig = {
     direction: 'asc' | 'desc';
 } | null;
 
-export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter = 'all' }: { quotes: Quote[], onViewQuote: (id: string) => void, onUpdateStatus?: (id: string, status: QuoteStatus) => void, initialFilter?: string }) => {
+export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus, initialFilter = 'all' }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onUpdateStatus?: (id: string, status: QuoteStatus) => void, initialFilter?: string }) => {
     const [activeTab, setActiveTab] = React.useState<string>(initialFilter);
     const [sort, setSort] = React.useState<SortConfig>(null);
     const [searchQuery, setSearchQuery] = React.useState('');
@@ -45,8 +45,35 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
             }
 
             // Search filtering
-            const matchSearch = q.investorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                q.investorEmail.toLowerCase().includes(searchQuery.toLowerCase());
+            const query = searchQuery.toLowerCase().trim();
+            const matchSearch = (() => {
+                const monthNames = [
+                    "january", "february", "march", "april", "may", "june",
+                    "july", "august", "september", "october", "november", "december"
+                ];
+                const date = new Date(q.createdAt);
+                const monthName = monthNames[date.getMonth()];
+                const amountStr = (q.loanAmount || 0).toString();
+                const formattedAmount = (q.loanAmount || 0).toLocaleString();
+
+                const investor = investors.find(inv => inv.id === q.investorId);
+                const phoneClean = investor?.phone?.replace(/[^0-9]/g, '');
+                const queryClean = query.replace(/[^0-9]/g, '');
+
+                return q.investorName.toLowerCase().includes(query) ||
+                    q.investorEmail.toLowerCase().includes(query) ||
+                    (q.propertyAddress && q.propertyAddress.toLowerCase().includes(query)) ||
+                    (q.propertyCity && q.propertyCity.toLowerCase().includes(query)) ||
+                    (q.propertyZip && q.propertyZip.toLowerCase().includes(query)) ||
+                    q.propertyState.toLowerCase().includes(query) ||
+                    (investor?.company && investor.company.toLowerCase().includes(query)) ||
+                    (investor?.phone && investor.phone.toLowerCase().includes(query)) ||
+                    (phoneClean && queryClean && phoneClean.includes(queryClean)) ||
+                    amountStr.includes(query) ||
+                    formattedAmount.includes(query) ||
+                    monthName.includes(query) ||
+                    date.toLocaleDateString().includes(query);
+            })();
 
             return matchTab && matchSearch;
         });
@@ -64,7 +91,7 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
         }
 
         return result;
-    }, [quotes, activeTab, sort, searchQuery]);
+    }, [quotes, investors, activeTab, sort, searchQuery]);
 
     const tabs = [
         { id: 'all', label: 'All' },
@@ -76,7 +103,7 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
     ];
 
     const SortIndicator = ({ column }: { column: string }) => {
-        if (sort?.key !== column) return <Icons.ChevronUp className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
+        if (sort?.key !== column) return <Icons.ChevronUp className="w-3 h-3 text-muted opacity-0 group-hover:opacity-100 transition-opacity" />;
         return sort.direction === 'asc' ? <Icons.ChevronUp className="w-3 h-3 text-indigo-500" /> : <Icons.ChevronDown className="w-3 h-3 text-indigo-500" />;
     };
 
@@ -84,83 +111,94 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
         <div className="pb-24 md:pb-0">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Quotes</h1>
-                    <div className="flex space-x-1 mt-2 bg-gray-100 p-1 rounded-lg inline-flex overflow-x-auto max-w-full no-scrollbar">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Quotes</h1>
+                    <div className="flex space-x-1 mt-2 bg-foreground/5 p-1 rounded-lg inline-flex overflow-x-auto max-w-full no-scrollbar">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}
                             >
                                 {tab.label}
                             </button>
                         ))}
                     </div>
                 </div>
-                <div className="w-full md:w-64">
+                <div className="relative group w-full md:w-80">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted group-focus-within:text-banana-400 transition-colors">
+                        <Icons.Search className="w-4 h-4" />
+                    </div>
                     <input
                         type="text"
-                        placeholder="Search investors..."
+                        placeholder="Search name, property, or phone..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="block w-full pl-10 pr-10 py-2.5 bg-surface border border-border/10 rounded-2xl shadow-sm focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50 font-medium"
                     />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted hover:text-foreground transition-colors"
+                        >
+                            <Icons.XCircle className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </header>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="hidden md:block bg-surface/30 backdrop-blur-xl rounded-xl border border-border/10 shadow-sm">
+                <table className="min-w-full divide-y divide-border/10">
+                    <thead className="bg-foreground/5">
                         <tr>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('investorName')}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors"
+                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
                             >
                                 <div className="flex items-center gap-1">Investor <SortIndicator column="investorName" /></div>
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Property</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('loanAmount')}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors"
+                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
                             >
                                 <div className="flex items-center gap-1">Amount <SortIndicator column="loanAmount" /></div>
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Term/Rate</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Term/Rate</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('status')}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer group hover:bg-gray-100 transition-colors"
+                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
                             >
                                 <div className="flex items-center gap-1">Status <SortIndicator column="status" /></div>
                             </th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">View</span></th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-transparent divide-y divide-border/10">
                         {filteredAndSortedQuotes.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                                <td colSpan={6} className="px-6 py-12 text-center text-muted">
                                     No quotes found in this view.
                                 </td>
                             </tr>
                         ) : (
                             filteredAndSortedQuotes.map((quote) => (
-                                <tr key={quote.id} className="hover:bg-gray-50 transition-colors group">
+                                <tr key={quote.id} className="hover:bg-foreground/5 transition-colors group">
                                     <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-sm font-medium text-gray-900">{quote.investorName}</div>
-                                        <div className="text-sm text-gray-500">{quote.investorEmail}</div>
+                                        <div className="text-sm font-medium text-foreground">{quote.investorName}</div>
+                                        <div className="text-sm text-muted">{quote.investorEmail}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-sm text-gray-900">{quote.propertyState}</div>
-                                        <div className="text-xs text-gray-500">{quote.dealType}</div>
+                                        <div className="text-sm text-foreground">{quote.propertyState}</div>
+                                        <div className="text-xs text-muted">{quote.dealType}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium cursor-pointer" onClick={() => onViewQuote(quote.id)}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-medium cursor-pointer" onClick={() => onViewQuote(quote.id)}>
                                         ${quote.loanAmount?.toLocaleString() || '0'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted cursor-pointer" onClick={() => onViewQuote(quote.id)}>
                                         {quote.termYears}y @ {quote.rate}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -174,7 +212,7 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <Icons.ChevronLeft className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 rotate-180 inline-block transition-colors" />
+                                        <Icons.ChevronLeft className="w-5 h-5 text-muted group-hover:text-banana-400 rotate-180 inline-block transition-colors" />
                                     </td>
                                 </tr>
                             ))
@@ -188,10 +226,10 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
                 {filteredAndSortedQuotes.map(quote => (
                     <div
                         key={quote.id}
-                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm active:scale-[0.98] transition-transform flex flex-col"
+                        className="bg-surface/30 backdrop-blur-xl p-4 rounded-xl border border-border/10 shadow-sm active:scale-[0.98] transition-transform flex flex-col"
                     >
                         <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold text-gray-900 cursor-pointer" onClick={() => onViewQuote(quote.id)}>{quote.investorName}</h3>
+                            <h3 className="font-semibold text-foreground cursor-pointer" onClick={() => onViewQuote(quote.id)}>{quote.investorName}</h3>
                             <div className="relative">
                                 {onUpdateStatus ? (
                                     <StatusDropdown
@@ -203,12 +241,12 @@ export const QuotesList = ({ quotes, onViewQuote, onUpdateStatus, initialFilter 
                                 )}
                             </div>
                         </div>
-                        <div className="text-sm text-gray-600 mb-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
+                        <div className="text-sm text-muted mb-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
                             {quote.dealType} • {quote.propertyState}
                         </div>
-                        <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-100 pt-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                            <span className="font-medium text-gray-900">${quote.loanAmount?.toLocaleString() || '0'}</span>
-                            <span>{new Date(quote.createdAt).toLocaleDateString()}</span>
+                        <div className="flex justify-between items-center text-xs text-muted border-t border-border/10 pt-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
+                            <span className="font-medium text-foreground">${quote.loanAmount?.toLocaleString() || '0'}</span>
+                            <span>{new Date(quote.createdAt).toLocaleDateString()} {new Date(quote.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
                         </div>
                     </div>
                 ))}

@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { StatusBadge } from '../components/StatusBadge';
 import { MetricCard } from '../components/MetricCard';
-import { Quote, QuoteStatus, View } from '../types';
+import { Quote, QuoteStatus, View, Investor } from '../types';
 
-export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quotes: Quote[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void }) => {
+export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void }) => {
     const stats = useMemo(() => {
         const today = new Date().toISOString().split('T')[0];
 
@@ -54,6 +54,43 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
         };
     }, [quotes]);
 
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredRecentQuotes = useMemo(() => {
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return quotes.slice(0, 10);
+
+        const monthNames = [
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december"
+        ];
+
+        return quotes.filter(q => {
+            const date = new Date(q.createdAt);
+            const monthName = monthNames[date.getMonth()];
+            const amountStr = q.loanAmount.toString();
+            const formattedAmount = q.loanAmount.toLocaleString();
+
+            const investor = investors.find(inv => inv.id === q.investorId);
+            const phoneClean = investor?.phone?.replace(/[^0-9]/g, '');
+            const queryClean = query.replace(/[^0-9]/g, '');
+
+            return q.investorName.toLowerCase().includes(query) ||
+                q.investorEmail.toLowerCase().includes(query) ||
+                (q.propertyAddress && q.propertyAddress.toLowerCase().includes(query)) ||
+                (q.propertyCity && q.propertyCity.toLowerCase().includes(query)) ||
+                (q.propertyZip && q.propertyZip.toLowerCase().includes(query)) ||
+                q.propertyState.toLowerCase().includes(query) ||
+                (investor?.company && investor.company.toLowerCase().includes(query)) ||
+                (investor?.phone && investor.phone.toLowerCase().includes(query)) ||
+                (phoneClean && queryClean && phoneClean.includes(queryClean)) ||
+                amountStr.includes(query) ||
+                formattedAmount.includes(query) ||
+                monthName.includes(query) ||
+                date.toLocaleDateString().includes(query);
+        }).slice(0, 10);
+    }, [quotes, investors, searchQuery]);
+
     const formatCurrency = (amount: number) => {
         if (amount >= 1000000) {
             return `$${(amount / 1000000).toFixed(2)}M`;
@@ -62,25 +99,25 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
     };
 
     return (
-        <div className="space-y-6 pb-24 md:pb-0">
+        <div className="space-y-8 pb-24 md:pb-0">
             <header className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-                    <p className="text-gray-500 text-sm hidden md:block">Overview of your deal flow and pending actions.</p>
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+                    <p className="text-muted text-sm mt-1 hidden md:block">Overview of your deal flow and pending actions.</p>
                 </div>
-                <div className="md:hidden h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                <div className="md:hidden h-10 w-10 rounded-full bg-foreground/5 flex items-center justify-center text-banana-600 dark:text-banana-400 font-bold border border-border/10 backdrop-blur-md">
                     JB
                 </div>
             </header>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Active Pipeline */}
                 <MetricCard
                     label="Active Volume"
                     value={formatCurrency(stats.activeVolume)}
                     icon={Icons.TrendingUp}
-                    color="text-emerald-600"
+                    color="text-emerald-400"
                     subtext={`${quotes.filter(q => q.status === QuoteStatus.ACTIVE || q.status === QuoteStatus.FOLLOW_UP).length} deals active`}
                     onClick={() => onNavigate?.('quotes', 'active')}
                 />
@@ -88,7 +125,7 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
                     label="Projected Fees"
                     value={formatCurrency(stats.projectedRevenue)}
                     icon={Icons.DollarSign}
-                    color="text-amber-500"
+                    color="text-banana-400"
                     subtext="Potential commission"
                     onClick={() => onNavigate?.('quotes', 'active')}
                 />
@@ -98,14 +135,14 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
                     label="Closed Volume"
                     value={formatCurrency(stats.closedVolume)}
                     icon={Icons.CheckCircle}
-                    color="text-indigo-600"
+                    color="text-secondary"
                     onClick={() => onNavigate?.('quotes', 'won')}
                 />
                 <MetricCard
                     label="Win Rate"
                     value={`${stats.winRate.toFixed(0)}%`}
                     icon={Icons.Award}
-                    color="text-blue-500"
+                    color="text-blue-400"
                     subtext={`Based on ${stats.closedWonCount} wins`}
                     onClick={() => onNavigate?.('analytics')}
                 />
@@ -115,7 +152,7 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
                     label="Pending Follow-Ups"
                     value={stats.pendingFollowUps.toString()}
                     icon={Icons.Clock}
-                    color="text-orange-500"
+                    color="text-orange-400"
                     subtext="Action required"
                     onClick={() => onNavigate?.('quotes', 'follow_up')}
                 />
@@ -123,30 +160,32 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
                     label="Lost Volume"
                     value={formatCurrency(stats.lostVolume)}
                     icon={Icons.XCircle}
-                    color="text-gray-400"
+                    color="text-slate-400"
                     onClick={() => onNavigate?.('quotes', 'lost')}
                 />
             </div>
 
             {/* Action Center: Due Follow Ups */}
             {stats.pendingFollowUps > 0 && (
-                <div className="bg-orange-50 border border-orange-100 rounded-xl p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+                <div className="bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 backdrop-blur-md rounded-2xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                    <div className="flex items-center justify-between mb-6 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-orange-500/20 rounded-xl text-orange-400 border border-orange-500/20 shadow-lg shadow-orange-500/10">
                                 <Icons.Clock className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900">Follow-ups Due Today</h3>
-                                <p className="text-sm text-gray-600">These deals need your attention.</p>
+                                <h3 className="font-bold text-foreground text-lg">Follow-ups Due Today</h3>
+                                <p className="text-sm text-muted">These deals need your attention.</p>
                             </div>
                         </div>
-                        <Button variant="secondary" className="bg-white border-orange-200 text-orange-700 hover:bg-orange-100 hover:border-orange-300">
+                        <Button variant="secondary" className="bg-surface/50 border-border/10 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-300">
                             Process All ({stats.pendingFollowUps})
                         </Button>
                     </div>
 
-                    <div className="grid gap-3">
+                    <div className="grid gap-3 relative z-10">
                         {quotes
                             .filter(q => {
                                 const today = new Date().toISOString().split('T')[0];
@@ -160,15 +199,15 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
                                 const stepNumber = dueStep ? q.followUpSchedule.indexOf(dueStep) + 1 : 1;
 
                                 return (
-                                    <div key={q.id} className="bg-white rounded-lg border border-orange-100 p-4 flex items-center justify-between shadow-sm">
+                                    <div key={q.id} className="bg-surface/40 hover:bg-foreground/5 border border-border/10 rounded-xl p-4 flex items-center justify-between transition-colors group">
                                         <div>
-                                            <h4 className="font-medium text-gray-900">{q.investorName} <span className="text-gray-400 font-normal">| {q.propertyState}</span></h4>
-                                            <div className="text-xs text-orange-600 font-medium mt-1 flex items-center">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
+                                            <h4 className="font-semibold text-foreground group-hover:text-banana-600 dark:group-hover:text-banana-400 transition-colors">{q.investorName} <span className="text-muted font-normal">| {q.propertyState}</span></h4>
+                                            <div className="text-xs text-orange-400 font-medium mt-1 flex items-center">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.6)]"></span>
                                                 Follow-up #{stepNumber} due today
                                             </div>
                                         </div>
-                                        <Button onClick={() => onViewQuote(q.id)} className="px-3 py-1 text-sm h-8">Review</Button>
+                                        <Button onClick={() => onViewQuote(q.id)} variant="secondary" className="px-4 py-1.5 text-xs h-8">Review</Button>
                                     </div>
                                 );
                             })}
@@ -178,59 +217,81 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
 
             {/* Quick Actions (Mobile Only) */}
             <div className="grid grid-cols-1 md:hidden">
-                <Button onClick={onNewQuote} icon={Icons.Plus} className="w-full shadow-md bg-indigo-600">
+                <Button onClick={onNewQuote} icon={Icons.Plus} className="w-full shadow-lg bg-banana-400 text-slate-900 font-bold">
                     New Quote
                 </Button>
             </div>
 
             {/* Recent Activity */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">Recent Quotes</h2>
-                    <button onClick={() => { }} className="text-sm text-indigo-600 font-medium hover:text-indigo-800 md:hidden">View All</button>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h2 className="text-xl font-bold text-foreground tracking-tight">Recent Quotes</h2>
+                    <div className="relative group w-full md:w-80">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted group-focus-within:text-banana-600 dark:group-focus-within:text-banana-400 transition-colors">
+                            <Icons.Search className="w-4 h-4" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search name, property, or phone..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-10 pr-10 py-3 bg-surface/50 border border-border/10 rounded-xl shadow-lg shadow-black/10 focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400/50 transition-all text-sm text-foreground placeholder:text-muted font-medium"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted hover:text-foreground transition-colors"
+                            >
+                                <Icons.XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {quotes.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
-                        No quotes yet. Start your first deal!
+                {filteredRecentQuotes.length === 0 ? (
+                    <div className="text-center py-16 text-muted bg-surface/20 rounded-2xl border border-dashed border-border/10 backdrop-blur-sm">
+                        {searchQuery ? `No quotes matching "${searchQuery}"` : 'No quotes yet. Start your first deal!'}
                     </div>
                 ) : (
                     <>
                         {/* Desktop Table View */}
-                        <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                        <div className="hidden md:block bg-surface/30 backdrop-blur-xl rounded-2xl border border-border/10 shadow-2xl overflow-hidden">
+                            <table className="min-w-full divide-y divide-border/10">
+                                <thead className="bg-foreground/5">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">View</span></th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase tracking-wider">Investor</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase tracking-wider">Property</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                                        <th scope="col" className="relative px-6 py-4"><span className="sr-only">View</span></th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {quotes.slice(0, 5).map((quote) => (
-                                        <tr key={quote.id} onClick={() => onViewQuote(quote.id)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                                <tbody className="bg-transparent divide-y divide-border/10">
+                                    {filteredRecentQuotes.map((quote) => (
+                                        <tr key={quote.id} onClick={() => onViewQuote(quote.id)} className="hover:bg-foreground/5 cursor-pointer transition-colors group">
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{quote.investorName}</div>
-                                                <div className="text-sm text-gray-500">{quote.investorEmail}</div>
+                                                <div className="text-sm font-bold text-foreground group-hover:text-banana-600 dark:group-hover:text-banana-400 transition-colors">{quote.investorName}</div>
+                                                <div className="text-xs text-muted font-medium">{quote.investorEmail}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{quote.propertyState}</div>
-                                                <div className="text-xs text-gray-500">{quote.dealType}</div>
+                                                <div className="text-sm text-slate-500 dark:text-slate-300">{quote.propertyState}</div>
+                                                <div className="text-xs text-muted">{quote.dealType}</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-mono font-medium tracking-tight">
                                                 ${quote.loanAmount.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <StatusBadge status={quote.status} />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(quote.createdAt).toLocaleDateString()}
+                                            <td className="px-6 py-4 whitespace-nowrap text-xs text-muted">
+                                                <div className="text-slate-600 dark:text-slate-300 font-medium">{new Date(quote.createdAt).toLocaleDateString()}</div>
+                                                <div className="text-[10px] text-muted">{new Date(quote.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Icons.ChevronLeft className="w-5 h-5 text-gray-400 rotate-180 inline-block" />
+                                                <div className="h-8 w-8 rounded-full bg-foreground/5 flex items-center justify-center group-hover:bg-banana-400 group-hover:text-slate-900 transition-all">
+                                                    <Icons.ChevronLeft className="w-5 h-5 text-muted group-hover:text-slate-900 rotate-180 transition-colors" />
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -240,22 +301,22 @@ export const Dashboard = ({ quotes, onViewQuote, onNewQuote, onNavigate }: { quo
 
                         {/* Mobile Card View */}
                         <div className="space-y-3 md:hidden">
-                            {quotes.slice(0, 5).map(quote => (
+                            {filteredRecentQuotes.map(quote => (
                                 <div
                                     key={quote.id}
                                     onClick={() => onViewQuote(quote.id)}
-                                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm active:scale-[0.98] transition-transform cursor-pointer flex justify-between items-center"
+                                    className="bg-surface/40 backdrop-blur-lg p-5 rounded-2xl border border-border/10 active:scale-[0.98] transition-transform cursor-pointer flex justify-between items-center"
                                 >
                                     <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-gray-900">{quote.investorName}</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="font-bold text-foreground">{quote.investorName}</span>
                                             <StatusBadge status={quote.status} />
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-muted font-medium">
                                             ${(quote.loanAmount / 1000).toFixed(0)}k • {quote.propertyState} • {quote.dealType}
                                         </div>
                                     </div>
-                                    <Icons.ArrowRight className="w-5 h-5 text-gray-300" />
+                                    <Icons.ArrowRight className="w-5 h-5 text-muted" />
                                 </div>
                             ))}
                         </div>

@@ -41,30 +41,30 @@ export const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <Icons.TrendingUp className="w-7 h-7 text-white" />
+                    <div className="w-12 h-12 bg-banana-400 rounded-xl flex items-center justify-center shadow-lg shadow-banana-400/20">
+                        <Icons.TrendingUp className="w-7 h-7 text-slate-900" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
                     {isSignUp ? 'Create your account' : 'Sign in to your account'}
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
+                <p className="mt-2 text-center text-sm text-muted">
                     Or{' '}
-                    <button onClick={() => setIsSignUp(!isSignUp)} className="font-medium text-indigo-600 hover:text-indigo-500 bg-transparent border-0 p-0 cursor-pointer">
+                    <button onClick={() => setIsSignUp(!isSignUp)} className="font-medium text-banana-600 dark:text-banana-400 hover:text-banana-500 bg-transparent border-0 p-0 cursor-pointer transition-colors">
                         {isSignUp ? 'sign in instead' : 'create an account'}
                     </button>
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <div className="bg-surface/30 backdrop-blur-xl py-8 px-4 shadow-xl border border-border/10 sm:rounded-xl sm:px-10">
                     <form className="space-y-6" onSubmit={handleAuth}>
                         {isSignUp && (
                             <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="name" className="block text-sm font-medium text-muted">
                                     Full Name
                                 </label>
                                 <div className="mt-1">
@@ -76,14 +76,14 @@ export const Login = () => {
                                         required={isSignUp}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        className="appearance-none block w-full px-3 py-2 bg-surface border border-border/10 rounded-lg shadow-sm placeholder:text-muted/50 text-foreground focus:outline-none focus:ring-2 focus:ring-banana-400 focus:border-banana-400 sm:text-sm transition-shadow"
                                     />
                                 </div>
                             </div>
                         )}
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="email" className="block text-sm font-medium text-muted">
                                 Email address
                             </label>
                             <div className="mt-1">
@@ -95,13 +95,13 @@ export const Login = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="appearance-none block w-full px-3 py-2 bg-surface border border-border/10 rounded-lg shadow-sm placeholder:text-muted/50 text-foreground focus:outline-none focus:ring-2 focus:ring-banana-400 focus:border-banana-400 sm:text-sm transition-shadow"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="password" className="block text-sm font-medium text-muted">
                                 Password
                             </label>
                             <div className="mt-1">
@@ -113,26 +113,26 @@ export const Login = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="appearance-none block w-full px-3 py-2 bg-surface border border-border/10 rounded-lg shadow-sm placeholder:text-muted/50 text-foreground focus:outline-none focus:ring-2 focus:ring-banana-400 focus:border-banana-400 sm:text-sm transition-shadow"
                                 />
                             </div>
                         </div>
 
                         {error && (
-                            <div className="rounded-md bg-red-50 p-4">
+                            <div className="rounded-md bg-red-500/10 border border-red-500/20 p-4">
                                 <div className="flex">
                                     <div className="ml-3">
-                                        <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                                        <h3 className="text-sm font-medium text-red-500">{error}</h3>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {message && (
-                            <div className="rounded-md bg-green-50 p-4">
+                            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-4">
                                 <div className="flex">
                                     <div className="ml-3">
-                                        <h3 className="text-sm font-medium text-green-800">{message}</h3>
+                                        <h3 className="text-sm font-medium text-emerald-500">{message}</h3>
                                     </div>
                                 </div>
                             </div>
@@ -141,7 +141,7 @@ export const Login = () => {
                         <div>
                             <Button
                                 type="submit"
-                                className="w-full justify-center"
+                                className="w-full justify-center shadow-lg shadow-banana-400/20"
                                 disabled={loading}
                             >
                                 {loading ? 'Loading...' : (isSignUp ? 'Sign up' : 'Sign in')}
