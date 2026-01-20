@@ -173,22 +173,14 @@ export const Login = () => {
                         Command your entire pipeline, automate high-touch outreach, and close deals faster. Built exclusively for elite producers.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <div className="flex justify-center">
                         <Button
                             onClick={() => openAuth('signup')}
-                            className={`h-16 px-10 text-xl bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-[0_0_50px_-10px_rgba(250,204,21,0.5)] hover:shadow-[0_0_80px_-10px_rgba(250,204,21,0.7)] hover:scale-[1.05] active:scale-[0.95] transition-all w-full sm:w-auto border-none`}
+                            className={`h-16 px-12 text-xl bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-[0_0_50px_-10px_rgba(250,204,21,0.5)] hover:shadow-[0_0_80px_-10px_rgba(250,204,21,0.7)] hover:scale-[1.05] active:scale-[0.95] transition-all w-full sm:w-auto border-none`}
                         >
-                            Get Started Free
+                            Get Started Now
                             <Icons.ArrowRight className="w-6 h-6 ml-2" />
                         </Button>
-                        <button className={`h-16 px-10 text-xl ${isDarkMode ? 'text-white border-white/10 hover:bg-white/5' : 'text-slate-900 border-slate-200 hover:bg-slate-50'} border rounded-2xl font-bold backdrop-blur-md transition-all w-full sm:w-auto group`}>
-                            <span className="flex items-center gap-2">
-                                <span className={`w-8 h-8 rounded-full ${isDarkMode ? 'bg-white/10' : 'bg-slate-100'} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                    <Icons.PieChart className="w-4 h-4 text-banana-400" />
-                                </span>
-                                View Platform Demo
-                            </span>
-                        </button>
                     </div>
 
                     {/* Visual Decorative Element at bottom of hero */}
