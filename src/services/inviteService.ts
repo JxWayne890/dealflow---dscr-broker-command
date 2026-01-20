@@ -22,9 +22,9 @@ export const InviteService = {
     },
 
     async claimInvite(code: string): Promise<void> {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) throw new Error('Not authenticated');
-        const user = session.user;
+        // Use getUser() directly for the most reliable current-user check
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
         const cleanCode = code.toUpperCase().trim();
 
