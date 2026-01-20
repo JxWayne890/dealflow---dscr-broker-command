@@ -21,16 +21,21 @@ export const InviteService = {
         return code;
     },
 
-    async claimInvite(code: string): Promise<void> {
-        // 1. Get current User ID (Robust check)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
+    async claimInvite(code: string, userId?: string | null): Promise<void> {
+        // 1. Get User ID: Use provided ID or fall back to getUser()
+        let targetUserId = userId;
+
+        if (!targetUserId) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+            targetUserId = user.id;
+        }
 
         const cleanCode = code.toUpperCase().trim();
 
         // 2. Call the Secure Backend Function (Bypasses RLS)
         const { error } = await supabase.rpc('claim_invite', {
-            p_user_id: user.id,
+            p_user_id: targetUserId,
             p_invite_code: cleanCode
         });
 

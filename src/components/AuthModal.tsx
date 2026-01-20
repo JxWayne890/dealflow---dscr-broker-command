@@ -35,6 +35,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
     const [website, setWebsite] = useState('');
     const [joinCode, setJoinCode] = useState('');
     const [organizationName, setOrganizationName] = useState<string | null>(null);
+    const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
@@ -123,7 +124,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 setError(error.message);
                 setLoading(false);
             } else if (data.user) {
-                console.log('Signup success, moving to join_type');
+                console.log('Signup success, storing user ID:', data.user.id);
+                setPendingUserId(data.user.id); // Store for later use
                 setStep('join_type');
                 setLoading(false);
             }
@@ -161,8 +163,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                     setLoading(false);
                     return;
                 }
-                console.log('Claiming invite code:', joinCode);
-                await InviteService.claimInvite(joinCode);
+                console.log('Claiming invite code:', joinCode, 'for user:', pendingUserId);
+                await InviteService.claimInvite(joinCode, pendingUserId);
             }
 
             console.log('Updating profile data...');
