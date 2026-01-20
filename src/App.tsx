@@ -57,6 +57,7 @@ export default function App() {
   useEffect(() => {
     if (session) {
       setLoadingData(true);
+      setCurrentView('dashboard'); // Always start on dashboard after login
       Promise.all([
         QuoteService.getQuotes(),
         InvestorService.getInvestors(),
