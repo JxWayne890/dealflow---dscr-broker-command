@@ -1,15 +1,52 @@
 import express from 'express';
 import cors from 'cors';
 import { Resend } from 'resend';
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const port = 3002;
 
 // Reverting to the hardcoded key that was working before
 const resend = new Resend('re_59HGkUtF_64myzv2Pa6K8GYT2SMUFCDeb');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 app.use(cors());
 app.use(express.json());
+
+app.post('/api/create-checkout-session', async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'The OfferHero - Elite Producer Plan',
+              description: 'Full access to the DSCR Broker Command platform with automated nurture, instant quotes, and analytics.',
+            },
+            unit_amount: 25000, // $250.00
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/pricing`,
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Stripe Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.post('/api/send-email', async (req, res) => {
   const { to, subject, html, text, fromName, fromPrefix } = req.body;
