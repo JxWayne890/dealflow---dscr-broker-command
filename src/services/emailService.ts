@@ -6,7 +6,7 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
         // Create a safe prefix from the user's name (e.g. "John Johnson" -> "john.johnson")
         // Remove special chars, lower case, replace spaces with dots
         let fromPrefix = 'deals'; // Default
-        let fromName = 'DealFlow';
+        let fromName = 'The OfferHero';
 
         if (senderProfile?.name) {
             fromName = senderProfile.name;

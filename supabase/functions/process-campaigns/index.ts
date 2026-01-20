@@ -235,7 +235,7 @@ serve(async (req) => {
       const html = generateHtmlEmail(lead, profile || {}, body);
 
       // 6. Send Email
-      const fromName = profile?.name || 'DealFlow';
+      const fromName = profile?.name || 'The OfferHero';
       const fromPrefix = profile?.name ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '.') : 'deals';
       const fromAddress = `${fromName} <${fromPrefix}@theofferhero.com>`;
 
