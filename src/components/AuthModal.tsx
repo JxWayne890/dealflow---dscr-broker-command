@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Icons } from './Icons';
+import { ProfileService } from '../services/profileService';
+import { InviteService } from '../services/inviteService';
+import { useToast } from '../contexts/ToastContext';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -10,167 +13,409 @@ interface AuthModalProps {
     defaultMode?: 'signin' | 'signup';
 }
 
+type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment';
+
 export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin' }: AuthModalProps) => {
+    const { showToast } = useToast();
     const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
+    const [step, setStep] = useState<AuthStep>('auth');
     const [loading, setLoading] = useState(false);
+
+    // Step 0: Auth
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+
+    // Step 1: Profile Info
+    const [company, setCompany] = useState('');
+    const [title, setTitle] = useState('');
+    const [phone, setPhone] = useState('');
+    const [website, setWebsite] = useState('');
+    const [joinCode, setJoinCode] = useState('');
+    const [organizationName, setOrganizationName] = useState<string | null>(null);
+
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
 
-    // Reset state when modal opens or mode changes externally
     useEffect(() => {
         if (isOpen) {
             setIsSignUp(defaultMode === 'signup');
+            setStep('auth');
             setError(null);
             setMessage(null);
-            // Don't clear email/name/pass to be friendly if they accidentally closed it
         }
     }, [isOpen, defaultMode]);
+
+    // Handle Join Code lookup
+    useEffect(() => {
+        if (joinCode.length === 6) {
+            checkJoinCode(joinCode);
+        } else {
+            setOrganizationName(null);
+        }
+    }, [joinCode]);
+
+    const checkJoinCode = async (code: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('company')
+                .eq('invite_code', code.toUpperCase())
+                .eq('role', 'admin')
+                .maybeSingle();
+
+            if (data?.company) {
+                setOrganizationName(data.company);
+                setCompany(data.company);
+            }
+        } catch (e) {
+            console.error('Code lookup failed', e);
+        }
+    };
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        setMessage(null);
 
         if (isSignUp) {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
-                options: {
-                    data: {
-                        name: name,
-                    },
-                },
+                options: { data: { name } },
             });
-            if (error) setError(error.message);
-            else setMessage('Check your email for the confirmation link!');
+
+            if (error) {
+                setError(error.message);
+                setLoading(false);
+            } else if (data.user) {
+                // Move to onboarding type selection
+                setStep('join_type');
+                setLoading(false);
+            }
         } else {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (error) setError(error.message);
-            // On success, Supabase auth state change will trigger redirect in App.tsx
-            // We can optionally close modal here, but the page refresh/redirect usually handles it better
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                setError(error.message);
+                setLoading(false);
+            } else {
+                onClose();
+            }
         }
-        setLoading(false);
+    };
+
+    const handleFinalOnboarding = async (type: 'admin' | 'assistant') => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            if (type === 'assistant') {
+                if (!joinCode) {
+                    setError('Please enter your organizational join code.');
+                    setLoading(false);
+                    return;
+                }
+                await InviteService.claimInvite(joinCode);
+            }
+
+            // Update profile with the rest of the info
+            await ProfileService.updateProfile({
+                name,
+                company,
+                title,
+                phone,
+                website,
+                role: type
+            });
+
+            if (type === 'admin') {
+                setStep('payment');
+            } else {
+                showToast('Welcome to the team!', 'success');
+                onClose();
+                window.location.reload(); // Refresh to load app state
+            }
+        } catch (e: any) {
+            setError(e.message || 'Onboarding failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStartSubscription = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await response.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                setError('Checkout failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            setError('Could not connect to payment server.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={isSignUp ? 'Create your account' : 'Welcome back'}
+            title={
+                step === 'auth' ? (isSignUp ? 'Create your account' : 'Welcome back') :
+                    step === 'join_type' ? 'How are you joining?' :
+                        step === 'assistant_setup' ? 'Join Organization' :
+                            step === 'producer_setup' ? 'Company Details' :
+                                'Choose Your Plan'
+            }
             maxWidth="max-w-md"
         >
             <div className="mt-4">
-                <form className="space-y-5" onSubmit={handleAuth}>
-                    {isSignUp && (
-                        <div>
+                {step === 'auth' && (
+                    <form className="space-y-5" onSubmit={handleAuth}>
+                        {isSignUp && (
                             <div className="relative group/input">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
                                     <Icons.Users className="h-5 w-5" />
                                 </div>
                                 <input
-                                    id="auth-name"
-                                    name="name"
                                     type="text"
-                                    autoComplete="name"
-                                    required={isSignUp}
+                                    required
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 focus:border-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
+                                    className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
                                     placeholder="Full Name"
                                 />
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div>
                         <div className="relative group/input">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
                                 <Icons.Mail className="h-5 w-5" />
                             </div>
                             <input
-                                id="auth-email"
-                                name="email"
                                 type="email"
-                                autoComplete="email"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 focus:border-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
+                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
                                 placeholder="name@company.com"
                             />
                         </div>
-                    </div>
 
-                    <div>
                         <div className="relative group/input">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
-                                <div className="flex items-center justify-center w-5 h-5 border-2 border-current rounded-md overflow-hidden">
-                                    <div className="w-1.5 h-1.5 bg-current rounded-full translate-y-0.5" />
-                                </div>
+                                <Icons.Lock className="h-5 w-5" />
                             </div>
                             <input
-                                id="auth-password"
-                                name="password"
                                 type="password"
-                                autoComplete="current-password"
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 focus:border-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
+                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
                                 placeholder="••••••••"
                             />
                         </div>
-                    </div>
 
-                    {error && (
-                        <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 flex items-start gap-3">
-                            <Icons.AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                            <div className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</div>
+                        {error && <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</div>}
+
+                        <Button type="submit" className="w-full justify-center py-3 bg-banana-400 text-slate-900 font-bold" disabled={loading}>
+                            {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                        </Button>
+
+                        <div className="mt-6 pt-6 border-t border-border/10 text-center">
+                            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm font-bold text-banana-400 hover:text-banana-300">
+                                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                            </button>
                         </div>
-                    )}
+                    </form>
+                )}
 
-                    {message && (
-                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-start gap-3">
-                            <Icons.CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                            <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{message}</div>
-                        </div>
-                    )}
-
-                    <Button
-                        type="submit"
-                        className="w-full justify-center py-3 bg-banana-400 text-slate-900 font-bold text-base rounded-xl hover:bg-banana-500 hover:shadow-lg hover:shadow-banana-400/20 transition-all"
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <>
-                                <Icons.RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                                Processing...
-                            </>
-                        ) : (
-                            isSignUp ? 'Create Account' : 'Sign In'
-                        )}
-                    </Button>
-                </form>
-
-                <div className="mt-6 pt-6 border-t border-border/10 text-center">
-                    <p className="text-muted text-sm">
-                        {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                {step === 'join_type' && (
+                    <div className="space-y-4">
+                        <p className="text-muted text-sm text-center mb-6">Choose how you want to use OfferHero.</p>
                         <button
-                            onClick={() => setIsSignUp(!isSignUp)}
-                            className="font-bold text-banana-600 dark:text-banana-400 hover:text-banana-500 transition-colors"
+                            onClick={() => setStep('producer_setup')}
+                            className="w-full p-6 bg-surface border border-border/10 rounded-2xl hover:border-banana-400/50 hover:bg-banana-400/5 transition-all text-left group"
                         >
-                            {isSignUp ? 'Sign in' : 'Sign up for free'}
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="p-3 bg-banana-400/20 rounded-xl text-banana-400 group-hover:scale-110 transition-transform">
+                                    <Icons.Award className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-lg text-foreground">Elite Producer</h3>
+                            </div>
+                            <p className="text-sm text-muted">A personal license for high-volume professionals. Full access to all automation tools.</p>
                         </button>
-                    </p>
-                </div>
+
+                        <button
+                            onClick={() => setStep('assistant_setup')}
+                            className="w-full p-6 bg-surface border border-border/10 rounded-2xl hover:border-indigo-400/50 hover:bg-indigo-400/5 transition-all text-left group"
+                        >
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="p-3 bg-indigo-400/20 rounded-xl text-indigo-400 group-hover:scale-110 transition-transform">
+                                    <Icons.Users className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-lg text-foreground">Team Assistant</h3>
+                            </div>
+                            <p className="text-sm text-muted">Joining an existing organization? Enter your team's code to get started.</p>
+                        </button>
+                    </div>
+                )}
+
+                {step === 'assistant_setup' && (
+                    <div className="space-y-5">
+                        <div>
+                            <label className="block text-sm font-medium text-muted mb-2">Organizational Join Code</label>
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                                className="block w-full px-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-center text-2xl font-mono tracking-widest uppercase"
+                                placeholder="XXXXXX"
+                            />
+                            {organizationName && (
+                                <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2 text-emerald-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+                                    <Icons.CheckCircle className="w-4 h-4" />
+                                    Joining: <span className="font-bold">{organizationName}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-muted mb-1.5">Job Title</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
+                                    placeholder="Assistant"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-muted mb-1.5">Phone</label>
+                                <input
+                                    type="text"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
+                                    placeholder="(555) 000-0000"
+                                />
+                            </div>
+                        </div>
+
+                        {error && <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</div>}
+
+                        <div className="flex gap-3">
+                            <Button variant="secondary" className="flex-1" onClick={() => setStep('join_type')}>Back</Button>
+                            <Button className="flex-[2] bg-banana-400 text-slate-900 font-bold" disabled={loading || !organizationName} onClick={() => handleFinalOnboarding('assistant')}>
+                                {loading ? 'Joining...' : 'Complete Join'}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'producer_setup' && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-muted mb-1.5">Company Name</label>
+                                <input
+                                    type="text"
+                                    value={company}
+                                    onChange={(e) => setCompany(e.target.value)}
+                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm font-medium text-foreground"
+                                    placeholder="Take This Cash LLC"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-muted mb-1.5">Job Title</label>
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
+                                        placeholder="Senior Broker"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-muted mb-1.5">Phone</label>
+                                    <input
+                                        type="text"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
+                                        placeholder="(555) 000-0000"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-muted mb-1.5">Website</label>
+                                <input
+                                    type="text"
+                                    value={website}
+                                    onChange={(e) => setWebsite(e.target.value)}
+                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm"
+                                    placeholder="https://yourcompany.com"
+                                />
+                            </div>
+                        </div>
+
+                        {error && <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</div>}
+
+                        <div className="flex gap-3 pt-2">
+                            <Button variant="secondary" className="flex-1" onClick={() => setStep('join_type')}>Back</Button>
+                            <Button className="flex-[2] bg-banana-400 text-slate-900 font-bold" disabled={loading || !company} onClick={() => handleFinalOnboarding('admin')}>
+                                {loading ? 'Saving...' : 'Continue to Payment'}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'payment' && (
+                    <div className="text-center py-6">
+                        <div className="w-16 h-16 bg-banana-400/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <Icons.CreditCard className="w-8 h-8 text-banana-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-foreground mb-2">Final Step: Activation</h3>
+                        <p className="text-muted text-sm mb-8 px-4">Subscribe to the Elite Producer plan to activate your account and access all automation features.</p>
+
+                        <div className="bg-foreground/5 rounded-2xl p-6 mb-8 text-left border border-border/10">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-foreground font-bold italic">Elite Producer Plan</span>
+                                <span className="text-xl font-black text-banana-400">$250<span className="text-xs text-muted font-normal">/mo</span></span>
+                            </div>
+                            <ul className="space-y-3">
+                                {['Automated Nurture Campaigns', 'Instant PDF Quote Gen', 'Visual Pipeline Management', 'Unlimited Seat Licensing'].map(f => (
+                                    <li key={f} className="flex items-center gap-2 text-xs text-muted">
+                                        <Icons.CheckCircle className="w-3 h-3 text-banana-400" />
+                                        {f}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {error && <div className="text-sm text-red-500 mb-6">{error}</div>}
+
+                        <Button
+                            className="w-full h-14 bg-banana-400 text-slate-900 font-black text-lg shadow-[0_0_30px_-5px_rgba(250,204,21,0.4)]"
+                            disabled={loading}
+                            onClick={handleStartSubscription}
+                        >
+                            {loading ? 'Redirecting...' : 'Activate Now'}
+                        </Button>
+                        <p className="mt-4 text-[10px] text-muted uppercase tracking-widest">Secure Payment via Stripe</p>
+                    </div>
+                )}
             </div>
         </Modal>
     );
 };
+

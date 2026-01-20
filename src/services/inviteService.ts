@@ -37,11 +37,20 @@ export const InviteService = {
 
         if (adminProfile) {
             // Join using static organizational code
+            // 1. Fetch admin details to copy company info
+            const { data: adminDetails } = await supabase
+                .from('profiles')
+                .select('company, logo_url')
+                .eq('id', adminProfile.id)
+                .single();
+
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
                     role: 'assistant',
                     parent_id: adminProfile.id,
+                    company: adminDetails?.company,
+                    logo_url: adminDetails?.logo_url,
                     permissions: {
                         dashboard: true,
                         quotes: true,
@@ -69,11 +78,20 @@ export const InviteService = {
         }
 
         if (invite) {
+            // Fetch inviter details to copy company info
+            const { data: inviterDetails } = await supabase
+                .from('profiles')
+                .select('company, logo_url')
+                .eq('id', invite.broker_id)
+                .single();
+
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
                     role: 'assistant',
                     parent_id: invite.broker_id,
+                    company: inviterDetails?.company,
+                    logo_url: inviterDetails?.logo_url,
                     permissions: invite.permissions
                 })
                 .eq('id', user.id);

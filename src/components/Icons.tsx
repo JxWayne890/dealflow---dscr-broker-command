@@ -37,7 +37,9 @@ import {
   Moon,
   AlertCircle,
   List,
-  Wand2
+  Wand2,
+  Lock,
+  CreditCard
 } from 'lucide-react';
 
 export const Icons = {
@@ -94,5 +96,7 @@ export const Icons = {
   Sun,
   Moon,
   List,
-  Wand2
+  Wand2,
+  Lock,
+  CreditCard
 };
