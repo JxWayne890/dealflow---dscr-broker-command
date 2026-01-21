@@ -5,11 +5,16 @@ import { useState } from 'react';
 import { Icons } from '../components/Icons';
 
 export const Inquiry = ({ isDark }: { isDark: boolean }) => {
+    // Get initial type from URL
+    const params = new URLSearchParams(window.location.search);
+    const initialType = params.get('type') === 'commercial' ? 'Commercial License' : 'Private Ownership';
+
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
         email: '',
-        contactTime: ''
+        contactTime: '',
+        inquiryType: initialType
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -76,6 +81,24 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="space-y-2">
+                            <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Inquiry Type</label>
+                            <div className="relative">
+                                <select
+                                    value={formData.inquiryType}
+                                    onChange={e => setFormData({ ...formData, inquiryType: e.target.value })}
+                                    className={`w-full h-14 px-6 rounded-xl border ${isDark ? 'bg-slate-950/50 border-white/10 text-white focus:border-banana-400' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-banana-400'} outline-none transition-all font-medium appearance-none cursor-pointer`}
+                                >
+                                    <option value="Private Ownership">Private Ownership</option>
+                                    <option value="Commercial License">Commercial License</option>
+                                    <option value="General Inquiry">General Inquiry</option>
+                                </select>
+                                <div className={`absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                    <Icons.ChevronDown className="w-5 h-5" />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
                             <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Full Name</label>
                             <input
