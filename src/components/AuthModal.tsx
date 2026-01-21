@@ -124,8 +124,20 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 setError(error.message);
                 setLoading(false);
             } else if (data.user) {
-                console.log('Signup success, storing user ID:', data.user.id);
-                setPendingUserId(data.user.id); // Store for later use
+                console.log('Signup success, creating initial profile...');
+                setPendingUserId(data.user.id);
+
+                // FORCE immediate profile creation so they show up in your table right away
+                try {
+                    await ProfileService.onboardingUpdate(data.user.id, {
+                        name: name,
+                        email: email,
+                        onboardingStatus: 'joined' as any
+                    });
+                } catch (profileError) {
+                    console.error('Immediate profile creation failed, but continuing...', profileError);
+                }
+
                 setStep('join_type');
                 setLoading(false);
             }
