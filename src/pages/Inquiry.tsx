@@ -19,6 +19,9 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const options = ['Private Ownership', 'Commercial License', 'General Inquiry'];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,25 +84,45 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative z-50">
                             <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Inquiry Type</label>
                             <div className="relative">
-                                <select
-                                    value={formData.inquiryType}
-                                    onChange={e => setFormData({ ...formData, inquiryType: e.target.value })}
-                                    className={`w-full h-14 px-6 rounded-xl border ${isDark ? 'bg-slate-950/50 border-white/10 text-white focus:border-banana-400' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-banana-400'} outline-none transition-all font-medium appearance-none cursor-pointer`}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className={`w-full h-14 px-6 rounded-xl border flex items-center justify-between ${isDark ? 'bg-slate-950/50 border-white/10 text-white hover:border-banana-400' : 'bg-slate-50 border-slate-200 text-slate-900 hover:border-banana-400'} outline-none transition-all font-medium text-left`}
                                 >
-                                    <option value="Private Ownership">Private Ownership</option>
-                                    <option value="Commercial License">Commercial License</option>
-                                    <option value="General Inquiry">General Inquiry</option>
-                                </select>
-                                <div className={`absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    <Icons.ChevronDown className="w-5 h-5" />
-                                </div>
+                                    <span>{formData.inquiryType}</span>
+                                    <Icons.ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)}></div>
+                                        <div className={`absolute top-full mt-2 left-0 w-full rounded-xl border shadow-xl z-20 overflow-hidden ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-100'}`}>
+                                            {options.map((option) => (
+                                                <button
+                                                    key={option}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, inquiryType: option });
+                                                        setIsDropdownOpen(false);
+                                                    }}
+                                                    className={`w-full text-left px-6 py-4 text-sm font-medium transition-colors ${formData.inquiryType === option
+                                                            ? (isDark ? 'bg-banana-400/10 text-banana-400' : 'bg-banana-50 text-banana-600')
+                                                            : (isDark ? 'text-slate-300 hover:bg-white/5' : 'text-slate-600 hover:bg-slate-50')
+                                                        }`}
+                                                >
+                                                    {option}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative z-0">
                             <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Full Name</label>
                             <input
                                 type="text"
@@ -111,7 +134,7 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-0">
                             <div className="space-y-2">
                                 <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Email Address</label>
                                 <input
@@ -136,7 +159,7 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative z-0">
                             <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'} ml-1`}>Best Time to Contact</label>
                             <input
                                 type="text"
