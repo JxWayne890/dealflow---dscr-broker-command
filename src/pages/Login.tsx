@@ -122,41 +122,43 @@ export const Login = () => {
             </div>
 
             {/* Navigation */}
-            <nav className="relative z-50 px-6 py-6 md:px-12 flex items-center justify-between max-w-7xl mx-auto">
-                <div className="flex items-center gap-2">
-                    <Logo className="h-10 w-auto" variant='icon' isDark={isDarkMode} />
-                    <Logo className="h-8 w-auto hidden sm:block" variant='full' isDark={isDarkMode} />
-                </div>
-                <div className="flex items-center gap-6">
-                    <button
-                        onClick={() => setIsDarkMode(!isDarkMode)}
-                        className={`p-2 rounded-xl border transition-all ${isDarkMode ? 'bg-white/5 border-white/10 text-banana-400 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'}`}
-                        aria-label="Toggle Theme"
-                    >
-                        {isDarkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
-                    </button>
-                    <button
-                        onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                        className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} hover:text-banana-400 font-medium text-sm transition-colors hidden md:block`}
-                    >
-                        Pricing
-                    </button>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => openAuth('signin')}
-                            className={`${isDarkMode ? 'text-slate-300' : 'text-slate-600'} hover:${isDarkMode ? 'text-white' : 'text-slate-900'} font-medium text-sm transition-colors py-2 px-4`}
-                        >
-                            Sign In
-                        </button>
-                        <button
-                            onClick={() => openAuth('signup')}
-                            className={`${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-white border-white/10' : 'bg-slate-950 hover:bg-slate-800 text-white border-transparent'} border px-5 py-2.5 rounded-xl text-sm font-semibold transition-all backdrop-blur-md`}
-                        >
-                            Get Started
-                        </button>
+            <div className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 border-b ${isDarkMode ? 'bg-slate-950/80 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-md`}>
+                <nav className="px-6 py-4 md:px-12 flex items-center justify-between max-w-7xl mx-auto">
+                    <div className="flex items-center gap-2">
+                        <Logo className="h-10 w-auto" variant='icon' isDark={isDarkMode} />
+                        <Logo className="h-8 w-auto hidden sm:block" variant='full' isDark={isDarkMode} />
                     </div>
-                </div>
-            </nav>
+                    <div className="flex items-center gap-6">
+                        <button
+                            onClick={() => setIsDarkMode(!isDarkMode)}
+                            className={`p-2 rounded-xl border transition-all ${isDarkMode ? 'bg-white/5 border-white/10 text-banana-400 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'}`}
+                            aria-label="Toggle Theme"
+                        >
+                            {isDarkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
+                        </button>
+                        <button
+                            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                            className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} hover:text-banana-400 font-medium text-sm transition-colors hidden md:block`}
+                        >
+                            Pricing
+                        </button>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => openAuth('signin')}
+                                className={`${isDarkMode ? 'text-slate-300' : 'text-slate-600'} hover:${isDarkMode ? 'text-white' : 'text-slate-900'} font-medium text-sm transition-colors py-2 px-4`}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                onClick={() => openAuth('signup')}
+                                className={`${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-white border-white/10' : 'bg-slate-950 hover:bg-slate-800 text-white border-transparent'} border px-5 py-2.5 rounded-xl text-sm font-semibold transition-all backdrop-blur-md`}
+                            >
+                                Get Started
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </div>
 
             <main className={`relative z-10 ${isDarkMode ? 'bg-slate-950/20' : 'bg-zinc-50/20'} transition-colors duration-500`}>
 
