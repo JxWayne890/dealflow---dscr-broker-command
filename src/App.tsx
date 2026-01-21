@@ -47,6 +47,8 @@ export default function App() {
   const [currentQuoteFilter, setCurrentQuoteFilter] = useState<string>('All');
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+
 
   // Theme State (Lifted from Layout)
   const [isDark, setIsDark] = useState(false);
@@ -103,7 +105,11 @@ export default function App() {
         // Only force dashboard navigation if this is the very first time we're loading data
         // or if we're currently "logged out" (no profile)
         if (!profile) {
-          setCurrentView('dashboard');
+          // If we have a public view in the URL, don't override it with dashboard
+          const params = new URLSearchParams(window.location.search);
+          if (!params.get('view')) {
+            setCurrentView('dashboard');
+          }
         }
 
         setProfile(fetchedProfile);
@@ -113,6 +119,25 @@ export default function App() {
       setInvestors([]);
     }
   }, [session]);
+
+  // Handle URL Routing on Mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    const quoteId = params.get('quoteId');
+
+    if (view === 'schedule' && quoteId) {
+      setCurrentView('public_schedule');
+      // Fetch the quote immediately even if not logged in
+      QuoteService.getQuote(quoteId).then(quote => {
+        if (quote) setSelectedQuote(quote);
+      });
+    } else if (view === 'inquiry') {
+      // Inquiry is handled by early return below for now, 
+      // but let's sync state just in case
+    }
+  }, []);
+
 
   // Navigation Handlers
   const handleNewQuote = () => setCurrentView('new_quote');
@@ -212,9 +237,12 @@ export default function App() {
   const renderContent = () => {
     // Public views don't use the layout sidebar
     if (currentView === 'public_schedule') {
-      if (!selectedQuote) return <div className="p-20 text-center">Quote not found.</div>;
-      return <PublicSchedule quote={selectedQuote} />;
+      const q = selectedQuote || (selectedQuoteId ? quotes.find(q => q.id === selectedQuoteId) : null);
+      if (loadingData && !q) return <div className="p-20 text-center">Loading schedule...</div>;
+      if (!q) return <div className="p-20 text-center">Quote not found.</div>;
+      return <PublicSchedule quote={q} />;
     }
+
 
     switch (currentView) {
       case 'dashboard':
@@ -280,18 +308,19 @@ export default function App() {
     return <div className="min-h-screen flex items-center justify-center bg-background text-muted">Loading...</div>;
   }
 
-  // Handle Public Links (e.g. Schedule) without requiring login
-  if (window.location.search.includes('view=schedule')) {
-    const params = new URLSearchParams(window.location.search);
-    const quoteId = params.get('quoteId');
-    const quote = quotes.find(q => q.id === quoteId);
-    if (quote) return <PublicSchedule quote={quote} />;
+  // Handle Public Links (e.g. Schedule)
+  // If we are in public_schedule view, we return it here to avoid the sidebar/auth layout
+  if (currentView === 'public_schedule') {
+    const q = selectedQuote || (selectedQuoteId ? quotes.find(q => q.id === selectedQuoteId) : null);
+    if (loadingData && !q) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading schedule...</div>;
+    if (q) return <PublicSchedule quote={q} />;
   }
 
   // Handle Public Inquiry Page
   if (window.location.search.includes('view=inquiry')) {
     return <Inquiry isDark={isDark} />;
   }
+
 
   // Determine if we should show forced onboarding
   // We check session AND if profile has loaded (or is still loading)
