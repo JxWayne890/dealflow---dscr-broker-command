@@ -32,29 +32,6 @@ export const Login = () => {
         containerRef.current.style.setProperty('--mouse-y', `${y}px`);
     };
 
-    const handleSubscribe = async () => {
-        setIsSubscribing(true);
-        try {
-            const response = await fetch('/api/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const data = await response.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert('Checkout failed: ' + (data.error || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Subscription error:', error);
-            alert('Could not connect to payment server. Please try again later.');
-        } finally {
-            setIsSubscribing(false);
-        }
-    };
-
     const campaignSlides = [
         "/campaign-step-1.png",
         "/campaign-step-2.png",
@@ -728,7 +705,7 @@ export const Login = () => {
                                 </ul>
 
                                 <Button
-                                    onClick={handleSubscribe}
+                                    onClick={() => openAuth('signup')}
                                     disabled={isSubscribing}
                                     className="w-full h-14 bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
