@@ -177,7 +177,7 @@ export default function App() {
 
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} />;
+        return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} profile={profile} />;
       case 'quotes':
         return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
       case 'new_quote':
@@ -228,6 +228,7 @@ export default function App() {
                 window.history.pushState(null, '', `?${newParams.toString()}`);
               }
             }}
+            profile={profile}
           />
         );
     }

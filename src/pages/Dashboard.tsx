@@ -3,9 +3,14 @@ import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { StatusBadge } from '../components/StatusBadge';
 import { MetricCard } from '../components/MetricCard';
-import { Quote, QuoteStatus, View, Investor } from '../types';
+import { Logo } from '../components/Logo';
+import { Quote, QuoteStatus, View, Investor, BrokerProfile } from '../types';
 
-export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void }) => {
+export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate, profile }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void, profile?: BrokerProfile | null }) => {
+    const initials = profile?.name
+        ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase()
+        : '??';
+
     const stats = useMemo(() => {
         const today = new Date().toISOString().split('T')[0];
 
@@ -101,13 +106,37 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
     return (
         <div className="space-y-8 pb-24 md:pb-0">
             <header className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
-                    <p className="text-muted text-sm mt-1 hidden md:block">Overview of your deal flow and pending actions.</p>
+                <div className="flex items-center gap-3">
+                    {/* Mobile Logo */}
+                    {/* Mobile Logo */}
+                    <div className="md:hidden flex items-center gap-2">
+                        <Logo className="h-8 w-auto" variant='icon' />
+                        <Logo className="h-6 w-auto" variant='full' />
+                    </div>
+                    {/* Desktop Heading */}
+                    <div className="hidden md:block">
+                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+                        <p className="text-muted text-sm mt-1">Overview of your deal flow and pending actions.</p>
+                    </div>
                 </div>
-                <div className="md:hidden h-10 w-10 rounded-full bg-foreground/5 flex items-center justify-center text-banana-600 dark:text-banana-400 font-bold border border-border/10 backdrop-blur-md">
-                    JB
-                </div>
+
+                <button
+                    onClick={() => onNavigate?.('settings')}
+                    className="flex items-center gap-3 md:hidden focus:outline-none"
+                    aria-label="Go to Settings"
+                >
+                    {/* Mobile Greeting - Optional */}
+                    <span className="text-sm font-semibold text-foreground">
+                        {profile?.name ? `Hi, ${profile.name.split(' ')[0]}` : ''}
+                    </span>
+
+                    <div className="h-10 w-10 rounded-full bg-banana-400 text-slate-900 font-bold border border-banana-500 shadow-lg shadow-banana-400/20 flex items-center justify-center">
+                        {initials}
+                    </div>
+                </button>
+
+                {/* Desktop Profile (Hidden here, usually in Sidebar) */}
+                <div className="hidden md:block"></div>
             </header>
 
             {/* Metrics Grid */}
@@ -215,12 +244,7 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
                 </div>
             )}
 
-            {/* Quick Actions (Mobile Only) */}
-            <div className="grid grid-cols-1 md:hidden">
-                <Button onClick={onNewQuote} icon={Icons.Plus} className="w-full shadow-lg bg-banana-400 text-slate-900 font-bold">
-                    New Quote
-                </Button>
-            </div>
+
 
             {/* Recent Activity */}
             <div className="space-y-4">
