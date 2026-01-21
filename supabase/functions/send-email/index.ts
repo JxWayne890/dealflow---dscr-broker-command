@@ -34,7 +34,8 @@ serve(async (req) => {
         // Construct "From" address
         // e.g. "John Doe <john.doe@theofferhero.com>"
         // NOTE: This domain must be verified in Resend.
-        const fromAddress = `${fromName} <${fromPrefix}@theofferhero.com>`;
+        const fromDomain = Deno.env.get("FROM_EMAIL_DOMAIN") || "theofferhero.com";
+        const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
 
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
