@@ -6,7 +6,7 @@ import { MetricCard } from '../components/MetricCard';
 import { Logo } from '../components/Logo';
 import { Quote, QuoteStatus, View, Investor, BrokerProfile } from '../types';
 
-export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate, profile }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void, profile?: BrokerProfile | null }) => {
+export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate, profile, isDark = false }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void, profile?: BrokerProfile | null, isDark?: boolean }) => {
     const initials = profile?.name
         ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : '??';

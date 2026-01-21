@@ -11,39 +11,16 @@ interface LayoutProps {
     onViewChange: (view: View) => void;
     onNewQuote: () => void;
     profile: BrokerProfile | null;
+    isDark: boolean;
+    toggleTheme: () => void;
 }
 
-export const Layout = ({ children, currentView, onViewChange, onNewQuote, profile }: LayoutProps) => {
+export const Layout = ({ children, currentView, onViewChange, onNewQuote, profile, isDark, toggleTheme }: LayoutProps) => {
     const initials = profile?.name
         ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : '??';
 
-    const [isDark, setIsDark] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
-
-    useEffect(() => {
-        // Check initial theme from localStorage or system preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            setIsDark(true);
-        } else {
-            document.documentElement.classList.remove('dark');
-            setIsDark(false);
-        }
-    }, []);
-
-    const toggleTheme = () => {
-        const newIsDark = !isDark;
-        setIsDark(newIsDark);
-        if (newIsDark) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
-    };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

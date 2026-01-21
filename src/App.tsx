@@ -43,10 +43,42 @@ export default function App() {
   }, []);
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [currentQuoteFilter, setCurrentQuoteFilter] = useState<string>('all');
+  const [currentQuoteFilter, setCurrentQuoteFilter] = useState<string>('All');
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
+  // Theme State (Lifted from Layout)
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial theme from localStorage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      setIsDark(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+      setIsDark(false);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setProfile(null);
+  };
   // Data State
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
@@ -177,7 +209,7 @@ export default function App() {
 
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} profile={profile} />;
+        return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} profile={profile} isDark={isDark} />;
       case 'quotes':
         return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
       case 'new_quote':
@@ -229,6 +261,7 @@ export default function App() {
               }
             }}
             profile={profile}
+            isDark={isDark}
           />
         );
     }
@@ -264,6 +297,8 @@ export default function App() {
             onViewChange={setCurrentView}
             onNewQuote={handleNewQuote}
             profile={profile}
+            isDark={isDark}
+            toggleTheme={toggleTheme}
           >
             {renderContent()}
           </Layout>
