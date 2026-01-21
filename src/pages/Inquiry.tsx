@@ -63,8 +63,9 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
     return (
         <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-50'} transition-colors duration-500`}>
             <nav className={`px-6 py-6 md:px-12 flex items-center justify-between`}>
-                <div onClick={() => window.location.href = '/'} className="cursor-pointer">
-                    <Logo className="h-10 w-auto" variant='full' isDark={isDark} />
+                <div onClick={() => window.location.href = '/'} className="cursor-pointer flex items-center gap-2">
+                    <Logo className="h-10 w-auto" variant='icon' isDark={isDark} />
+                    <Logo className="h-8 w-auto hidden sm:block" variant='full' isDark={isDark} />
                 </div>
                 <button
                     onClick={() => window.location.href = '/'}
