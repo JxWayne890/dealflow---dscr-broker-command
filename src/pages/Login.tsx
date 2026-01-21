@@ -728,10 +728,11 @@ export const Login = () => {
                                 </ul>
 
                                 <Button
-                                    onClick={() => window.location.href = '/?view=inquiry&type=elite'}
-                                    className="w-full h-14 bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl transition-all"
+                                    onClick={handleSubscribe}
+                                    disabled={isSubscribing}
+                                    className="w-full h-14 bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Subscribe Now
+                                    {isSubscribing ? 'Connecting...' : 'Subscribe Now'}
                                 </Button>
                             </div>
                         </div>
