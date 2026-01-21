@@ -232,7 +232,7 @@ export default function App() {
     }
   };
 
-  const selectedQuote = quotes.find(q => q.id === selectedQuoteId);
+
 
   const renderContent = () => {
     // Public views don't use the layout sidebar

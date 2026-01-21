@@ -19,6 +19,7 @@ type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'produ
 
 export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus }: AuthModalProps) => {
     const { showToast } = useToast();
+    const [authSubStep, setAuthSubStep] = useState<'email' | 'password'>('email');
     const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
     const [step, setStep] = useState<AuthStep>('auth');
     const [loading, setLoading] = useState(false);
@@ -63,6 +64,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         if (isOpen) {
             hydrateProfile();
             setIsSignUp(defaultMode === 'signup');
+            setAuthSubStep('email');
             setError(null);
             setMessage(null);
 
@@ -108,20 +110,26 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
+
+        if (authSubStep === 'email') {
+            if (!email) {
+                setError('Please enter your email address');
+                return;
+            }
+            // Basic email validation could go here
+            setAuthSubStep('password');
+            return;
+        }
+
+        setLoading(true);
 
         if (isSignUp) {
             console.log('Signing up user:', email);
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
-                options: {
-                    data: {
-                        name: name,
-                        full_name: name
-                    }
-                },
+                // Name is now collected in onboarding, not here
             });
 
             if (error) {
@@ -178,6 +186,12 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         console.log('Finalizing onboarding for:', type);
         setLoading(true);
         setError(null);
+
+        if (!name) {
+            setError('Please enter your full name');
+            setLoading(false);
+            return;
+        }
 
         try {
             if (type === 'assistant') {
@@ -270,7 +284,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 step === 'auth' ? (isSignUp ? 'Create your account' : 'Welcome back') :
                     step === 'join_type' ? 'How are you joining?' :
                         step === 'assistant_setup' ? 'Join Organization' :
-                            step === 'producer_setup' ? 'Company Details' :
+                            step === 'producer_setup' ? 'Your Details' :
                                 'Choose Your Plan'
             }
             maxWidth="max-w-md"
@@ -278,58 +292,86 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
             <div className="mt-4">
                 {step === 'auth' && (
                     <form className="space-y-5" onSubmit={handleAuth}>
-                        {isSignUp && (
+
+
+                        <div className="space-y-4">
                             <div className="relative group/input">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
-                                    <Icons.Users className="h-5 w-5" />
+                                <label className="block text-sm font-medium text-muted mb-1.5 ">Email</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
+                                        <Icons.Mail className="h-5 w-5" />
+                                    </div>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        disabled={authSubStep === 'password'}
+                                        className={`block w-full pl-10 pr-4 py-3 bg-surface border ${authSubStep === 'password' ? 'border-transparent bg-white/5' : 'border-border/10'} rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium`}
+                                        placeholder="name@company.com"
+                                    />
+                                    {authSubStep === 'password' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setAuthSubStep('email')}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm font-bold text-banana-400 hover:text-banana-300"
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
                                 </div>
-                                <input
-                                    type="text"
-                                    required
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
-                                    placeholder="Full Name"
-                                />
                             </div>
-                        )}
 
-                        <div className="relative group/input">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
-                                <Icons.Mail className="h-5 w-5" />
-                            </div>
-                            <input
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
-                                placeholder="name@company.com"
-                            />
-                        </div>
-
-                        <div className="relative group/input">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
-                                <Icons.Lock className="h-5 w-5" />
-                            </div>
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
-                                placeholder="••••••••"
-                            />
+                            {authSubStep === 'password' && (
+                                <div className="relative group/input animate-in fade-in slide-in-from-top-2">
+                                    <label className="block text-sm font-medium text-muted mb-1.5">Password</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within/input:text-banana-400 transition-colors">
+                                            <Icons.Lock className="h-5 w-5" />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            required
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="block w-full pl-10 pr-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground placeholder:text-muted/50 transition-all outline-none font-medium"
+                                            placeholder="••••••••"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    {isSignUp && <div className="mt-2 text-xs text-muted space-y-1">
+                                        <p>Password must contain:</p>
+                                        <ul className="list-disc list-inside pl-1 text-[11px] opacity-70">
+                                            <li>at least 8 characters</li>
+                                            <li>a number (0-9)</li>
+                                        </ul>
+                                    </div>}
+                                </div>
+                            )}
                         </div>
 
                         {error && <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</div>}
 
                         <Button type="submit" className="w-full justify-center py-3 bg-banana-400 text-slate-900 font-bold" disabled={loading}>
-                            {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                            {loading ? 'Processing...' : (
+                                authSubStep === 'email' ? 'Continue' :
+                                    (isSignUp ? 'Create Account' : 'Sign In')
+                            )}
                         </Button>
 
+                        {/* Footer Links */}
+                        <div className="text-center text-xs text-muted mt-6">
+                            {isSignUp ? (
+                                <p>By continuing, you agree to the <a href="#" className="underline hover:text-foreground">Terms of Service</a> and <a href="#" className="underline hover:text-foreground">Privacy Policy</a>.</p>
+                            ) : null}
+                        </div>
+
                         <div className="mt-6 pt-6 border-t border-border/10 text-center">
-                            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm font-bold text-banana-400 hover:text-banana-300">
+                            <button onClick={() => {
+                                setIsSignUp(!isSignUp);
+                                setAuthSubStep('email');
+                                setError(null);
+                            }} className="text-sm font-bold text-banana-400 hover:text-banana-300">
                                 {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                             </button>
                         </div>
@@ -369,6 +411,18 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
 
                 {step === 'assistant_setup' && (
                     <div className="space-y-5">
+                        {/* Added Name Field for Assistant */}
+                        <div>
+                            <label className="block text-sm font-medium text-muted mb-2">Your Full Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="block w-full px-4 py-3 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-foreground font-medium"
+                                placeholder="John Doe"
+                            />
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-muted mb-2">Organizational Join Code</label>
                             <input
@@ -428,6 +482,18 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 {step === 'producer_setup' && (
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-4">
+                            {/* Added Name Field for Producer */}
+                            <div>
+                                <label className="block text-sm font-medium text-muted mb-1.5">Full Name</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm font-medium text-foreground"
+                                    placeholder="Jane Doe"
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-muted mb-1.5">Company Name</label>
                                 <input
@@ -508,13 +574,16 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
 
                         {error && <div className="text-sm text-red-500 mb-6">{error}</div>}
 
-                        <Button
-                            className="w-full h-14 bg-banana-400 text-slate-900 font-black text-lg shadow-[0_0_30px_-5px_rgba(250,204,21,0.4)]"
-                            disabled={loading}
-                            onClick={handleStartSubscription}
-                        >
-                            {loading ? 'Redirecting...' : 'Activate Now'}
-                        </Button>
+                        <div className="flex gap-3 pt-2">
+                            <Button variant="secondary" className="flex-1 h-14" onClick={() => setStep('producer_setup')}>Back</Button>
+                            <Button
+                                className="flex-[2] h-14 bg-banana-400 text-slate-900 font-black text-lg shadow-[0_0_30px_-5px_rgba(250,204,21,0.4)]"
+                                disabled={loading}
+                                onClick={handleStartSubscription}
+                            >
+                                {loading ? 'Redirecting...' : 'Activate Now'}
+                            </Button>
+                        </div>
                         <p className="mt-4 text-[10px] text-muted uppercase tracking-widest">Secure Payment via Stripe</p>
                     </div>
                 )}
