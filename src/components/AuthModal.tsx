@@ -48,6 +48,11 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
             if (session?.user) {
                 const existing = await ProfileService.getProfile();
                 if (existing) {
+                    if (existing.onboardingStatus === 'active') {
+                        console.log('User is already active, reloading to sync state...');
+                        window.location.reload();
+                        return;
+                    }
                     setName(existing.name || '');
                     setCompany(existing.company || '');
                     setTitle(existing.title || '');
@@ -194,21 +199,34 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         }
 
         try {
+            // Resolve User ID if missing
+            let uid = pendingUserId;
+            if (!uid) {
+                const { data: { user } } = await supabase.auth.getUser();
+                uid = user?.id || null;
+            }
+
             if (type === 'assistant') {
                 if (!joinCode) {
                     setError('Please enter your organizational join code.');
                     setLoading(false);
                     return;
                 }
-                console.log('Claiming invite code:', joinCode, 'for user:', pendingUserId);
-                // Pass all profile data to the backend - it handles everything for assistants
-                await InviteService.claimInvite(joinCode, pendingUserId, { name, phone, title: 'Assistant' });
+                console.log('Claiming invite code:', joinCode, 'for user:', uid);
 
-                // Show email confirmation step
-                console.log('Assistant profile created, showing email confirmation...');
-                setStep('email_confirmation');
-                setLoading(false);
-                return; // Exit early - no need for ProfileService
+                if (uid) {
+                    // Pass all profile data to the backend - it handles everything for assistants
+                    await InviteService.claimInvite(joinCode, uid, { name, phone, title: 'Assistant' });
+
+                    // FORCE status to active to ensure it sticks (redundancy)
+                    await ProfileService.onboardingUpdate(uid, { onboardingStatus: 'active' });
+                }
+
+                // Join success - reload to access dashboard
+                console.log('Assistant joining complete');
+                onClose();
+                window.location.reload();
+                return;
             }
 
             // For admins, continue with the normal flow
@@ -223,11 +241,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 onboardingStatus: 'pending_payment' as any
             };
 
-            let uid = pendingUserId;
-            if (!uid) {
-                const { data: { user } } = await supabase.auth.getUser();
-                uid = user?.id || null;
-            }
+
 
             if (uid) {
                 // Use onboardingUpdate to ensure profile exists/is created
@@ -285,7 +299,8 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                     step === 'join_type' ? 'How are you joining?' :
                         step === 'assistant_setup' ? 'Join Organization' :
                             step === 'producer_setup' ? 'Your Details' :
-                                'Choose Your Plan'
+                                step === 'email_confirmation' ? 'Check Your Inbox' :
+                                    'Choose Your Plan'
             }
             maxWidth="max-w-md"
         >
