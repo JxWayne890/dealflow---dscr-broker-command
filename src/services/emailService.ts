@@ -50,10 +50,11 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
     }
 };
 
-export const sendInquiryEmail = async (data: { name: string, email: string, phone: string, contactTime: string }): Promise<{ success: boolean; error?: string }> => {
+export const sendInquiryEmail = async (data: { name: string, email: string, phone: string, contactTime: string, inquiryType: string }): Promise<{ success: boolean; error?: string }> => {
     try {
         const html = `
             <h2>New License Inquiry</h2>
+            <p><strong>Inquiry Type:</strong> ${data.inquiryType}</p>
             <p><strong>Name:</strong> ${data.name}</p>
             <p><strong>Email:</strong> ${data.email}</p>
             <p><strong>Phone:</strong> ${data.phone}</p>
@@ -65,9 +66,9 @@ export const sendInquiryEmail = async (data: { name: string, email: string, phon
         const { error } = await supabase.functions.invoke('send-email', {
             body: {
                 to: 'theprovidersystem@gmail.com',
-                subject: `New Inquiry: ${data.name}`,
+                subject: `New Inquiry (${data.inquiryType}): ${data.name}`,
                 html: html,
-                text: `New Inquiry from ${data.name}. Phone: ${data.phone}. Email: ${data.email}. Best Time: ${data.contactTime}`,
+                text: `New Inquiry (${data.inquiryType}) from ${data.name}. Phone: ${data.phone}. Email: ${data.email}. Best Time: ${data.contactTime}`,
                 fromName: 'The OfferHero Inquiry',
                 fromPrefix: 'inquiries'
             }
