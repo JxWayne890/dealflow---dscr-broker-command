@@ -52,6 +52,10 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                     setTitle(existing.title || '');
                     setPhone(existing.phone || '');
                     setWebsite(existing.website || '');
+                } else {
+                    // Pre-fill from auth metadata if profile doesn't exist yet
+                    setName(session.user.user_metadata?.name || session.user.user_metadata?.full_name || '');
+                    setEmail(session.user.email || '');
                 }
             }
         };
@@ -123,22 +127,9 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
             if (error) {
                 setError(error.message);
                 setLoading(false);
-            } else if (data.user) {
-                console.log('Signup success, creating initial profile...');
-                setPendingUserId(data.user.id);
-
-                // FORCE immediate profile creation so they show up in your table right away
-                try {
-                    await ProfileService.onboardingUpdate(data.user.id, {
-                        name: name,
-                        email: email,
-                        onboardingStatus: 'joined' as any
-                    });
-                } catch (profileError) {
-                    console.error('Immediate profile creation failed, but continuing...', profileError);
-                }
-
-                setStep('join_type');
+            } else {
+                console.log('Signup success, showing email confirmation...');
+                setStep('email_confirmation');
                 setLoading(false);
             }
         } else {
@@ -155,7 +146,27 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
     const handleStepTransition = async (nextStep: AuthStep, statusUpdate?: string) => {
         if (statusUpdate) {
             try {
-                await ProfileService.updateProfile({ onboardingStatus: statusUpdate as any });
+                let uid = pendingUserId;
+                let userEmail = email;
+                let userName = name;
+
+                if (!uid) {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    uid = user?.id || null;
+                    if (user) {
+                        userEmail = user.email || '';
+                        userName = user.user_metadata?.name || user.user_metadata?.full_name || '';
+                    }
+                }
+
+                if (uid) {
+                    // pass name/email to ensure creation if missing
+                    await ProfileService.onboardingUpdate(uid, {
+                        onboardingStatus: statusUpdate as any,
+                        name: userName,
+                        email: userEmail
+                    });
+                }
             } catch (e) {
                 console.error("Failed to update status", e);
             }
@@ -198,10 +209,15 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 onboardingStatus: 'pending_payment' as any
             };
 
-            if (pendingUserId) {
-                await ProfileService.onboardingUpdate(pendingUserId, updates);
-            } else {
-                await ProfileService.updateProfile(updates);
+            let uid = pendingUserId;
+            if (!uid) {
+                const { data: { user } } = await supabase.auth.getUser();
+                uid = user?.id || null;
+            }
+
+            if (uid) {
+                // Use onboardingUpdate to ensure profile exists/is created
+                await ProfileService.onboardingUpdate(uid, updates);
             }
 
             console.log('Moving to payment');
@@ -219,10 +235,14 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         try {
             // Final status update before redirect
             const updates = { onboardingStatus: 'pending_payment' as any };
-            if (pendingUserId) {
-                await ProfileService.onboardingUpdate(pendingUserId, updates);
-            } else {
-                await ProfileService.updateProfile(updates);
+            let uid = pendingUserId;
+            if (!uid) {
+                const { data: { user } } = await supabase.auth.getUser();
+                uid = user?.id || null;
+            }
+
+            if (uid) {
+                await ProfileService.onboardingUpdate(uid, updates);
             }
 
             const response = await fetch('/api/create-checkout-session', {
@@ -509,15 +529,17 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                             We've sent a confirmation link to <span className="text-foreground font-semibold">{email}</span>.
                         </p>
                         <p className="text-muted text-sm mb-8 px-4">
-                            Click the link in your email to verify your account, then come back and sign in to access your team's dashboard.
+                            Click the link in your email to verify your account, then come back and sign in to access your dashboard.
                         </p>
 
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
-                            <p className="text-emerald-400 text-sm font-medium flex items-center justify-center gap-2">
-                                <Icons.CheckCircle className="w-4 h-4" />
-                                You've joined: {organizationName}
-                            </p>
-                        </div>
+                        {organizationName && (
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
+                                <p className="text-emerald-400 text-sm font-medium flex items-center justify-center gap-2">
+                                    <Icons.CheckCircle className="w-4 h-4" />
+                                    You've joined: {organizationName}
+                                </p>
+                            </div>
+                        )}
 
                         <Button
                             className="w-full bg-banana-400 text-slate-900 font-bold"
@@ -534,4 +556,3 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         </Modal>
     );
 };
-
