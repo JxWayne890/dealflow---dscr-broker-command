@@ -185,7 +185,7 @@ export const Login = () => {
                     <div className="flex justify-center">
                         <Button
                             onClick={() => openAuth('signup')}
-                            className={`h-16 px-12 text-xl bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-[0_0_50px_-10px_rgba(250,204,21,0.5)] hover:shadow-[0_0_80px_-10px_rgba(250,204,21,0.7)] hover:scale-[1.05] active:scale-[0.95] transition-all w-full sm:w-auto border-none`}
+                            className={`h-16 px-12 text-xl bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-[0_0_50px_-10px_rgba(250,204,21,0.5)] hover:shadow-[0_0_80px_-10px_rgba(250,204,21,0.7)] hover:scale-[1.05] active:scale-[0.95] transition-all w-auto border-none`}
                         >
                             Get Started Now
                             <Icons.ArrowRight className="w-6 h-6 ml-2" />
