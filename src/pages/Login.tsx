@@ -3,7 +3,10 @@ import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { AuthModal } from '../components/AuthModal';
 
+import { Logo } from '../components/Logo';
+
 export const Login = () => {
+    // ... existing state ...
     const [authOpen, setAuthOpen] = useState(false);
     const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
     const [activeSlide, setActiveSlide] = useState(0); // For Campaign Carousel
@@ -121,10 +124,8 @@ export const Login = () => {
             {/* Navigation */}
             <nav className="relative z-50 px-6 py-6 md:px-12 flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-banana-400 to-banana-500 rounded-xl flex items-center justify-center shadow-lg shadow-banana-400/20">
-                        <Icons.TrendingUp className="w-6 h-6 text-slate-900" />
-                    </div>
-                    <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-950'} tracking-tight hidden sm:block`}>The OfferHero</span>
+                    <Logo className="h-10 w-auto" variant='icon' isDark={isDarkMode} />
+                    <Logo className="h-8 w-auto hidden sm:block" variant='full' isDark={isDarkMode} />
                 </div>
                 <div className="flex items-center gap-6">
                     <button
