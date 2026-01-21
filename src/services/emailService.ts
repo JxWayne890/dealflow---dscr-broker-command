@@ -64,7 +64,7 @@ export const sendInquiryEmail = async (data: { name: string, email: string, phon
 
         const { error } = await supabase.functions.invoke('send-email', {
             body: {
-                to: 'john@theprovidersystem.com',
+                to: 'theprovidersystem@gmail.com',
                 subject: `New Inquiry: ${data.name}`,
                 html: html,
                 text: `New Inquiry from ${data.name}. Phone: ${data.phone}. Email: ${data.email}. Best Time: ${data.contactTime}`,
