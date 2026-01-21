@@ -806,8 +806,8 @@ export const Login = () => {
             <footer className={`relative z-10 ${isDarkMode ? 'border-white/5' : 'border-slate-100'} border-t py-12 mt-20 mb-20`}>
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className={`flex items-center gap-2 ${isDarkMode ? 'opacity-50 text-white' : 'opacity-80 text-slate-950'}`}>
-                        <Icons.TrendingUp className="w-5 h-5" />
-                        <span className="font-bold">The OfferHero</span>
+                        <Logo className="h-8 w-auto" variant='icon' isDark={isDarkMode} />
+                        <Logo className="h-6 w-auto" variant='full' isDark={isDarkMode} />
                     </div>
                     <div className={`${isDarkMode ? 'text-slate-500' : 'text-slate-400'} text-sm`}>
                         © {new Date().getFullYear()} All rights reserved.
