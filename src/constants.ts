@@ -1,6 +1,8 @@
 import { Quote, QuoteStatus, DealType, Investor, BrokerProfile } from './types';
 
 export const APP_NAME = "The OfferHero";
+export const BASE_URL = import.meta.env.VITE_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? window.location.origin : 'https://theofferhero.com');
+
 
 export const DEFAULT_BROKER_PROFILE: BrokerProfile = {
   name: 'Timothy Herro',

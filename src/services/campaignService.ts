@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { generateHtmlEmail } from '../utils/emailTemplates';
 import { ProfileService } from './profileService';
+import { BASE_URL } from '../constants';
 import { sendQuoteEmail } from './emailService';
 
 export interface Campaign {
@@ -404,7 +405,7 @@ export const campaignService = {
             originationFee: sub.quotes.origination_fee,
             uwFee: sub.quotes.uw_fee,
             dealType: sub.quotes.deal_type,
-            scheduleUrl: `${window.location.origin}/?view=schedule&quoteId=${sub.quotes.id}`
+            scheduleUrl: `${BASE_URL}/?view=schedule&quoteId=${sub.quotes.id}`
         };
 
         const html = generateHtmlEmail(quoteObj, profile, bodyTemplate);

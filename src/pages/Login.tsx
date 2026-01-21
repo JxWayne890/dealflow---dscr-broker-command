@@ -158,7 +158,7 @@ export const Login = () => {
                     </h1>
 
                     <p className={`text-xl sm:text-2xl ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} max-w-2xl mx-auto leading-relaxed mb-14 font-medium`}>
-                        Command your entire pipeline, automate high-touch outreach, and close deals faster. Built exclusively for elite producers.
+                        Control your entire pipeline, automate high-touch outreach, and close deals faster. Built exclusively for elite producers.
                     </p>
 
                     <div className="flex justify-center">
@@ -194,7 +194,7 @@ export const Login = () => {
                         />
                         <FeatureCard
                             icon={Icons.PieChart}
-                            title="Pipeline Command"
+                            title="Pipeline Control"
                             description="Visual drag-and-drop pipeline management. Track every deal stage, set tasks, and forecast your commissions with precision."
                             delay="delay-300"
                         />
@@ -269,7 +269,7 @@ export const Login = () => {
             {/* Pipeline Section */}
             <section className={`relative py-24 ${isDarkMode ? 'bg-slate-900/60' : 'bg-zinc-100/60'} backdrop-blur-sm overflow-hidden border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
                 <div className="max-w-7xl mx-auto px-6">
-                    {/* Part 1: The Pipeline Command */}
+                    {/* Part 1: The Pipeline Control */}
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="flex-1 space-y-6">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/10 border border-banana-400/20 text-banana-400 text-sm font-medium">
@@ -277,7 +277,7 @@ export const Login = () => {
                                 <span>Total Visibility</span>
                             </div>
                             <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-tight`}>
-                                Visual Pipeline Command
+                                Visual Pipeline Control
                             </h2>
                             <p className={`text-lg ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed`}>
                                 See your entire book of business at a glance. Filter by active deals, drafts, or won opportunities. No more digging through emails to find that one quote.
@@ -578,7 +578,7 @@ export const Login = () => {
                         <div className="flex-1 space-y-6">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-banana-400/10 border border-banana-400/20 text-banana-400 text-sm font-medium">
                                 <Icons.Settings className="w-4 h-4" />
-                                <span>Complete Command</span>
+                                <span>Complete Control</span>
                             </div>
                             <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-tight`}>
                                 Run Your Campaigns<br /> Like a Machine
@@ -665,7 +665,7 @@ export const Login = () => {
                             <span>Fair & Simple</span>
                         </div>
                         <h2 className={`text-4xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6 tracking-tight`}>
-                            Command Your <span className="text-banana-400">Future</span>
+                            Control Your <span className="text-banana-400">Future</span>
                         </h2>
                         <p className={`text-xl ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} max-w-2xl mx-auto`}>
                             Whether you're a solo producer or building an empire, we have the right foundation for your growth.

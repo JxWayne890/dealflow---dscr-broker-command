@@ -108,100 +108,118 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
     };
 
     return (
-        <div className="pb-24 md:pb-0">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Quotes</h1>
-                    <div className="flex space-x-1 mt-2 bg-foreground/5 p-1 rounded-lg inline-flex overflow-x-auto max-w-full no-scrollbar">
+        <div className="pb-24 md:pb-0 space-y-8">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 overflow-hidden">
+                <div className="space-y-4 w-full md:w-auto">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-banana-600 dark:text-banana-400 opacity-60">Ledger Index</span>
+                        </div>
+                        <h1 className="text-2xl font-bold text-foreground leading-none">Quotes</h1>
+                    </div>
+
+                    <div className="flex p-1.5 bg-surfaceHighlight/30 backdrop-blur-md rounded-2xl border border-border/5 inline-flex overflow-x-auto max-w-full no-scrollbar shadow-sm">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}
+                                className={`px-5 py-2 text-xs font-semibold uppercase tracking-widest rounded-xl whitespace-nowrap transition-all duration-300 ${activeTab === tab.id
+                                    ? 'bg-gradient-to-br from-banana-300 to-banana-500 text-slate-950 shadow-lg shadow-banana-400/20 scale-105'
+                                    : 'text-muted/60 hover:text-foreground hover:bg-white/5'}`}
                             >
                                 {tab.label}
                             </button>
                         ))}
                     </div>
                 </div>
-                <div className="relative group w-full md:w-80">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted group-focus-within:text-banana-400 transition-colors">
-                        <Icons.Search className="w-4 h-4" />
+
+                <div className="relative group w-full md:w-96">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted group-focus-within:text-banana-500 transition-colors">
+                        <Icons.Search className="w-5 h-5" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Search name, property, or phone..."
+                        placeholder="Search name, property, or volume..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-10 py-2.5 bg-surface border border-border/10 rounded-2xl shadow-sm focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50 font-medium"
+                        className="block w-full pl-12 pr-12 py-4 bg-surface/30 backdrop-blur-xl border border-border/5 rounded-2xl shadow-xl focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400/30 transition-all text-sm font-medium text-foreground placeholder:text-muted/50"
                     />
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery('')}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted hover:text-foreground transition-colors"
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted hover:text-foreground transition-colors"
                         >
-                            <Icons.XCircle className="w-4 h-4" />
+                            <Icons.XCircle className="w-5 h-5" />
                         </button>
                     )}
                 </div>
             </header>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-surface/30 backdrop-blur-xl rounded-xl border border-border/10 shadow-sm">
-                <table className="min-w-full divide-y divide-border/10">
-                    <thead className="bg-foreground/5">
+            <div className="hidden md:block bg-surface/20 backdrop-blur-3xl rounded-[2.5rem] border border-border/5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)] overflow-hidden">
+                <table className="min-w-full divide-y divide-white/5">
+                    <thead className="bg-white/5">
                         <tr>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('investorName')}
-                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
+                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex items-center gap-1">Investor <SortIndicator column="investorName" /></div>
+                                <div className="flex items-center gap-1">Investor Quote <SortIndicator column="investorName" /></div>
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Property</th>
+                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Deployment</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('loanAmount')}
-                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
+                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex items-center gap-1">Amount <SortIndicator column="loanAmount" /></div>
+                                <div className="flex items-center gap-1">Volume <SortIndicator column="loanAmount" /></div>
                             </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Term/Rate</th>
+                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Configuration</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('status')}
-                                className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer group hover:bg-foreground/5 transition-colors"
+                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-1">Status <SortIndicator column="status" /></div>
                             </th>
-                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">View</span></th>
+                            <th scope="col" className="relative px-8 py-5 text-center text-[10px] font-semibold text-muted uppercase tracking-wider">Access</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-transparent divide-y divide-border/10">
+                    <tbody className="bg-transparent divide-y divide-white/5">
                         {filteredAndSortedQuotes.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-muted">
-                                    No quotes found in this view.
+                                <td colSpan={6} className="px-8 py-24 text-center">
+                                    <div className="flex flex-col items-center justify-center opacity-40">
+                                        <div className="p-4 bg-white/5 rounded-2xl mb-4 text-muted">
+                                            <Icons.AlertCircle className="w-8 h-8" />
+                                        </div>
+                                        <p className="text-lg font-bold text-foreground">Zero Vectors Detected</p>
+                                        <p className="text-xs font-semibold text-muted mt-1 uppercase tracking-widest">No matching records in sequence hub.</p>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
                             filteredAndSortedQuotes.map((quote) => (
-                                <tr key={quote.id} className="hover:bg-foreground/5 transition-colors group">
-                                    <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-sm font-medium text-foreground">{quote.investorName}</div>
-                                        <div className="text-sm text-muted">{quote.investorEmail}</div>
+                                <tr key={quote.id} className="hover:bg-white/[0.04] cursor-pointer transition-all group">
+                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="text-base font-bold text-foreground group-hover:text-banana-400 transition-colors">{quote.investorName}</div>
+                                        <div className="text-[11px] text-muted font-medium opacity-70 italic">{quote.investorEmail}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-sm text-foreground">{quote.propertyState}</div>
-                                        <div className="text-xs text-muted">{quote.dealType}</div>
+                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-semibold text-foreground/80">{quote.propertyState}</span>
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surfaceHighlight/50 border border-border/5 text-muted tracking-wide uppercase">{quote.dealType}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-medium cursor-pointer" onClick={() => onViewQuote(quote.id)}>
+                                    <td className="px-8 py-6 whitespace-nowrap text-base font-bold text-foreground" onClick={() => onViewQuote(quote.id)}>
                                         ${quote.loanAmount?.toLocaleString() || '0'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        {quote.termYears}y @ {quote.rate}%
+                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="text-xs font-bold text-foreground/70 uppercase">{quote.termYears}Y Fixed Duration</div>
+                                        <div className="text-[10px] text-muted font-medium tracking-widest uppercase">{quote.rate}% Rate Floor</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-8 py-6 whitespace-nowrap">
                                         {onUpdateStatus ? (
                                             <StatusDropdown
                                                 currentStatus={quote.status}
@@ -211,8 +229,8 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                                             <StatusBadge status={quote.status} />
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                                        <Icons.ChevronLeft className="w-5 h-5 text-muted group-hover:text-banana-400 rotate-180 inline-block transition-colors" />
+                                    <td className="px-8 py-6 whitespace-nowrap text-right" onClick={() => onViewQuote(quote.id)}>
+                                        <Icons.ChevronRight className="w-6 h-6 mx-auto text-muted/40 group-hover:text-banana-400 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
                                     </td>
                                 </tr>
                             ))
@@ -222,14 +240,17 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
             </div>
 
             {/* Mobile Card View */}
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-4 md:hidden">
                 {filteredAndSortedQuotes.map(quote => (
                     <div
                         key={quote.id}
-                        className="bg-surface/30 backdrop-blur-xl p-4 rounded-xl border border-border/10 shadow-sm active:scale-[0.98] transition-transform flex flex-col"
+                        className="bg-surface/30 backdrop-blur-xl p-6 rounded-[2rem] border border-border/5 shadow-xl active:scale-[0.98] transition-transform flex flex-col group"
                     >
-                        <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold text-foreground cursor-pointer" onClick={() => onViewQuote(quote.id)}>{quote.investorName}</h3>
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-foreground" onClick={() => onViewQuote(quote.id)}>{quote.investorName}</h3>
+                                <p className="text-[10px] font-medium text-muted uppercase tracking-widest">{quote.dealType} • {quote.propertyState}</p>
+                            </div>
                             <div className="relative">
                                 {onUpdateStatus ? (
                                     <StatusDropdown
@@ -241,12 +262,14 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                                 )}
                             </div>
                         </div>
-                        <div className="text-sm text-muted mb-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                            {quote.dealType} • {quote.propertyState}
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-muted border-t border-border/10 pt-2 cursor-pointer" onClick={() => onViewQuote(quote.id)}>
-                            <span className="font-medium text-foreground">${quote.loanAmount?.toLocaleString() || '0'}</span>
-                            <span>{new Date(quote.createdAt).toLocaleDateString()} {new Date(quote.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                        <div className="flex items-end justify-between border-t border-white/5 pt-4" onClick={() => onViewQuote(quote.id)}>
+                            <div>
+                                <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Vector Volume</p>
+                                <p className="text-xl font-bold text-foreground">${quote.loanAmount?.toLocaleString() || '0'}</p>
+                            </div>
+                            <div className="text-muted/40 group-hover:text-banana-400 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]">
+                                <Icons.ChevronRight className="w-6 h-6" />
+                            </div>
                         </div>
                     </div>
                 ))}

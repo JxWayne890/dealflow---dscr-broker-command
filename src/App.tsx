@@ -90,7 +90,8 @@ export default function App() {
   useEffect(() => {
     if (session) {
       setLoadingData(true);
-      setCurrentView('dashboard'); // Always start on dashboard after login
+
+      // Fetch all data
       Promise.all([
         QuoteService.getQuotes(),
         InvestorService.getInvestors(),
@@ -98,6 +99,13 @@ export default function App() {
       ]).then(([fetchedQuotes, fetchedInvestors, fetchedProfile]) => {
         setQuotes(fetchedQuotes);
         setInvestors(fetchedInvestors);
+
+        // Only force dashboard navigation if this is the very first time we're loading data
+        // or if we're currently "logged out" (no profile)
+        if (!profile) {
+          setCurrentView('dashboard');
+        }
+
         setProfile(fetchedProfile);
       }).finally(() => setLoadingData(false));
     } else {

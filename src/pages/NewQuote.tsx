@@ -5,7 +5,7 @@ import { Quote, QuoteStatus, DealType, BrokerProfile, EmailFormat, Investor } fr
 import { generateQuoteEmail } from '../services/geminiService';
 import { sendQuoteEmail } from '../services/emailService';
 import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
-import { DEFAULT_BROKER_PROFILE } from '../constants';
+import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
 
@@ -104,7 +104,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         setIsSending(true);
 
         // Generate the real schedule URL using the pre-generated ID
-        const scheduleUrl = `${window.location.origin}/?view=schedule&quoteId=${formData.id}`;
+        const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
         const formDataWithUrl = { ...formData, scheduleUrl };
 
         // Generate the FINAL payload based on format
@@ -169,7 +169,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     };
 
     // Live HTML Preview
-    const previewScheduleUrl = `${window.location.origin}/?view=schedule&quoteId=${formData.id}`;
+    const previewScheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
     const htmlPreview = generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl }, profile, formData.emailBody || '');
 
     return (

@@ -84,7 +84,7 @@ const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
                   The first year of your loan will build approximately <strong>$${firstYearPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
                 </p>
                 <div style="font-size:13px;color:#6b7280;text-align:center;">
-                  <a href="https://dealflow-dscr.vercel.app/?view=schedule&quoteId=${quote.id}" style="display:inline-block;padding:10px 24px;background:#4f46e5;border-radius:6px;color:#ffffff;font-weight:600;text-decoration:none;">
+                  <a href="${Deno.env.get("BASE_URL") || "https://theofferhero.com"}/?view=schedule&quoteId=${quote.id}" style="display:inline-block;padding:10px 24px;background:#4f46e5;border-radius:6px;color:#ffffff;font-weight:600;text-decoration:none;">
                     View Full Amortization Schedule
                   </a>
                 </div>

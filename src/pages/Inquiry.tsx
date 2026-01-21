@@ -77,7 +77,7 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
             <div className="flex-1 flex items-center justify-center p-6 pb-20">
                 <div className={`max-w-xl w-full p-8 md:p-12 rounded-[2.5rem] ${isDark ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200'} border shadow-2xl backdrop-blur-xl`}>
                     <div className="text-center mb-10">
-                        <h1 className={`text-4xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-4 tracking-tight`}>Get Full Access</h1>
+                        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>Get Full Access</h1>
                         <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                             Fill out the form below and our team will contact you to discuss the Private or Commercial license options.
                         </p>
@@ -180,7 +180,7 @@ export const Inquiry = ({ isDark }: { isDark: boolean }) => {
                         <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full h-16 bg-banana-400 hover:bg-banana-500 text-slate-950 font-black text-lg rounded-2xl shadow-lg hover:shadow-banana-400/20 transition-all mt-4"
+                            className="w-full h-16 bg-banana-400 hover:bg-banana-500 text-slate-950 font-bold text-lg rounded-2xl shadow-lg hover:shadow-banana-400/20 transition-all mt-4"
                         >
                             {isSubmitting ? 'Sending Request...' : 'Submit Inquiry'}
                         </Button>

@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Quote, QuoteStatus } from '../types';
 import { generateHtmlEmail } from '../utils/emailTemplates';
 import { sendQuoteEmail } from '../services/emailService';
-import { DEFAULT_BROKER_PROFILE } from '../constants';
+import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { StatusBadge } from '../components/StatusBadge';
@@ -37,7 +37,7 @@ export const QuoteDetail = ({
 
     const handleResend = async () => {
         setIsResending(true);
-        const scheduleUrl = `${window.location.origin}/?view=schedule&quoteId=${quote.id}`;
+        const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${quote.id}`;
         const quoteWithUrl = { ...quote, scheduleUrl };
         const html = quote.emailHtml || generateHtmlEmail(quoteWithUrl, profile, quote.emailBody || '');
         const result = await sendQuoteEmail(quote, html, profile);
@@ -103,10 +103,9 @@ export const QuoteDetail = ({
         </div>
     );
 
-    // Prepare email preview
     const previewHtml = quote.emailHtml || generateHtmlEmail({
         ...quote,
-        scheduleUrl: `${window.location.origin}/?view=schedule&quoteId=${quote.id}`
+        scheduleUrl: `${BASE_URL}/?view=schedule&quoteId=${quote.id}`
     }, profile, quote.emailBody || '');
 
     return (
@@ -211,20 +210,21 @@ export const QuoteDetail = ({
                                                 value={
                                                     <div className="flex items-center gap-2">
                                                         <span>{quote.propertyAddress}</span>
-                                                        <a
-                                                            href={`https://www.zillow.com/homes/${encodeURIComponent(`${quote.propertyAddress} ${quote.propertyCity} ${quote.propertyState} ${quote.propertyZip}`.trim())}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                window.open(`https://www.zillow.com/homes/${encodeURIComponent(`${quote.propertyAddress} ${quote.propertyCity} ${quote.propertyState} ${quote.propertyZip}`.trim())}`, '_blank', 'noopener,noreferrer');
+                                                            }}
                                                             className="inline-flex items-center justify-center p-1.5 bg-surface dark:bg-white border border-border/10 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
                                                             title="Research on Zillow"
-                                                            onClick={(e) => e.stopPropagation()}
                                                         >
                                                             <img
                                                                 src="https://www.zillowstatic.com/s3/pfs/static/z-logo-default-visual-refresh.svg"
                                                                 className="h-3 w-auto opacity-70 group-hover:opacity-100 transition-opacity"
                                                                 alt="Zillow"
                                                             />
-                                                        </a>
+                                                        </button>
                                                     </div>
                                                 }
                                             />
