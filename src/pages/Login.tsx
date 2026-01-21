@@ -49,7 +49,7 @@ export const Login = () => {
             }
         } catch (error) {
             console.error('Subscription error:', error);
-            alert(`Could not connect to payment server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            alert('Could not connect to payment server. Please try again later.');
         } finally {
             setIsSubscribing(false);
         }

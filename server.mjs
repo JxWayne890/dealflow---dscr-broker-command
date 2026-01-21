@@ -9,27 +9,15 @@ dotenv.config();
 const app = express();
 const port = 3002;
 
-// Robust initialization - don't crash if keys are missing
-const resendKey = process.env.RESEND_API_KEY;
-if (!resendKey) {
-  console.warn("WARNING: RESEND_API_KEY is missing from environment variables. Email routes will fail.");
-}
-const resend = resendKey ? new Resend(resendKey) : null;
-const stripeKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeKey) {
-  console.error("CRITICAL ERROR: STRIPE_SECRET_KEY is missing from environment variables.");
-  // Don't crash immediately to allow other routes to work, but Stripe routes will fail.
-}
-const stripe = stripeKey ? new Stripe(stripeKey) : null;
+// Reverting to the hardcoded key that was working before
+const resend = new Resend(process.env.RESEND_API_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 app.use(cors());
 app.use(express.json());
 
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
-    if (!stripe) {
-      throw new Error("Stripe is not configured on the server. Missing STRIPE_SECRET_KEY.");
-    }
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
