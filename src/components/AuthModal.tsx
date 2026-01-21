@@ -392,7 +392,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                                     value={company}
                                     onChange={(e) => setCompany(e.target.value)}
                                     className="block w-full px-4 py-2 bg-surface border border-border/10 rounded-xl focus:ring-2 focus:ring-banana-400 text-sm font-medium text-foreground"
-                                    placeholder="Take This Cash LLC"
+                                    placeholder="The OfferHero LLC"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
