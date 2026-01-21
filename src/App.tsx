@@ -12,6 +12,7 @@ import { Investors } from './pages/Investors';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { PublicSchedule } from './pages/PublicSchedule';
+import { Inquiry } from './pages/Inquiry';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
 import { Team } from './pages/Team';
@@ -277,6 +278,11 @@ export default function App() {
     const quoteId = params.get('quoteId');
     const quote = quotes.find(q => q.id === quoteId);
     if (quote) return <PublicSchedule quote={quote} />;
+  }
+
+  // Handle Public Inquiry Page
+  if (window.location.search.includes('view=inquiry')) {
+    return <Inquiry isDark={isDark} />;
   }
 
   // Determine if we should show forced onboarding

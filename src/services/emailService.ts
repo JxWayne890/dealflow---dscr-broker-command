@@ -49,3 +49,39 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
         return { success: false, error: "Network/Connection Error" };
     }
 };
+
+export const sendInquiryEmail = async (data: { name: string, email: string, phone: string, contactTime: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const html = `
+            <h2>New License Inquiry</h2>
+            <p><strong>Name:</strong> ${data.name}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+            <p><strong>Best Time to Contact:</strong> ${data.contactTime}</p>
+            <hr />
+            <p>Sent from The OfferHero Inquiry Page</p>
+        `;
+
+        const { error } = await supabase.functions.invoke('send-email', {
+            body: {
+                to: 'john@theprovidersystem.com',
+                subject: `New Inquiry: ${data.name}`,
+                html: html,
+                text: `New Inquiry from ${data.name}. Phone: ${data.phone}. Email: ${data.email}. Best Time: ${data.contactTime}`,
+                fromName: 'The OfferHero Inquiry',
+                fromPrefix: 'inquiries'
+            }
+        });
+
+        if (error) {
+            console.error("Supabase Function Error:", error);
+            return { success: false, error: error.message || "Failed to send email" };
+        }
+
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("Failed to send inquiry:", error);
+        return { success: false, error: "Network/Connection Error" };
+    }
+};

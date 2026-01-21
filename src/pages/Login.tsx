@@ -769,6 +769,7 @@ export const Login = () => {
                                 </ul>
 
                                 <button
+                                    onClick={() => window.location.href = '/?view=inquiry'}
                                     className={`w-full h-14 ${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-white border-white/10' : 'bg-white hover:bg-slate-100 text-slate-900 border-slate-200'} border font-bold rounded-2xl transition-all text-sm`}
                                 >
                                     Inquire for Details
@@ -811,6 +812,7 @@ export const Login = () => {
                                 </ul>
 
                                 <button
+                                    onClick={() => window.location.href = '/?view=inquiry'}
                                     className="w-full h-14 bg-banana-400 hover:bg-banana-500 text-slate-950 font-black rounded-2xl shadow-xl transition-all text-sm"
                                 >
                                     Acquire Full Rights
