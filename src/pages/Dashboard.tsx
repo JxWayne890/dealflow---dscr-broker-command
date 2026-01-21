@@ -109,9 +109,9 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
                 <div className="flex items-center gap-3">
                     {/* Mobile Logo */}
                     {/* Mobile Logo */}
-                    <div className="md:hidden flex items-center gap-2">
-                        <Logo className="h-8 w-auto" variant='icon' />
-                        <Logo className="h-6 w-auto" variant='full' />
+                    {/* Mobile Logo */}
+                    <div className="md:hidden flex items-center">
+                        <Logo className="h-8 w-auto" variant='full' isDark={isDark} />
                     </div>
                     {/* Desktop Heading */}
                     <div className="hidden md:block">
