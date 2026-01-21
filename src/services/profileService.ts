@@ -41,6 +41,24 @@ export const ProfileService = {
         return mapDbToProfile(data);
     },
 
+    async onboardingUpdate(userId: string, updates: Partial<BrokerProfile>): Promise<void> {
+        const { error } = await supabase.rpc('update_onboarding_profile', {
+            p_user_id: userId,
+            p_name: updates.name || null,
+            p_company: updates.company || null,
+            p_title: updates.title || null,
+            p_phone: updates.phone || null,
+            p_website: updates.website || null,
+            p_role: updates.role || null,
+            p_onboarding_status: updates.onboardingStatus || null
+        });
+
+        if (error) {
+            console.error('Onboarding Update Failed:', error);
+            throw error;
+        }
+    },
+
     async getTeam(): Promise<BrokerProfile[]> {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];

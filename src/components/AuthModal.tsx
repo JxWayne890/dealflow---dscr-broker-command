@@ -176,15 +176,21 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
 
             // For admins, continue with the normal flow
             console.log('Updating profile data...');
-            await ProfileService.updateProfile({
+            const updates = {
                 name,
                 company,
                 title,
                 phone,
                 website,
                 role: type,
-                onboardingStatus: 'pending_payment'
-            });
+                onboardingStatus: 'pending_payment' as any
+            };
+
+            if (pendingUserId) {
+                await ProfileService.onboardingUpdate(pendingUserId, updates);
+            } else {
+                await ProfileService.updateProfile(updates);
+            }
 
             console.log('Moving to payment');
             setStep('payment');
@@ -200,7 +206,12 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
         setLoading(true);
         try {
             // Final status update before redirect
-            await ProfileService.updateProfile({ onboardingStatus: 'pending_payment' });
+            const updates = { onboardingStatus: 'pending_payment' as any };
+            if (pendingUserId) {
+                await ProfileService.onboardingUpdate(pendingUserId, updates);
+            } else {
+                await ProfileService.updateProfile(updates);
+            }
 
             const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
