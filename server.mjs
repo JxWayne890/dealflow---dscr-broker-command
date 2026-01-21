@@ -9,8 +9,12 @@ dotenv.config();
 const app = express();
 const port = 3002;
 
-// Reverting to the hardcoded key that was working before
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Robust initialization - don't crash if keys are missing
+const resendKey = process.env.RESEND_API_KEY;
+if (!resendKey) {
+  console.warn("WARNING: RESEND_API_KEY is missing from environment variables. Email routes will fail.");
+}
+const resend = resendKey ? new Resend(resendKey) : null;
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeKey) {
   console.error("CRITICAL ERROR: STRIPE_SECRET_KEY is missing from environment variables.");
