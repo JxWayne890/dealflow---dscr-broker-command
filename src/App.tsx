@@ -16,6 +16,7 @@ import { Inquiry } from './pages/Inquiry';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
 import { Team } from './pages/Team';
+import { DevDashboard } from './pages/DevDashboard';
 import { AuthModal } from './components/AuthModal';
 import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
@@ -136,6 +137,9 @@ export default function App() {
         } else if (viewParam === 'settings') {
           // Support direct linking to settings if needed
           setCurrentView('settings');
+        } else if (viewParam === 'dev') {
+          // Hidden dev dashboard
+          setCurrentView('dev');
         }
 
         setProfile(fetchedProfile);
@@ -318,6 +322,8 @@ export default function App() {
         />;
       case 'team':
         return <Team profile={profile} />;
+      case 'dev':
+        return <DevDashboard />;
       default:
         return (
           <Dashboard

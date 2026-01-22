@@ -427,6 +427,15 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                             </div>
                             <p className="text-sm text-muted">Joining an existing organization? Enter your team's code to get started.</p>
                         </button>
+
+                        <div className="pt-4 border-t border-border/10">
+                            <button
+                                onClick={() => window.location.href = '/'}
+                                className="w-full text-center text-sm text-muted hover:text-banana-400 transition-colors py-2"
+                            >
+                                ← Back to Landing Page
+                            </button>
+                        </div>
                     </div>
                 )}
 

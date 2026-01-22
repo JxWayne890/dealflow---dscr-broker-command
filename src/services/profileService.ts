@@ -102,6 +102,24 @@ export const ProfileService = {
             available: result.available ?? false,
             suggestions: result.suggestions ?? []
         };
+    },
+
+    async getAllProfiles(): Promise<(BrokerProfile & { id: string; createdAt: string })[]> {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching all profiles:', error);
+            return [];
+        }
+
+        return data.map((row: any) => ({
+            ...mapDbToProfile(row),
+            id: row.id,
+            createdAt: row.created_at
+        }));
     }
 };
 
