@@ -5,6 +5,52 @@ import { AuthModal } from '../components/AuthModal';
 
 import { Logo } from '../components/Logo';
 
+const LENDER_TYPES = [
+    "Mortgage Broker",
+    "DSCR Lender",
+    "Bridge Lender",
+    "Gap Lender",
+    "Gator Lender",
+    "Hard Money Lender",
+    "Private Lender",
+    "Fix & Flip Lender",
+    "Transactional Lender",
+];
+
+const RotatingLenderType = ({ isDarkMode }: { isDarkMode: boolean }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIsAnimating(true);
+            setTimeout(() => {
+                setCurrentIndex((prev) => (prev + 1) % LENDER_TYPES.length);
+                setIsAnimating(false);
+            }, 300);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <h1 className={`text-6xl sm:text-8xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} tracking-tighter mb-10 leading-[0.95]`}>
+            <span className="block">The</span>
+            <span
+                className={`block transition-all duration-300 ${isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}
+            >
+                <span className="relative inline-block">
+                    {LENDER_TYPES[currentIndex]}'s
+                    <span className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-banana-300 via-banana-400 to-banana-300 -z-10 opacity-80"></span>
+                </span>
+            </span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-banana-300 via-banana-400 to-banana-300 pb-2">
+                Unfair Advantage
+            </span>
+        </h1>
+    );
+};
+
 export const Login = () => {
     // ... existing state ...
     const [authOpen, setAuthOpen] = useState(false);
@@ -149,13 +195,7 @@ export const Login = () => {
                         </div>
                     </div>
 
-                    <h1 className={`text-6xl sm:text-8xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} tracking-tighter mb-10 leading-[0.95]`}>
-                        The Mortgage <br className="hidden md:block" />
-                        Broker's <br className="hidden md:block" />
-                        <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-banana-300 via-banana-400 to-banana-300 pb-2">
-                            Unfair Advantage
-                        </span>
-                    </h1>
+                    <RotatingLenderType isDarkMode={isDarkMode} />
 
                     <p className={`text-xl sm:text-2xl ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} max-w-2xl mx-auto leading-relaxed mb-14 font-medium`}>
                         Control your entire pipeline, automate high-touch outreach, and close deals faster. Built exclusively for elite producers.

@@ -677,28 +677,6 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <div className="grid grid-cols-1 gap-3 mb-6">
                                 <Button
                                     onClick={() => {
-                                        const blob = new Blob([formData.emailHtml || ''], { type: 'text/html' });
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = `Quote_${formData.investorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
-
-                                        if (formData.id) {
-                                            QuoteService.updateQuote(formData.id, { status: QuoteStatus.DOWNLOADED });
-                                        }
-                                        showToast('Terms downloaded as HTML', 'success');
-                                    }}
-                                    variant="outline"
-                                    icon={Icons.Download}
-                                    className="justify-center"
-                                >
-                                    Download Terms (HTML)
-                                </Button>
-                                <Button
-                                    onClick={() => {
                                         const element = document.createElement('div');
                                         element.innerHTML = generateTermSheetHtml(formData, profile);
 
