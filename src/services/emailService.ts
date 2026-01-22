@@ -3,14 +3,18 @@ import { supabase } from '../lib/supabase';
 
 export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderProfile?: BrokerProfile): Promise<{ success: boolean; error?: string }> => {
     try {
-        // Create a safe prefix from the user's name (e.g. "John Johnson" -> "john.johnson")
-        // Remove special chars, lower case, replace spaces with dots
+        // Create a safe prefix from the user's custom setting, or fall back to auto-generated from name
         let fromPrefix = 'deals'; // Default
         let fromName = 'The OfferHero';
 
-        if (senderProfile?.name) {
-            fromName = senderProfile.name;
-            fromPrefix = senderProfile.name.toLowerCase().replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.+$/g, '');
+        if (senderProfile) {
+            fromName = senderProfile.name || fromName;
+            // Use custom senderEmailPrefix if set, otherwise generate from name
+            if (senderProfile.senderEmailPrefix) {
+                fromPrefix = senderProfile.senderEmailPrefix;
+            } else if (senderProfile.name) {
+                fromPrefix = senderProfile.name.toLowerCase().replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$|\.+$/g, '');
+            }
         }
 
         const { data, error } = await supabase.functions.invoke('send-email', {
