@@ -34,6 +34,12 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
     const [joinCode, setJoinCode] = useState('');
     const [joining, setJoining] = useState(false);
 
+    // Email prefix state
+    const [emailPrefix, setEmailPrefix] = useState('');
+    const [emailPrefixAvailable, setEmailPrefixAvailable] = useState<boolean | null>(null);
+    const [emailPrefixSuggestions, setEmailPrefixSuggestions] = useState<string[]>([]);
+    const [checkingPrefix, setCheckingPrefix] = useState(false);
+
     const TIMEZONES = [
         { value: 'UTC', name: 'UTC' },
         { value: 'America/New_York', name: 'Eastern Time' },
@@ -55,6 +61,7 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
     const loadProfile = async () => {
         if (currentProfile) {
             setProfile(currentProfile);
+            setEmailPrefix(currentProfile.senderEmailPrefix || '');
             setLoading(false);
             return;
         }
@@ -62,6 +69,7 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
             const data = await ProfileService.getProfile();
             if (data) {
                 setProfile(data);
+                setEmailPrefix(data.senderEmailPrefix || '');
             }
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -76,17 +84,54 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
         setSaving(true);
 
         try {
-            const updated = await ProfileService.updateProfile(profile);
+            // Include email prefix in the profile update
+            const profileToSave = { ...profile, senderEmailPrefix: emailPrefix || undefined };
+            const updated = await ProfileService.updateProfile(profileToSave);
             setProfile(updated);
             onProfileUpdate(updated);
             showToast('Profile updated successfully', 'success');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save profile:', error);
-            showToast('Failed to save changes', 'error');
+            if (error.message?.includes('sender_email_prefix') || error.code === '23505') {
+                showToast('This sender email is already taken. Please choose another.', 'error');
+            } else {
+                showToast('Failed to save changes', 'error');
+            }
         } finally {
             setSaving(false);
         }
     };
+
+    // Debounced email prefix checking
+    useEffect(() => {
+        if (!emailPrefix || emailPrefix.length < 2) {
+            setEmailPrefixAvailable(null);
+            setEmailPrefixSuggestions([]);
+            return;
+        }
+
+        // Skip check if it's the same as their current saved prefix
+        if (emailPrefix === profile.senderEmailPrefix) {
+            setEmailPrefixAvailable(true);
+            setEmailPrefixSuggestions([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setCheckingPrefix(true);
+            try {
+                const result = await ProfileService.checkEmailPrefixAvailable(emailPrefix);
+                setEmailPrefixAvailable(result.available);
+                setEmailPrefixSuggestions(result.suggestions);
+            } catch (e) {
+                console.error('Prefix check failed:', e);
+            } finally {
+                setCheckingPrefix(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [emailPrefix, profile.senderEmailPrefix]);
 
     const handleImageUpload = async (file: File, field: 'logoUrl' | 'headshotUrl') => {
         setSaving(true);
@@ -346,6 +391,62 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
                                             placeholder="www.example.com"
                                         />
                                     </div>
+                                </div>
+
+                                {/* Sender Email */}
+                                <div className="sm:col-span-6">
+                                    <label htmlFor="senderEmail" className="block text-sm font-medium text-muted">Sender Email</label>
+                                    <p className="text-xs text-muted/70 mb-2">This is the "from" address when sending quotes and campaigns.</p>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <div className="relative flex-1 max-w-xs">
+                                            <input
+                                                type="text"
+                                                name="senderEmail"
+                                                id="senderEmail"
+                                                value={emailPrefix}
+                                                onChange={e => setEmailPrefix(e.target.value.toLowerCase().replace(/[^a-z0-9.]/g, ''))}
+                                                className={`shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface text-foreground placeholder:text-muted/50 rounded-l-md px-3 py-2 border ${emailPrefixAvailable === false ? 'border-red-500' : emailPrefixAvailable === true ? 'border-emerald-500' : 'border-border/10'
+                                                    }`}
+                                                placeholder="john.doe"
+                                            />
+                                            {checkingPrefix && (
+                                                <div className="absolute inset-y-0 right-2 flex items-center">
+                                                    <Icons.RefreshCw className="w-4 h-4 text-muted animate-spin" />
+                                                </div>
+                                            )}
+                                            {!checkingPrefix && emailPrefixAvailable === true && (
+                                                <div className="absolute inset-y-0 right-2 flex items-center">
+                                                    <Icons.CheckCircle className="w-4 h-4 text-emerald-500" />
+                                                </div>
+                                            )}
+                                            {!checkingPrefix && emailPrefixAvailable === false && (
+                                                <div className="absolute inset-y-0 right-2 flex items-center">
+                                                    <Icons.XCircle className="w-4 h-4 text-red-500" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-sm text-muted font-medium bg-foreground/5 px-3 py-2 rounded-r-md border border-l-0 border-border/10">@theofferhero.com</span>
+                                    </div>
+
+                                    {/* Suggestions if taken */}
+                                    {emailPrefixAvailable === false && emailPrefixSuggestions.length > 0 && (
+                                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs text-muted">Try:</span>
+                                            {emailPrefixSuggestions.map((suggestion) => (
+                                                <button
+                                                    key={suggestion}
+                                                    type="button"
+                                                    onClick={() => setEmailPrefix(suggestion)}
+                                                    className="text-xs px-2 py-1 bg-banana-400/10 text-banana-600 dark:text-banana-400 rounded-md hover:bg-banana-400/20 transition-colors font-medium"
+                                                >
+                                                    {suggestion}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {emailPrefixAvailable === false && emailPrefixSuggestions.length === 0 && (
+                                        <p className="mt-1 text-xs text-red-500">This email is already taken. Please choose another.</p>
+                                    )}
                                 </div>
 
                                 <div className="sm:col-span-3">

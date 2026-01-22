@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     permissions JSONB DEFAULT '{"dashboard": true, "quotes": true, "investors": true, "campaigns": true, "analytics": true}'::jsonb,
     timezone TEXT DEFAULT 'UTC',
     theme TEXT DEFAULT 'light',
+    sender_email_prefix TEXT UNIQUE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -62,6 +63,14 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_status TEXT DEFA
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{"dashboard": true, "quotes": true, "investors": true, "campaigns": true, "analytics": true}'::jsonb;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'UTC';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'light';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sender_email_prefix TEXT;
+
+-- Add UNIQUE constraint if not exists (may already exist from table definition)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_sender_email_prefix_key') THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_sender_email_prefix_key UNIQUE (sender_email_prefix);
+    END IF;
+END $$;
 
 -- 2.2 Investors Table
 CREATE TABLE IF NOT EXISTS public.investors (
@@ -613,6 +622,65 @@ BEGIN
         onboarding_status = COALESCE(p_onboarding_status, public.profiles.onboarding_status);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- SECTION 13: EMAIL PREFIX AVAILABILITY CHECK
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION check_email_prefix_available(prefix_to_check TEXT)
+RETURNS TABLE (available BOOLEAN, suggestions TEXT[]) 
+SECURITY DEFINER AS $$
+DECLARE
+    is_available BOOLEAN;
+    suggestion_list TEXT[] := ARRAY[]::TEXT[];
+    clean_prefix TEXT;
+    i INTEGER;
+BEGIN
+    -- Normalize the prefix (lowercase, only alphanumeric and dots)
+    clean_prefix := lower(regexp_replace(prefix_to_check, '[^a-zA-Z0-9.]', '', 'g'));
+    
+    -- Check if this exact prefix is available
+    SELECT NOT EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE sender_email_prefix = clean_prefix
+    ) INTO is_available;
+    
+    -- If not available, generate suggestions
+    IF NOT is_available THEN
+        -- Try adding numbers
+        FOR i IN 1..5 LOOP
+            IF NOT EXISTS (
+                SELECT 1 FROM public.profiles 
+                WHERE sender_email_prefix = clean_prefix || i::TEXT
+            ) THEN
+                suggestion_list := array_append(suggestion_list, clean_prefix || i::TEXT);
+                EXIT WHEN array_length(suggestion_list, 1) >= 3;
+            END IF;
+        END LOOP;
+        
+        -- Try first initial + last name pattern
+        IF array_length(suggestion_list, 1) IS NULL OR array_length(suggestion_list, 1) < 3 THEN
+            IF position('.' in clean_prefix) > 0 THEN
+                DECLARE
+                    first_part TEXT := split_part(clean_prefix, '.', 1);
+                    last_part TEXT := split_part(clean_prefix, '.', 2);
+                    alt_prefix TEXT;
+                BEGIN
+                    alt_prefix := substring(first_part, 1, 1) || last_part;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM public.profiles 
+                        WHERE sender_email_prefix = alt_prefix
+                    ) THEN
+                        suggestion_list := array_append(suggestion_list, alt_prefix);
+                    END IF;
+                END;
+            END IF;
+        END IF;
+    END IF;
+    
+    RETURN QUERY SELECT is_available, suggestion_list;
+END;
+$$ LANGUAGE plpgsql;
 
 -- This "nudges" Supabase to refresh its memory of functions
 NOTIFY pgrst, 'reload schema';
