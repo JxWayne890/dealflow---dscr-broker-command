@@ -10,6 +10,8 @@ import { useToast } from '../contexts/ToastContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { Campaign } from '../services/campaignService';
 import { ProfileService } from '../services/profileService';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 const activeColor = "text-banana-600 dark:text-banana-400";
 const activeBg = "bg-banana-400";
 
@@ -362,6 +364,33 @@ export const QuoteDetail = ({
                                 <div>
                                     <div className="text-sm font-semibold text-foreground">Download Terms</div>
                                     <div className="text-[10px] text-muted">Save HTML file locally</div>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    const element = document.createElement('div');
+                                    element.innerHTML = previewHtml;
+
+                                    const opt = {
+                                        margin: 0,
+                                        filename: `Quote_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.pdf`,
+                                        image: { type: 'jpeg' as const, quality: 0.98 },
+                                        html2canvas: { scale: 2, useCORS: true },
+                                        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+                                    };
+
+                                    html2pdf().set(opt).from(element).save();
+                                    showToast('Downloading PDF...', 'success');
+                                }}
+                                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/10 hover:bg-banana-400/10 hover:border-banana-400/30 transition-all group text-left"
+                            >
+                                <div className="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:bg-banana-400 group-hover:text-slate-900 transition-colors">
+                                    <Icons.FileText className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-foreground">Download PDF</div>
+                                    <div className="text-[10px] text-muted">Save as PDF document</div>
                                 </div>
                             </button>
                         </div>

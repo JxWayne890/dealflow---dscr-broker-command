@@ -8,6 +8,8 @@ import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     onCancel: () => void,
@@ -648,6 +650,31 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     className="justify-center"
                                 >
                                     Download Terms (HTML)
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        const element = document.createElement('div');
+                                        element.innerHTML = formData.emailHtml || '';
+                                        // Some styles to ensure it looks good in PDF
+                                        element.style.padding = '0';
+                                        element.style.fontSize = '12px'; // slightly smaller for PDF maybe
+
+                                        const opt = {
+                                            margin: 0, // margin is handled in the HTML table usually, but we can add some
+                                            filename: `Quote_${formData.investorName?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                                            image: { type: 'jpeg' as const, quality: 0.98 },
+                                            html2canvas: { scale: 2, useCORS: true },
+                                            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+                                        };
+
+                                        html2pdf().set(opt).from(element).save();
+                                        showToast('Downloading PDF...', 'success');
+                                    }}
+                                    variant="outline"
+                                    icon={Icons.FileText} // Changed icon to FileText for PDF? Or Download
+                                    className="justify-center"
+                                >
+                                    Download Terms (PDF)
                                 </Button>
                                 <Button
                                     onClick={() => {
