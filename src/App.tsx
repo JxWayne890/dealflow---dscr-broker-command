@@ -126,12 +126,16 @@ export default function App() {
 
         // Only force dashboard navigation if this is the very first time we're loading data
         // or if we're currently "logged out" (no profile)
-        if (!profile) {
-          // If we have a public view in the URL, don't override it with dashboard
-          const params = new URLSearchParams(window.location.search);
-          if (!params.get('view')) {
-            setCurrentView('dashboard');
-          }
+        // Explicitly force dashboard navigation on session load unless a specific view is requested via URL
+        // or we are in a special flow (like public schedule)
+        const params = new URLSearchParams(window.location.search);
+        const viewParam = params.get('view');
+
+        if (!viewParam) {
+          setCurrentView('dashboard');
+        } else if (viewParam === 'settings') {
+          // Support direct linking to settings if needed
+          setCurrentView('settings');
         }
 
         setProfile(fetchedProfile);

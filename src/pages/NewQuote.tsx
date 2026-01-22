@@ -9,6 +9,7 @@ import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
 import { QuoteService } from '../services/quoteService';
+import { generateTermSheetHtml } from '../utils/pdfTemplates';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -363,6 +364,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </Field>
                             </div>
 
+                            <Field label="Prepay Penalty">
+                                <Input
+                                    placeholder="e.g. 5-4-3-2-1 or 3 Yr Hard"
+                                    value={formData.prepayPenalty || ''}
+                                    onChange={e => setFormData({ ...formData, prepayPenalty: e.target.value })}
+                                />
+                            </Field>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Lender Origination ($)">
                                     <CurrencyInput
@@ -669,14 +678,11 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 <Button
                                     onClick={() => {
                                         const element = document.createElement('div');
-                                        element.innerHTML = formData.emailHtml || '';
-                                        // Some styles to ensure it looks good in PDF
-                                        element.style.padding = '0';
-                                        element.style.fontSize = '12px'; // slightly smaller for PDF maybe
+                                        element.innerHTML = generateTermSheetHtml(formData, profile);
 
                                         const opt = {
-                                            margin: 0, // margin is handled in the HTML table usually, but we can add some
-                                            filename: `Quote_${formData.investorName?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                                            margin: 0,
+                                            filename: `Term_Sheet_${formData.investorName?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
                                             image: { type: 'jpeg' as const, quality: 0.98 },
                                             html2canvas: { scale: 2, useCORS: true },
                                             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
@@ -1028,8 +1034,8 @@ const CustomSelect = ({
                             <div
                                 key={option.value}
                                 className={`relative cursor-default select-none py-2 pl-10 pr-4 transition-colors ${value === option.value
-                                        ? 'bg-banana-50 dark:bg-banana-500/10 text-banana-900 dark:text-banana-100'
-                                        : 'text-foreground hover:bg-banana-100/50 dark:hover:bg-banana-500/5'
+                                    ? 'bg-banana-50 dark:bg-banana-500/10 text-banana-900 dark:text-banana-100'
+                                    : 'text-foreground hover:bg-banana-100/50 dark:hover:bg-banana-500/5'
                                     }`}
                                 onClick={() => {
                                     onChange(option.value);

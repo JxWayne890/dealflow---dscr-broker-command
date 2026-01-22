@@ -63,6 +63,7 @@ export interface Quote {
   emailHtml?: string;
   scheduleUrl?: string;
   lenderCode?: string;
+  prepayPenalty?: string;
 }
 
 export interface User {

@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Quote, QuoteStatus, BrokerProfile } from '../types';
 import { generateHtmlEmail } from '../utils/emailTemplates';
 import { sendQuoteEmail } from '../services/emailService';
+import { generateTermSheetHtml } from '../utils/pdfTemplates';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
@@ -375,11 +376,11 @@ export const QuoteDetail = ({
                             <button
                                 onClick={() => {
                                     const element = document.createElement('div');
-                                    element.innerHTML = previewHtml;
+                                    element.innerHTML = generateTermSheetHtml(quote, profile);
 
                                     const opt = {
                                         margin: 0,
-                                        filename: `Quote_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.pdf`,
+                                        filename: `Term_Sheet_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.pdf`,
                                         image: { type: 'jpeg' as const, quality: 0.98 },
                                         html2canvas: { scale: 2, useCORS: true },
                                         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
