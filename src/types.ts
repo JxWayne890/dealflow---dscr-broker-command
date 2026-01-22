@@ -11,7 +11,8 @@ export enum QuoteStatus {
   ACTIVE = 'Active',
   FOLLOW_UP = 'Follow-up',
   WON = 'Won',
-  LOST = 'Lost'
+  LOST = 'Lost',
+  DOWNLOADED = 'Downloaded'
 }
 
 export interface Investor {

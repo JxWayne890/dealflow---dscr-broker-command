@@ -354,6 +354,10 @@ export const QuoteDetail = ({
                                     a.click();
                                     document.body.removeChild(a);
                                     URL.revokeObjectURL(url);
+
+                                    if (onUpdateStatus) {
+                                        onUpdateStatus(quote.id, QuoteStatus.DOWNLOADED);
+                                    }
                                     showToast('Terms downloaded as HTML', 'success');
                                 }}
                                 className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/10 hover:bg-banana-400/10 hover:border-banana-400/30 transition-all group text-left"
@@ -381,6 +385,10 @@ export const QuoteDetail = ({
                                     };
 
                                     html2pdf().set(opt).from(element).save();
+
+                                    if (onUpdateStatus) {
+                                        onUpdateStatus(quote.id, QuoteStatus.DOWNLOADED);
+                                    }
                                     showToast('Downloading PDF...', 'success');
                                 }}
                                 className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/10 hover:bg-banana-400/10 hover:border-banana-400/30 transition-all group text-left"

@@ -8,6 +8,7 @@ import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
+import { QuoteService } from '../services/quoteService';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -639,10 +640,13 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         const a = document.createElement('a');
                                         a.href = url;
                                         a.download = `Quote_${formData.investorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
-                                        document.body.appendChild(a);
                                         a.click();
                                         document.body.removeChild(a);
                                         URL.revokeObjectURL(url);
+
+                                        if (formData.id) {
+                                            QuoteService.updateQuote(formData.id, { status: QuoteStatus.DOWNLOADED });
+                                        }
                                         showToast('Terms downloaded as HTML', 'success');
                                     }}
                                     variant="outline"
@@ -668,6 +672,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         };
 
                                         html2pdf().set(opt).from(element).save();
+
+                                        if (formData.id) {
+                                            QuoteService.updateQuote(formData.id, { status: QuoteStatus.DOWNLOADED });
+                                        }
                                         showToast('Downloading PDF...', 'success');
                                     }}
                                     variant="outline"

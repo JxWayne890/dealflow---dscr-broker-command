@@ -12,7 +12,7 @@ type SortConfig = {
 
 export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus, initialFilter = 'all' }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onUpdateStatus?: (id: string, status: QuoteStatus) => void, initialFilter?: string }) => {
     const [activeTab, setActiveTab] = React.useState<string>(initialFilter);
-    const [sort, setSort] = React.useState<SortConfig>(null);
+    const [sort, setSort] = React.useState<SortConfig>({ key: 'createdAt', direction: 'desc' });
     const [searchQuery, setSearchQuery] = React.useState('');
 
     React.useEffect(() => {
@@ -38,6 +38,7 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                 case 'active': matchTab = q.status === QuoteStatus.ACTIVE; break;
                 case 'won': matchTab = q.status === QuoteStatus.WON; break;
                 case 'lost': matchTab = q.status === QuoteStatus.LOST; break;
+                case 'downloaded': matchTab = q.status === QuoteStatus.DOWNLOADED; break;
                 case 'follow_up': matchTab = q.status === QuoteStatus.FOLLOW_UP; break;
                 case 'all':
                 default:
@@ -100,6 +101,7 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
         { id: 'won', label: 'Won' },
         { id: 'lost', label: 'Lost' },
         { id: 'follow_up', label: 'Follow-up' },
+        { id: 'downloaded', label: 'Downloaded' },
     ];
 
     const SortIndicator = ({ column }: { column: string }) => {
@@ -175,6 +177,13 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                             >
                                 <div className="flex items-center gap-1">Volume <SortIndicator column="loanAmount" /></div>
                             </th>
+                            <th
+                                scope="col"
+                                onClick={() => handleSort('createdAt')}
+                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
+                            >
+                                <div className="flex items-center gap-1">Date <SortIndicator column="createdAt" /></div>
+                            </th>
                             <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Configuration</th>
                             <th
                                 scope="col"
@@ -189,7 +198,7 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                     <tbody className="bg-transparent divide-y divide-white/5">
                         {filteredAndSortedQuotes.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-8 py-24 text-center">
+                                <td colSpan={7} className="px-8 py-24 text-center">
                                     <div className="flex flex-col items-center justify-center opacity-40">
                                         <div className="p-4 bg-white/5 rounded-2xl mb-4 text-muted">
                                             <Icons.AlertCircle className="w-8 h-8" />
@@ -214,6 +223,9 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                                     </td>
                                     <td className="px-8 py-6 whitespace-nowrap text-base font-bold text-foreground" onClick={() => onViewQuote(quote.id)}>
                                         ${quote.loanAmount?.toLocaleString() || '0'}
+                                    </td>
+                                    <td className="px-8 py-6 whitespace-nowrap text-xs font-medium text-foreground/70" onClick={() => onViewQuote(quote.id)}>
+                                        {new Date(quote.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </td>
                                     <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
                                         <div className="text-xs font-bold text-foreground/70 uppercase">{quote.termYears}Y Fixed Duration</div>
