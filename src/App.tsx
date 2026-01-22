@@ -28,6 +28,7 @@ export default function App() {
   const { showToast } = useToast();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [dataInitializationComplete, setDataInitializationComplete] = useState(false);
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -134,10 +135,16 @@ export default function App() {
         }
 
         setProfile(fetchedProfile);
-      }).finally(() => setLoadingData(false));
+        setProfile(fetchedProfile);
+      }).finally(() => {
+        setLoadingData(false);
+        setDataInitializationComplete(true);
+      });
     } else {
       setQuotes([]);
       setInvestors([]);
+      // If we signed out, data is "initialized" (as empty)
+      setDataInitializationComplete(true);
     }
   }, [session]);
 
@@ -355,7 +362,8 @@ export default function App() {
   // Determine if we should show forced onboarding
   // We check session AND if profile has loaded (or is still loading)
   // FIX: Don't show modal just because data is loading. Wait for profile.
-  const isNewlyAuthenticated = !!session && !profile && !loadingData;
+  // We use dataInitializationComplete to ensure we tried fetching at least once
+  const isNewlyAuthenticated = !!session && !profile && dataInitializationComplete;
   const needsOnboarding = !!session && !!profile && profile.onboardingStatus !== 'active';
   const showOnboarding = isNewlyAuthenticated || needsOnboarding;
 
