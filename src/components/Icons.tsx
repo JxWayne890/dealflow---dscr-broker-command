@@ -41,7 +41,8 @@ import {
   Lock,
   Download,
   Link,
-  CreditCard
+  CreditCard,
+  Tag
 } from 'lucide-react';
 
 export const Icons = {
@@ -112,5 +113,6 @@ export const Icons = {
   ),
   CreditCard,
   Download,
-  Link
+  Link,
+  Tag
 };

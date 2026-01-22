@@ -62,6 +62,7 @@ export interface Quote {
   followUpsEnabled: boolean;
   emailHtml?: string;
   scheduleUrl?: string;
+  lenderCode?: string;
 }
 
 export interface User {

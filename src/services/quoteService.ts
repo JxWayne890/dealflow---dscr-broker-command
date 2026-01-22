@@ -142,7 +142,8 @@ const mapDbToQuote = (row: any): Quote => ({
     followUpsEnabled: row.follow_ups_enabled,
     followUpSchedule: row.follow_up_schedule || [],
     emailHtml: row.email_html,
-    scheduleUrl: row.schedule_url
+    scheduleUrl: row.schedule_url,
+    lenderCode: row.lender_code
 });
 
 const mapQuoteToDb = (quote: Partial<Quote>): any => {
@@ -176,6 +177,7 @@ const mapQuoteToDb = (quote: Partial<Quote>): any => {
     if (quote.followUpSchedule !== undefined) db.follow_up_schedule = quote.followUpSchedule;
     if (quote.emailHtml !== undefined) db.email_html = quote.emailHtml;
     if (quote.scheduleUrl !== undefined) db.schedule_url = quote.scheduleUrl;
+    if (quote.lenderCode !== undefined) db.lender_code = quote.lenderCode;
 
     return db;
 };

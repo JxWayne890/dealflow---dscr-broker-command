@@ -260,6 +260,7 @@ export const QuoteDetail = ({
                                             <DetailRow label="Underwriting Fee" value={`$${quote.uwFee?.toLocaleString()}`} />
                                             {quote.brokerFee && <DetailRow label="Broker Fee" value={`$${quote.brokerFee.toLocaleString()}`} />}
                                             <DetailRow label="Est. Closing Fees" value={`$${quote.closingFees?.toLocaleString()}`} />
+                                            {quote.lenderCode && <DetailRow label="Lender Code" value={quote.lenderCode} />}
                                             <DetailRow label="Created At" value={new Date(quote.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })} />
                                         </div>
                                     </div>

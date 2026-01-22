@@ -55,10 +55,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         rate: 7.5,
         emailBody: '', // This will store the *custom message* part, not the full HTML
         brokerFee: 0,
-        brokerFeePercent: 0,
+        brokerFeePercent: 1.0,
     });
 
-    const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('$');
+    const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('%');
 
     // Available properties for the selected investor
     const [availableProperties, setAvailableProperties] = useState<string[]>([]);
@@ -102,7 +102,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         setIsGenerating(true);
         // Simulate a brief delay
         setTimeout(() => {
-            const intro = `Great connecting with you. I've crunched the numbers for your scenario in ${formData.propertyState}. Based on the details provided, we can offer the following terms:`;
+            const intro = `Great connecting with you. I've crunched the numbers for your scenario in ${formData.propertyState}. Based on _____ credit score, we can offer the following terms:`;
 
             // Compose final content with intro and user notes
             const finalContent = formData.notes
@@ -461,9 +461,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                             )}
                                         </div>
                                     </div>
-                                    {brokerFeeType === '%' && formData.brokerFee && (
-                                        <p className="text-[10px] text-muted/60 mt-1 italic leading-tight">
-                                            Calculated: ${formData.brokerFee.toLocaleString()}
+
+                                    {brokerFeeType === '%' && (formData.brokerFee || 0) > 0 && (
+                                        <p className="text-sm font-semibold text-banana-600 dark:text-banana-400 mt-2 bg-banana-50 dark:bg-banana-900/20 px-3 py-1.5 rounded-lg border border-banana-200 dark:border-banana-800/30 inline-block shadow-sm">
+                                            Calculated: ${formData.brokerFee?.toLocaleString()}
                                         </p>
                                     )}
                                 </Field>
@@ -477,6 +478,21 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     value={formData.notes || ''}
                                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                 />
+                            </Field>
+
+                            <Field label="Lender Code (Internal Tag)">
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within:text-banana-500 transition-colors">
+                                        <Icons.Tag className="h-4 w-4" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={formData.lenderCode || ''}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, lenderCode: e.target.value }))}
+                                        className="block w-full pl-10 pr-4 py-2.5 bg-surface border border-border/10 rounded-lg focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50"
+                                        placeholder="e.g. VISIO-2024-Q1"
+                                    />
+                                </div>
                             </Field>
                         </div>
 
@@ -719,68 +735,71 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
 
             {/* Profile Settings Slide-over / Modal */}
-            {showSettings && (
-                <div className="absolute inset-0 z-50 flex justify-end">
-                    <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
-                    <div className="relative w-full max-w-sm bg-surface h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300 border-l border-border/10">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-foreground">Broker Profile</h2>
-                            <button onClick={() => setShowSettings(false)} className="text-muted hover:text-foreground">
-                                <Icons.X className="w-6 h-6" />
-                            </button>
-                        </div>
+            {
+                showSettings && (
+                    <div className="absolute inset-0 z-50 flex justify-end">
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowSettings(false)}></div>
+                        <div className="relative w-full max-w-sm bg-surface h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300 border-l border-border/10">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-lg font-bold text-foreground">Broker Profile</h2>
+                                <button onClick={() => setShowSettings(false)} className="text-muted hover:text-foreground">
+                                    <Icons.X className="w-6 h-6" />
+                                </button>
+                            </div>
 
-                        <div className="space-y-4">
-                            <Field label="Full Name">
-                                <Input value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} />
-                            </Field>
-                            <Field label="Job Title">
-                                <Input value={profile.title} onChange={e => setProfile({ ...profile, title: e.target.value })} />
-                            </Field>
-                            <Field label="Phone">
-                                <Input value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} />
-                            </Field>
-                            <Field label="Logo URL">
-                                <Input value={profile.logoUrl} onChange={e => setProfile({ ...profile, logoUrl: e.target.value })} />
-                            </Field>
-                            <Field label="Headshot URL">
-                                <Input value={profile.headshotUrl} onChange={e => setProfile({ ...profile, headshotUrl: e.target.value })} />
-                            </Field>
-                            <Field label="Website">
-                                <Input value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
-                            </Field>
+                            <div className="space-y-4">
+                                <Field label="Full Name">
+                                    <Input value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} />
+                                </Field>
+                                <Field label="Job Title">
+                                    <Input value={profile.title} onChange={e => setProfile({ ...profile, title: e.target.value })} />
+                                </Field>
+                                <Field label="Phone">
+                                    <Input value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} />
+                                </Field>
+                                <Field label="Logo URL">
+                                    <Input value={profile.logoUrl} onChange={e => setProfile({ ...profile, logoUrl: e.target.value })} />
+                                </Field>
+                                <Field label="Headshot URL">
+                                    <Input value={profile.headshotUrl} onChange={e => setProfile({ ...profile, headshotUrl: e.target.value })} />
+                                </Field>
+                                <Field label="Website">
+                                    <Input value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
+                                </Field>
 
-                            <div className="pt-4 border-t border-border/10">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">Auto-Send Emails</span>
-                                        <span className="text-xs text-muted">Send email automatically when created</span>
+                                <div className="pt-4 border-t border-border/10">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-foreground">Auto-Send Emails</span>
+                                            <span className="text-xs text-muted">Send email automatically when created</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newVal = !profile.autoSendQuoteEmail;
+                                                setProfile({ ...profile, autoSendQuoteEmail: newVal });
+                                                // Ideally, we should save this preference to the backend immediately
+                                                ProfileService.updateProfile({ autoSendQuoteEmail: newVal }).catch(err => console.error("Failed to save pref", err));
+                                            }}
+                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${profile.autoSendQuoteEmail ? 'bg-banana-400' : 'bg-foreground/10'}`}
+                                        >
+                                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${profile.autoSendQuoteEmail ? 'translate-x-5' : 'translate-x-0'}`} />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            const newVal = !profile.autoSendQuoteEmail;
-                                            setProfile({ ...profile, autoSendQuoteEmail: newVal });
-                                            // Ideally, we should save this preference to the backend immediately
-                                            ProfileService.updateProfile({ autoSendQuoteEmail: newVal }).catch(err => console.error("Failed to save pref", err));
-                                        }}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${profile.autoSendQuoteEmail ? 'bg-banana-400' : 'bg-foreground/10'}`}
-                                    >
-                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${profile.autoSendQuoteEmail ? 'translate-x-5' : 'translate-x-0'}`} />
-                                    </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="mt-8 pt-6 border-t border-gray-100">
-                            <Button className="w-full" onClick={() => setShowSettings(false)}>Close & Save</Button>
+                            <div className="mt-8 pt-6 border-t border-gray-100">
+                                <Button className="w-full" onClick={() => setShowSettings(false)}>Close & Save</Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Mobile Sticky Footer */}
             <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border/10 p-4 pb-8 z-10 md:hidden">
@@ -806,7 +825,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
