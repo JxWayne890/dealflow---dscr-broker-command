@@ -22,6 +22,7 @@ import { InvestorService } from './services/investorService';
 import { ProfileService } from './services/profileService';
 import { useToast } from './contexts/ToastContext';
 import { BrokerProfile } from './types';
+import { EmailConfirmation } from './pages/EmailConfirmation';
 
 export default function App() {
   const { showToast } = useToast();
@@ -135,6 +136,8 @@ export default function App() {
     } else if (view === 'inquiry') {
       // Inquiry is handled by early return below for now, 
       // but let's sync state just in case
+    } else if (view === 'confirmation' || window.location.hash.includes('type=signup') || window.location.hash.includes('type=recovery') || window.location.hash.includes('type=magiclink')) {
+      setCurrentView('confirmation');
     }
   }, []);
 
@@ -319,6 +322,11 @@ export default function App() {
   // Handle Public Inquiry Page
   if (window.location.search.includes('view=inquiry')) {
     return <Inquiry isDark={isDark} />;
+  }
+
+  // Handle Email Confirmation Page
+  if (currentView === 'confirmation') {
+    return <EmailConfirmation onContinue={() => setCurrentView('dashboard')} isDark={isDark} />;
   }
 
 

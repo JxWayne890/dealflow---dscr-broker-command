@@ -198,71 +198,8 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
                 />
             </div>
 
-            {/* Intelligence Center: Due Action Items */}
-            {stats.pendingFollowUps > 0 && (
-                <section className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-banana-400/20 to-orange-500/20 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                    <div className="relative bg-surface/40 backdrop-blur-3xl border border-orange-500/10 rounded-[2.5rem] p-8 overflow-hidden">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 relative z-10">
-                            <div className="flex items-center gap-4">
-                                <div className="p-4 bg-orange-500 rounded-[1.2rem] text-slate-950">
-                                    <Icons.Zap className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-orange-500">Intelligence Briefing</span>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></div>
-                                    </div>
-                                    <h3 className="font-bold text-foreground text-xl">Active Quotes Required</h3>
-                                    <p className="text-sm text-muted mt-1">Found <span className="text-orange-500 font-semibold">{stats.pendingFollowUps} critical follow-ups</span> requiring immediate sequence execution.</p>
-                                </div>
-                            </div>
-                            <Button variant="secondary" className="h-12 px-6 bg-orange-500/10 border-orange-500/20 text-orange-500 hover:bg-orange-500 text-slate-950 font-bold rounded-2xl transition-all">
-                                Execute All Sequences
-                            </Button>
-                        </div>
 
-                        <div className="grid md:grid-cols-2 gap-4 relative z-10">
-                            {quotes
-                                .filter(q => {
-                                    const today = new Date().toISOString().split('T')[0];
-                                    return q.followUpsEnabled &&
-                                        q.status !== QuoteStatus.WON &&
-                                        q.status !== QuoteStatus.LOST &&
-                                        q.followUpSchedule.some(f => f.status === 'pending' && f.scheduledDate.startsWith(today));
-                                })
-                                .map(q => {
-                                    const dueStep = q.followUpSchedule.find(f => f.status === 'pending' && f.scheduledDate.startsWith(new Date().toISOString().split('T')[0]));
-                                    const stepNumber = dueStep ? q.followUpSchedule.indexOf(dueStep) + 1 : 1;
-
-                                    return (
-                                        <div key={q.id} className="bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-orange-500/30 rounded-2xl p-5 flex items-center justify-between transition-all group/item">
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <h4 className="font-bold text-foreground group-hover/item:text-orange-500 transition-colors">{q.investorName}</h4>
-                                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-muted uppercase">{q.propertyState}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <div className="flex -space-x-1">
-                                                        {[1, 2, 3].map(i => (
-                                                            <div key={i} className={`w-1.5 h-1.5 rounded-full border border-surface ${i <= stepNumber ? 'bg-orange-500' : 'bg-muted/20'}`} />
-                                                        ))}
-                                                    </div>
-                                                    <span className="text-[10px] text-orange-500/80 font-medium uppercase tracking-widest">Sequence Step {stepNumber}</span>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => onViewQuote(q.id)} className="text-muted hover:text-orange-500 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]">
-                                                <Icons.ChevronRight className="w-6 h-6" />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {/* Recent Activity */}
             <section className="space-y-6">
