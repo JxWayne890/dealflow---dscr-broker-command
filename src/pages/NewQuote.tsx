@@ -629,6 +629,28 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 Save as Draft
                             </Button>
                             <Button
+                                onClick={() => {
+                                    const element = document.createElement('div');
+                                    element.innerHTML = generateTermSheetHtml(formData, profile);
+
+                                    const opt = {
+                                        margin: 0,
+                                        filename: `Term_Sheet_${formData.investorName?.replace(/\s+/g, '_') || 'Quote'}_${new Date().toISOString().split('T')[0]}.pdf`,
+                                        image: { type: 'jpeg' as const, quality: 0.98 },
+                                        html2canvas: { scale: 2, useCORS: true },
+                                        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+                                    };
+
+                                    html2pdf().set(opt).from(element).save();
+                                    showToast('Downloading Term Sheet PDF...', 'success');
+                                }}
+                                variant="outline"
+                                icon={Icons.FileText}
+                                className="px-6"
+                            >
+                                Download Term Sheet
+                            </Button>
+                            <Button
                                 onClick={handleSubmit}
                                 className="w-full md:w-auto px-8"
                                 icon={profile.autoSendQuoteEmail ? Icons.Send : Icons.CheckCircle}

@@ -13,125 +13,184 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
 <head>
     <meta charset="utf-8" />
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; margin: 0; padding: 40px; background: #fff; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; }
-        .logo-section { max-width: 300px; }
-        .logo-section img { height: 50px; margin-bottom: 10px; }
-        .logo-section h1 { margin: 0; font-size: 24px; font-weight: 700; color: #111; }
-        .meta-data { text-align: right; }
-        .doc-title { font-size: 32px; font-weight: 800; color: #111; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: -0.5px; }
-        .doc-date { font-size: 14px; color: #666; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            color: #1e293b; 
+            background: #fff; 
+            font-size: 13px; 
+            line-height: 1.5;
+        }
         
-        .section { margin-bottom: 35px; }
-        .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 20px; }
-        
-        .grid { display: block; width: 100%; overflow: hidden; }
-        .col { float: left; width: 48%; margin-right: 4%; box-sizing: border-box; }
-        .col:last-child { margin-right: 0; }
-        
-        .row { margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px dashed #f0f0f0; padding-bottom: 4px; }
-        .label { font-weight: 500; color: #555; font-size: 14px; }
-        .value { font-weight: 700; color: #111; font-size: 14px; text-align: right; }
-        
-        .notes-box { background: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 6px; font-size: 13px; line-height: 1.5; color: #444; }
-        
-        .amortization-box { background: #f8fcf8; border: 1px solid #e8f5e9; padding: 15px; border-radius: 6px; }
-        .highlight-text { font-size: 14px; color: #2e7d32; line-height: 1.5; font-weight: 500; }
-        
-        .footer { margin-top: 60px; padding-top: 20px; border-top: 2px solid #eaeaea;text-align: center; color: #888; font-size: 11px; line-height: 1.4; }
-        .broker-info { margin-bottom: 15px; font-size: 13px; color: #333; font-weight: 600; }
+        /* Header Banner */
+        .header-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            color: #fff;
+            padding: 30px 40px;
+        }
+        .header-table { width: 100%; }
+        .header-left { vertical-align: middle; }
+        .header-right { vertical-align: middle; text-align: right; }
+        .company-name { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .company-sub { font-size: 12px; color: #94a3b8; }
+        .doc-title { font-size: 32px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-date { font-size: 12px; color: #94a3b8; margin-top: 4px; }
 
-        /* Clearfix */
-        .clearfix::after { content: ""; clear: both; display: table; }
+        /* Content Area */
+        .content { padding: 30px 40px; }
+        
+        /* Property Section */
+        .property-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .property-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+        .property-address { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .property-city { font-size: 14px; color: #475569; }
+        
+        /* Section */
+        .section-header { 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #64748b; 
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        /* Terms Grid */
+        .terms-grid { display: table; width: 100%; margin-bottom: 25px; }
+        .terms-col { display: table-cell; width: 50%; vertical-align: top; }
+        .terms-col:first-child { padding-right: 15px; }
+        .terms-col:last-child { padding-left: 15px; }
+        
+        .terms-table { width: 100%; border-collapse: collapse; }
+        .terms-table tr { border-bottom: 1px solid #f1f5f9; }
+        .terms-table tr:last-child { border-bottom: none; }
+        .terms-table td { padding: 10px 0; }
+        .terms-table .label { font-weight: 500; color: #475569; }
+        .terms-table .value { font-weight: 700; color: #0f172a; text-align: right; font-size: 14px; }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 25px;
+        }
+        .highlight-box .icon { display: inline-block; margin-right: 10px; font-size: 18px; }
+        .highlight-box .text { font-size: 14px; color: #166534; }
+        .highlight-box strong { font-weight: 700; color: #15803d; }
+
+        /* Notes Box */
+        .notes-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 25px;
+        }
+        .notes-box .notes-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #92400e; font-weight: 700; margin-bottom: 8px; }
+        .notes-box .notes-content { font-size: 13px; color: #78350f; line-height: 1.6; }
+
+        /* Footer */
+        .footer { 
+            background: #f8fafc; 
+            border-top: 1px solid #e2e8f0; 
+            padding: 25px 40px; 
+            text-align: center; 
+        }
+        .footer-contact { font-weight: 600; color: #334155; font-size: 14px; margin-bottom: 10px; }
+        .footer-legal { font-size: 10px; color: #94a3b8; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+        .footer-copyright { font-size: 10px; color: #cbd5e1; margin-top: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="header clearfix">
-        <div class="logo-section" style="float:left;">
-            ${profile.logoUrl ? `<img src="${profile.logoUrl}" alt="${profile.name}" />` : ''}
-            <h1>${profile.company || profile.name}</h1>
-            <div style="font-size:12px;color:#666;margin-top:4px;">${profile.title || 'Mortgage Broker'}</div>
-        </div>
-        <div class="meta-data" style="float:right;">
-            <div class="doc-title">Term Sheet</div>
-            <div class="doc-date">Prepared on ${today}</div>
-        </div>
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    ${profile.logoUrl ? `<img src="${profile.logoUrl}" alt="${profile.name}" style="height: 45px; margin-bottom: 8px; display: block;" />` : ''}
+                    <div class="company-name">${profile.company || profile.name}</div>
+                    <div class="company-sub">${profile.title || 'Mortgage Broker'}</div>
+                </td>
+                <td class="header-right">
+                    <div class="doc-title">Term Sheet</div>
+                    <div class="doc-date">${today}</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="section">
-        <div class="section-title">Property Information</div>
-        <div style="font-size: 18px; font-weight: 600; color: #000; margin-bottom: 6px;">
-            ${quote.propertyAddress || 'TBD Property'}
+    <!-- Content -->
+    <div class="content">
+        
+        <!-- Property Section -->
+        <div class="property-section">
+            <div class="property-label">Subject Property</div>
+            <div class="property-address">${quote.propertyAddress || 'Property Address TBD'}</div>
+            <div class="property-city">${quote.propertyCity ? `${quote.propertyCity}, ` : ''}${quote.propertyState || ''} ${quote.propertyZip || ''}</div>
         </div>
-        <div style="font-size: 14px; color: #444;">
-            ${quote.propertyCity ? `${quote.propertyCity}, ` : ''}${quote.propertyState} ${quote.propertyZip || ''}
-        </div>
-    </div>
 
-    <div class="section clearfix">
-        <div class="section-title">Loan Terms</div>
-        
-        <div class="col">
-            <div class="row"><span class="label">Loan Amount</span><span class="value">$${quote.loanAmount?.toLocaleString()}</span></div>
-            <div class="row"><span class="label">LTV</span><span class="value">${quote.ltv}%</span></div>
-            <div class="row"><span class="label">Interest Rate</span><span class="value">${quote.rate}%</span></div>
-            <div class="row"><span class="label">Loan Program</span><span class="value">DSCR (${quote.dealType})</span></div>
-        </div>
-        
-        <div class="col">
-            <div class="row"><span class="label">Term</span><span class="value">${quote.termYears} Years</span></div>
-            <div class="row"><span class="label">Rate Type</span><span class="value">${quote.rateType || 'Fixed'}</span></div>
-            ${quote.monthlyPayment ? `<div class="row"><span class="label">Monthly P&I</span><span class="value">$${quote.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>` : ''}
-            <div class="row"><span class="label">Prepay Penalty</span><span class="value">${quote.prepayPenalty || 'N/A'}</span></div>
-        </div>
-    </div>
-
-    <div class="section clearfix">
-        <div class="section-title">Estimated Funds</div>
-        
-        <div class="col">
-           ${quote.originationFee ? `<div class="row"><span class="label">Lender Fee</span><span class="value">$${quote.originationFee.toLocaleString()}</span></div>` : ''}
-           ${quote.uwFee ? `<div class="row"><span class="label">Underwriting Fee</span><span class="value">$${quote.uwFee.toLocaleString()}</span></div>` : ''}
-           ${quote.closingFees ? `<div class="row"><span class="label">Est. Closing Costs</span><span class="value">$${quote.closingFees.toLocaleString()}</span></div>` : ''}
-        </div>
-        
-        <div class="col">
-            ${quote.brokerFee ? `
-            <div class="row">
-                <span class="label">Broker Fee</span>
-                <span class="value">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${quote.brokerFee.toLocaleString()}`}</span>
-            </div>` : ''}
-        </div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Amortization Analysis</div>
-        <div class="amortization-box">
-            <div class="highlight-text">
-                The first year of your loan will build approximately <strong>$${equityBuild.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
+        <!-- Terms Grid -->
+        <div class="terms-grid">
+            <div class="terms-col">
+                <div class="section-header">Loan Terms</div>
+                <table class="terms-table">
+                    <tr><td class="label">Loan Amount</td><td class="value">$${(quote.loanAmount || 0).toLocaleString()}</td></tr>
+                    <tr><td class="label">Loan-to-Value (LTV)</td><td class="value">${quote.ltv || 0}%</td></tr>
+                    <tr><td class="label">Interest Rate</td><td class="value">${quote.rate || 0}%</td></tr>
+                    <tr><td class="label">Loan Program</td><td class="value">DSCR ${quote.dealType ? `(${quote.dealType})` : ''}</td></tr>
+                    <tr><td class="label">Loan Term</td><td class="value">${quote.termYears || 30} Years</td></tr>
+                    <tr><td class="label">Rate Type</td><td class="value">${quote.rateType || 'Fixed'}</td></tr>
+                    <tr><td class="label">Est. Monthly P&I</td><td class="value">$${(quote.monthlyPayment || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+                    <tr><td class="label">Prepayment Penalty</td><td class="value">${quote.prepayPenalty || 'None'}</td></tr>
+                </table>
+            </div>
+            <div class="terms-col">
+                <div class="section-header">Estimated Costs & Fees</div>
+                <table class="terms-table">
+                    <tr><td class="label">Lender Origination Fee</td><td class="value">$${(quote.originationFee || 0).toLocaleString()}</td></tr>
+                    <tr><td class="label">Underwriting Fee</td><td class="value">$${(quote.uwFee || 0).toLocaleString()}</td></tr>
+                    <tr><td class="label">Est. Closing Costs</td><td class="value">$${(quote.closingFees || 0).toLocaleString()}</td></tr>
+                    <tr><td class="label">Broker Fee</td><td class="value">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${(quote.brokerFee || 0).toLocaleString()}`}</td></tr>
+                </table>
             </div>
         </div>
+
+        <!-- Amortization Highlight -->
+        <div class="highlight-box">
+            <span class="icon">📈</span>
+            <span class="text">The first year of your loan will build approximately <strong>$${equityBuild.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.</span>
+        </div>
+
+        <!-- Notes -->
+        ${quote.notes ? `
+        <div class="notes-box">
+            <div class="notes-label">Additional Notes</div>
+            <div class="notes-content">${quote.notes.replace(/\n/g, '<br>')}</div>
+        </div>` : ''}
+
     </div>
 
-    ${quote.notes ? `
-    <div class="section">
-        <div class="section-title">Notes</div>
-        <div class="notes-box">
-            ${quote.notes.replace(/\n/g, '<br>')}
-        </div>
-    </div>` : ''}
-
+    <!-- Footer -->
     <div class="footer">
-        <div class="broker-info">
-            ${profile.name} &bull; ${formatPhoneNumber(profile.phone || '')} &bull; ${profile.website}
+        <div class="footer-contact">
+            ${profile.name} &nbsp;•&nbsp; ${formatPhoneNumber(profile.phone || '')} &nbsp;•&nbsp; ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color: #334155; text-decoration: underline;">${profile.website}</a>` : ''}
         </div>
-        <div>
-            This is not a commitment to lend. Rates and terms are subject to change based on market conditions, borrower creditworthiness, and property valuation. 
-            Actual terms may vary. Quote based on hypothetical credit score.
+        <div class="footer-legal">
+            This is not a commitment to lend. Rates and terms are subject to change based on market conditions, borrower creditworthiness, and property valuation. Actual terms may vary. Quote based on hypothetical credit score.
         </div>
-        <div style="margin-top: 10px;">
-            &copy; ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.
+        <div class="footer-copyright">
+            © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.
         </div>
     </div>
 
