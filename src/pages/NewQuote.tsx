@@ -51,7 +51,11 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         notes: '',
         rate: 7.5,
         emailBody: '', // This will store the *custom message* part, not the full HTML
+        brokerFee: 0,
+        brokerFeePercent: 0,
     });
+
+    const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('$');
 
     // Available properties for the selected investor
     const [availableProperties, setAvailableProperties] = useState<string[]>([]);
@@ -75,13 +79,21 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
             if (monthlyRate === 0) {
                 setFormData(prev => ({ ...prev, monthlyPayment: Math.round(principal / numberOfPayments) }));
-                return;
+            } else {
+                const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+                setFormData(prev => ({ ...prev, monthlyPayment: Math.round(payment * 100) / 100 }));
             }
-
-            const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-            setFormData(prev => ({ ...prev, monthlyPayment: Math.round(payment * 100) / 100 }));
         }
     }, [formData.loanAmount, formData.rate, formData.termYears]);
+
+    // Recalculate Broker Fee if Loan Amount changes and we are in % mode
+    useEffect(() => {
+        if (brokerFeeType === '%' && formData.loanAmount && formData.brokerFeePercent) {
+            const fee = (formData.loanAmount * formData.brokerFeePercent) / 100;
+            setFormData(prev => ({ ...prev, brokerFee: Math.round(fee * 100) / 100 }));
+        }
+    }, [formData.loanAmount, formData.brokerFeePercent, brokerFeeType]);
+
 
     const handleGenerateEmail = () => {
         setIsGenerating(true);
@@ -115,17 +127,22 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             finalContent = generatePlainText(formDataWithUrl, profile, formData.emailBody || '');
         }
 
-        // Attempt real email send
-        let result: { success: boolean; error?: string } = { success: false };
-        if (formData.investorEmail) {
-            result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
+        // Attempt real email send ONLY if auto-send is enabled
+        let result: { success: boolean; error?: string } = { success: true }; // Default to true if not sending
+
+        if (profile.autoSendQuoteEmail) {
+            if (formData.investorEmail) {
+                result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
+            }
+        } else {
+            console.log("Auto-send disabled, skipping email dispatch.");
         }
 
         const newQuote: Quote = {
             ...formDataWithUrl as Quote,
             id: formData.id || Math.random().toString(36).substr(2, 9),
             createdAt: new Date().toISOString(),
-            status: result.success ? QuoteStatus.ACTIVE : QuoteStatus.DRAFT,
+            status: result.success ? (profile.autoSendQuoteEmail ? QuoteStatus.SENT : QuoteStatus.ACTIVE) : QuoteStatus.DRAFT,
             emailHtml: emailFormat === 'html' ? finalContent : undefined,
             followUpSchedule: [
                 { id: Math.random().toString(36), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
@@ -383,6 +400,72 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </Field>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Broker Fee">
+                                    <div className="flex gap-2">
+                                        <div className="w-1/3">
+                                            <div className="relative">
+                                                <select
+                                                    className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-3 py-2.5 pr-8 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
+                                                    value={brokerFeeType}
+                                                    onChange={e => {
+                                                        const newVal = e.target.value as '$' | '%';
+                                                        setBrokerFeeType(newVal);
+                                                        // Reset values to avoid confusion when switching?
+                                                        // Or just recalculate. Let's recalculate if switching to %
+                                                        if (newVal === '%' && formData.loanAmount) {
+                                                            const pct = 1.0; // Default to 1% if starting fresh?
+                                                            setFormData(p => ({ ...p, brokerFeePercent: pct, brokerFee: (p.loanAmount! * pct) / 100 }));
+                                                        }
+                                                    }}
+                                                >
+                                                    <option value="$">Flat ($)</option>
+                                                    <option value="%">Percent (%)</option>
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
+                                                    <Icons.ChevronDown className="h-4 w-4" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            {brokerFeeType === '$' ? (
+                                                <CurrencyInput
+                                                    value={formData.brokerFee || 0}
+                                                    onChange={val => setFormData({ ...formData, brokerFee: val, brokerFeePercent: 0 })}
+                                                    placeholder="0.00"
+                                                />
+                                            ) : (
+                                                <div className="relative rounded-md shadow-sm">
+                                                    <input
+                                                        type="number"
+                                                        step="0.125"
+                                                        className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
+                                                        placeholder="1.0"
+                                                        value={formData.brokerFeePercent || ''}
+                                                        onChange={e => {
+                                                            const val = parseFloat(e.target.value);
+                                                            setFormData({
+                                                                ...formData,
+                                                                brokerFeePercent: val,
+                                                                brokerFee: formData.loanAmount ? (formData.loanAmount * val) / 100 : 0
+                                                            });
+                                                        }}
+                                                    />
+                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                        <span className="text-muted sm:text-sm">%</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {brokerFeeType === '%' && formData.brokerFee && (
+                                        <p className="text-[10px] text-muted/60 mt-1 italic leading-tight">
+                                            Calculated: ${formData.brokerFee.toLocaleString()}
+                                        </p>
+                                    )}
+                                </Field>
+                            </div>
+
                             <Field label="Notes (Optional)">
                                 <textarea
                                     className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow"
@@ -525,10 +608,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <Button
                                 onClick={handleSubmit}
                                 className="w-full md:w-auto px-8"
-                                icon={Icons.Send}
+                                icon={profile.autoSendQuoteEmail ? Icons.Send : Icons.CheckCircle}
                                 disabled={isSending}
                             >
-                                {isSending ? 'Sending...' : 'Send Quote Now'}
+                                {isSending ? 'Processing...' : (profile.autoSendQuoteEmail ? 'Send Quote Now' : 'Create Quote')}
                             </Button>
                         </div>
                     </div>
@@ -539,11 +622,48 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Icons.CheckCircle className="w-10 h-10 text-emerald-500" />
                             </div>
-                            <h2 className="text-3xl font-bold text-foreground mb-2">Quote Sent Successfully!</h2>
+                            <h2 className="text-3xl font-bold text-foreground mb-2">Quote Created Successfully!</h2>
                             <p className="text-muted mb-8 text-lg">
-                                Your quote has been emailed to <strong>{formData.investorName}</strong> ({formData.investorEmail}).
+                                {profile.autoSendQuoteEmail
+                                    ? <span>Your quote has been emailed to <strong>{formData.investorName}</strong>.</span>
+                                    : <span>Quote saved for <strong>{formData.investorName}</strong>. Ready to share.</span>
+                                }
                             </p>
-                            <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-3 mb-6">
+                                <Button
+                                    onClick={() => {
+                                        const blob = new Blob([formData.emailHtml || ''], { type: 'text/html' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `Quote_${formData.investorName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                        showToast('Terms downloaded as HTML', 'success');
+                                    }}
+                                    variant="outline"
+                                    icon={Icons.Download}
+                                    className="justify-center"
+                                >
+                                    Download Terms (HTML)
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        const url = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
+                                        navigator.clipboard.writeText(url);
+                                        showToast('Schedule link copied to clipboard!', 'success');
+                                    }}
+                                    variant="outline"
+                                    icon={Icons.Link}
+                                    className="justify-center"
+                                >
+                                    Copy Schedule Link
+                                </Button>
+                            </div>
+
+                            <div className="space-y-3 pt-4 border-t border-border/10">
                                 <Button
                                     onClick={() => onSave(formData as Quote)}
                                     className="w-full justify-center py-4 text-base"
@@ -598,6 +718,26 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <Field label="Website">
                                 <Input value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
                             </Field>
+
+                            <div className="pt-4 border-t border-border/10">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">Auto-Send Emails</span>
+                                        <span className="text-xs text-muted">Send email automatically when created</span>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const newVal = !profile.autoSendQuoteEmail;
+                                            setProfile({ ...profile, autoSendQuoteEmail: newVal });
+                                            // Ideally, we should save this preference to the backend immediately
+                                            ProfileService.updateProfile({ autoSendQuoteEmail: newVal }).catch(err => console.error("Failed to save pref", err));
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${profile.autoSendQuoteEmail ? 'bg-banana-400' : 'bg-foreground/10'}`}
+                                    >
+                                        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${profile.autoSendQuoteEmail ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="mt-8 pt-6 border-t border-gray-100">
@@ -626,7 +766,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             icon={Icons.Send}
                             disabled={isSending}
                         >
-                            {isSending ? 'Sending...' : 'Send Quote'}
+                            {isSending ? 'Processing...' : (profile.autoSendQuoteEmail ? 'Send Quote' : 'Create Quote')}
                         </Button>
                     )}
                 </div>

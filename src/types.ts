@@ -49,6 +49,8 @@ export interface Quote {
   originationFee?: number;
   uwFee?: number;
   monthlyPayment?: number;
+  brokerFee?: number;
+  brokerFeePercent?: number;
   closingFees?: number;
   notes?: string;
   emailBody?: string;
@@ -99,6 +101,7 @@ export interface BrokerProfile {
   permissions?: Permissions;
   inviteCode?: string;
   onboardingStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
+  autoSendQuoteEmail?: boolean;
 }
 
 export type EmailFormat = 'text' | 'html';

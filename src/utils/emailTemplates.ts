@@ -85,17 +85,22 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                                   <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.closingFees.toLocaleString()}</div>
                                 </td>` : ''}
                               </tr>
-                              ${(quote.originationFee || quote.uwFee) ? `
+                              ${(quote.originationFee || quote.uwFee || quote.brokerFee) ? `
                               <tr>
                                 ${quote.originationFee ? `
-                                <td width="50%" valign="top">
+                                <td width="33%" valign="top">
                                   <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Origination</div>
                                   <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.originationFee.toLocaleString()}</div>
                                 </td>` : ''}
                                 ${quote.uwFee ? `
-                                <td width="50%" valign="top">
+                                <td width="33%" valign="top">
                                   <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">UW Fee</div>
                                   <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.uwFee.toLocaleString()}</div>
+                                </td>` : ''}
+                                ${quote.brokerFee ? `
+                                <td width="33%" valign="top">
+                                  <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Broker Fee</div>
+                                  <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.brokerFee.toLocaleString()}</div>
                                 </td>` : ''}
                               </tr>` : ''}
                             </table>
@@ -171,7 +176,7 @@ DEAL TERMS:
 - LTV: ${quote.ltv}%
 - Rate: ${quote.rate}%
 - Term: ${quote.termYears} Years (${quote.rateType || 'Fixed'})
-${quote.monthlyPayment ? `- Monthly P&I: $${quote.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${quote.originationFee ? `- Lender Origination: $${quote.originationFee.toLocaleString()}\n` : ''}${quote.uwFee ? `- UW Fee: $${quote.uwFee.toLocaleString()}\n` : ''}${quote.closingFees ? `- Est. Closing Fees: $${quote.closingFees.toLocaleString()}\n` : ''}----------------------------------------
+${quote.monthlyPayment ? `- Monthly P&I: $${quote.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${quote.originationFee ? `- Lender Origination: $${quote.originationFee.toLocaleString()}\n` : ''}${quote.uwFee ? `- UW Fee: $${quote.uwFee.toLocaleString()}\n` : ''}${quote.brokerFee ? `- Broker Fee: $${quote.brokerFee.toLocaleString()}\n` : ''}${quote.closingFees ? `- Est. Closing Fees: $${quote.closingFees.toLocaleString()}\n` : ''}----------------------------------------
 
 ----------------------------------------
 

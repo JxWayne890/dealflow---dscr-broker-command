@@ -256,6 +256,7 @@ export const QuoteDetail = ({
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
                                             <DetailRow label="Origination Fee" value={`$${quote.originationFee?.toLocaleString()}`} />
                                             <DetailRow label="Underwriting Fee" value={`$${quote.uwFee?.toLocaleString()}`} />
+                                            {quote.brokerFee && <DetailRow label="Broker Fee" value={`$${quote.brokerFee.toLocaleString()}`} />}
                                             <DetailRow label="Est. Closing Fees" value={`$${quote.closingFees?.toLocaleString()}`} />
                                             <DetailRow label="Created At" value={new Date(quote.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })} />
                                         </div>
@@ -337,6 +338,30 @@ export const QuoteDetail = ({
                                 <div>
                                     <div className="text-sm font-semibold text-foreground">Resend Email</div>
                                     <div className="text-[10px] text-muted">Send latest terms again</div>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    const blob = new Blob([previewHtml], { type: 'text/html' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `Quote_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.html`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    showToast('Terms downloaded as HTML', 'success');
+                                }}
+                                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/10 hover:bg-banana-400/10 hover:border-banana-400/30 transition-all group text-left"
+                            >
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 group-hover:bg-banana-400 group-hover:text-slate-900 transition-colors">
+                                    <Icons.Download className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-foreground">Download Terms</div>
+                                    <div className="text-[10px] text-muted">Save HTML file locally</div>
                                 </div>
                             </button>
                         </div>
