@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     onboarding_status TEXT DEFAULT 'joined',
     permissions JSONB DEFAULT '{"dashboard": true, "quotes": true, "investors": true, "campaigns": true, "analytics": true}'::jsonb,
     timezone TEXT DEFAULT 'UTC',
+    theme TEXT DEFAULT 'light',
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -60,6 +61,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS invite_code TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_status TEXT DEFAULT 'joined';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{"dashboard": true, "quotes": true, "investors": true, "campaigns": true, "analytics": true}'::jsonb;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'UTC';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'light';
 
 -- 2.2 Investors Table
 CREATE TABLE IF NOT EXISTS public.investors (

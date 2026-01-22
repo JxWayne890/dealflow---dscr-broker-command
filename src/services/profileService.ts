@@ -97,6 +97,7 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     headshotUrl: row.headshot_url,
     title: row.title || '',
     timezone: row.timezone || 'UTC',
+    theme: row.theme || 'light',
     role: row.role || 'admin',
     parentId: row.parent_id,
     permissions: row.permissions,
@@ -114,6 +115,7 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.headshotUrl !== undefined) db.headshot_url = profile.headshotUrl;
     if (profile.title !== undefined) db.title = profile.title;
     if (profile.timezone !== undefined) db.timezone = profile.timezone;
+    if (profile.theme !== undefined) db.theme = profile.theme;
     if (profile.role !== undefined) db.role = profile.role;
     if (profile.parentId !== undefined) db.parent_id = profile.parentId;
     if (profile.permissions !== undefined) db.permissions = profile.permissions;

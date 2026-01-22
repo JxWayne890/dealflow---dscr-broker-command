@@ -92,6 +92,7 @@ export interface BrokerProfile {
   title?: string;
   company?: string;
   timezone?: string;
+  theme?: 'light' | 'dark';
   role?: 'admin' | 'assistant';
   parentId?: string;
   permissions?: Permissions;

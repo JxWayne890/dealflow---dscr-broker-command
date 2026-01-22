@@ -66,7 +66,7 @@ export default function App() {
     }
   }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
     if (newIsDark) {
@@ -75,6 +75,14 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+    // Save to database if logged in
+    if (session) {
+      try {
+        await ProfileService.updateProfile({ theme: newIsDark ? 'dark' : 'light' });
+      } catch (e) {
+        console.error('Failed to save theme preference:', e);
+      }
     }
   };
 
@@ -102,6 +110,18 @@ export default function App() {
       ]).then(([fetchedQuotes, fetchedInvestors, fetchedProfile]) => {
         setQuotes(fetchedQuotes);
         setInvestors(fetchedInvestors);
+
+        // Apply theme from profile if available
+        if (fetchedProfile?.theme) {
+          const profileIsDark = fetchedProfile.theme === 'dark';
+          setIsDark(profileIsDark);
+          localStorage.setItem('theme', fetchedProfile.theme);
+          if (profileIsDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
 
         // Only force dashboard navigation if this is the very first time we're loading data
         // or if we're currently "logged out" (no profile)
@@ -146,6 +166,8 @@ export default function App() {
   const handleNewQuote = () => setCurrentView('new_quote');
   const handleViewQuote = (id: string) => {
     setSelectedQuoteId(id);
+    const quote = quotes.find(q => q.id === id);
+    if (quote) setSelectedQuote(quote);
     setCurrentView('detail');
   };
 
