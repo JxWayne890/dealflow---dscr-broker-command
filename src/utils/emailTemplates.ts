@@ -117,13 +117,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                   The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(quote.loanAmount || 0, quote.rate || 0, quote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
                 </p>
                 <div style="font-size:13px;color:#6b7280;text-align:center;">
-                  ${quote.scheduleUrl ? `
-                  <a href="${quote.scheduleUrl}" style="display:inline-block;padding:10px 24px;background:#4f46e5;border-radius:6px;color:#ffffff;font-weight:600;text-decoration:none;">
-                    View Full Amortization Schedule
-                  </a>` : `
-                  <span style="display:inline-block;padding:8px 16px;background:#ffffff;border:1px solid #e5e7eb;border-radius:6px;color:#4f46e5;font-weight:600;">
-                    Full Amortization Schedule Included
-                  </span>`}
+                  {/* Link removed per user request */}
                 </div>
               </div>
 
@@ -180,8 +174,7 @@ ${quote.monthlyPayment ? `- Monthly P&I: $${quote.monthlyPayment.toLocaleString(
 
 ----------------------------------------
 
-*Full 30-year amortization schedule is included below.
-${quote.scheduleUrl ? `View Schedule: ${quote.scheduleUrl}\n` : ''}
+*Full 30-year amortization schedule is available upon request.
 Let me know if these terms work for you.
 
 Best,
