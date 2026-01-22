@@ -7,17 +7,19 @@ import { ProfileService } from '../services/profileService';
 import { InviteService } from '../services/inviteService';
 import { useToast } from '../contexts/ToastContext';
 import { formatPhoneNumber } from '../utils/formatters';
+import { BrokerProfile } from '../types';
 
 interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     defaultMode?: 'signin' | 'signup';
     initialStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
+    onProfileFound?: (profile: BrokerProfile) => void;
 }
 
 type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment' | 'email_confirmation';
 
-export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus }: AuthModalProps) => {
+export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus, onProfileFound }: AuthModalProps) => {
     const { showToast } = useToast();
     const [authSubStep, setAuthSubStep] = useState<'email' | 'password'>('email');
     const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
@@ -49,8 +51,12 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                 const existing = await ProfileService.getProfile();
                 if (existing) {
                     if (existing.onboardingStatus === 'active') {
-                        console.log('User is already active, reloading to sync state...');
-                        window.location.reload();
+                        console.log('User is already active, syncing state...');
+                        if (onProfileFound) {
+                            onProfileFound(existing);
+                        } else {
+                            window.location.reload();
+                        }
                         return;
                     }
                     setName(existing.name || '');

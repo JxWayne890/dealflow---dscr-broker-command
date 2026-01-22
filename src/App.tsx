@@ -389,6 +389,7 @@ export default function App() {
               isOpen={true}
               onClose={() => { }} // Cannot close until active
               initialStatus={onboardingStatus}
+              onProfileFound={setProfile}
             />
           )}
         </>
