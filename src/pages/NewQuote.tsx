@@ -225,12 +225,12 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-6 border-b border-border/10 pb-2">Investor Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Select Investor">
-                                    <Select
+                                    <CustomSelect
                                         value={formData.investorId || ''}
-                                        onChange={e => {
-                                            const selectedId = e.target.value;
+                                        options={investors.map(inv => ({ label: inv.name, value: inv.id }))}
+                                        placeholder="Select an investor..."
+                                        onChange={(selectedId) => {
                                             if (selectedId === 'new') {
-                                                // Handle creating new investor logic if needed, or just clear fields
                                                 setFormData({ ...formData, investorId: '', investorName: '', investorEmail: '' });
                                             } else {
                                                 const inv = investors.find(i => i.id === selectedId);
@@ -244,12 +244,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                 }
                                             }
                                         }}
-                                    >
-                                        <option value="">Select an investor...</option>
-                                        {investors.map(inv => (
-                                            <option key={inv.id} value={inv.id}>{inv.name}</option>
-                                        ))}
-                                    </Select>
+                                    />
                                 </Field>
                                 <Field label="Or Create New">
                                     <div className="flex items-center pt-2">
@@ -977,6 +972,83 @@ const CurrencyInput = ({ value, onChange, placeholder }: { value: number, onChan
                 value={displayValue}
                 onChange={handleChange}
             />
+        </div>
+    );
+};
+
+const CustomSelect = ({
+    value,
+    onChange,
+    options,
+    placeholder = "Select..."
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    options: { label: string; value: string }[];
+    placeholder?: string;
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(o => o.value === value);
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="relative w-full cursor-default rounded-lg bg-surface py-2.5 pl-3 pr-10 text-left shadow-sm border border-border/10 focus:outline-none focus:ring-2 focus:ring-banana-500/20 focus:border-banana-500 sm:text-sm transition-all text-foreground"
+            >
+                <span className={`block truncate ${!selectedOption ? 'text-muted' : 'text-foreground'}`}>
+                    {selectedOption?.label || placeholder}
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <Icons.ChevronDown className={`h-4 w-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                </span>
+            </button>
+
+            {isOpen && (
+                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm animate-in fade-in zoom-in-95 duration-100 border border-border/10">
+                    {options.length === 0 ? (
+                        <div className="relative cursor-default select-none py-2 px-4 text-muted italic">
+                            No options available
+                        </div>
+                    ) : (
+                        options.map((option) => (
+                            <div
+                                key={option.value}
+                                className={`relative cursor-default select-none py-2 pl-10 pr-4 transition-colors ${value === option.value
+                                        ? 'bg-banana-50 dark:bg-banana-500/10 text-banana-900 dark:text-banana-100'
+                                        : 'text-foreground hover:bg-banana-100/50 dark:hover:bg-banana-500/5'
+                                    }`}
+                                onClick={() => {
+                                    onChange(option.value);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                <span className={`block truncate ${value === option.value ? 'font-medium' : 'font-normal'}`}>
+                                    {option.label}
+                                </span>
+                                {value === option.value ? (
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-banana-600 dark:text-banana-400">
+                                        <Icons.Check className="h-4 w-4" aria-hidden="true" />
+                                    </span>
+                                ) : null}
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
         </div>
     );
 };

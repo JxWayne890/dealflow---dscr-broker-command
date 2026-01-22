@@ -97,6 +97,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                                   <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">UW Fee</div>
                                   <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.uwFee.toLocaleString()}</div>
                                 </td>` : ''}
+                                ${quote.brokerFee ? `
                                   <td width="33%" valign="top">
                                     <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Broker Fee</div>
                                     <div style="font-size:18px;font-weight:700;color:#111827;">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${quote.brokerFee.toLocaleString()}`}</div>
@@ -106,49 +107,48 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                           </div>
                         </td>
                       </tr>` : ''
-}
+    }
 </table>
   </td>
   </tr>
   </table>
-  < div style = "background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;border:1px dashed #d1d5db;" >
-    <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;" > Amortization Highlights </h3>
-      < p style = "margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;" >
-        The first year of your loan will build approximately < strong > $${ calculateAmortizationSchedule(quote.loanAmount || 0, quote.rate || 0, quote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) } </strong> in equity through principal paydown.
+  <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;border:1px dashed #d1d5db;">
+    <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Amortization Highlights</h3>
+      <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;">
+        The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(quote.loanAmount || 0, quote.rate || 0, quote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
           </p>
-          < div style = "font-size:13px;color:#6b7280;text-align:center;" >
+          <div style="font-size:13px;color:#6b7280;text-align:center;">
 
             </div>
             </div>
 
-            < hr style = "border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
-              <table role="presentation" width = "100%" cellpadding = "0" cellspacing = "0" border = "0" >
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                ${
-  profile.headshotUrl ? `
+                ${profile.headshotUrl ? `
                   <td width="72" valign="top">
                     <img src="${profile.headshotUrl}"
                          alt="${profile.name}" width="60" height="60"
                          style="border-radius:50%;display:block;border:2px solid #e5e7eb;object-fit:cover;" />
                   </td>` : ''
-}
-<td valign="top" style = "${profile.headshotUrl ? 'padding-left:12px;' : ''}" >
-  <div style="font-weight:700;color:#111827;font-size:16px;" > ${ profile.name } </div>
-    < div style = "color:#4b5563;font-size:14px;margin-top:2px;" > ${ profile.title || 'Loan Broker' } </div>
-                      ${ profile.company ? `<div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.company}</div>` : '' }
-<div style="color:#6b7280;font-size:14px;margin-top:6px;" >
-  ${ profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${formatPhoneNumber(profile.phone)}</a>` : '' }
-                        ${ profile.phone && profile.website ? '&nbsp;&nbsp;|&nbsp;&nbsp;' : '' }
-                        ${ profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color:#6b7280;text-decoration:none;">${profile.website}</a>` : '' }
+    }
+<td valign="top" style="${profile.headshotUrl ? 'padding-left:12px;' : ''}">
+  <div style="font-weight:700;color:#111827;font-size:16px;">${profile.name}</div>
+    <div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.title || 'Loan Broker'}</div>
+                      ${profile.company ? `<div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.company}</div>` : ''}
+<div style="color:#6b7280;font-size:14px;margin-top:6px;">
+  ${profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${formatPhoneNumber(profile.phone)}</a>` : ''}
+                        ${profile.phone && profile.website ? '&nbsp;&nbsp;|&nbsp;&nbsp;' : ''}
+                        ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color:#6b7280;text-decoration:none;">${profile.website}</a>` : ''}
 </div>
   </td>
   </tr>
   </table>
 
-  < div style = "margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;" >
-                © ${ new Date().getFullYear() } ${ profile.company || profile.name }. All rights reserved.< br />
-  Rates and terms subject to change based on market conditions.Quote based on _____ credit score.
+  <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
+                © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.<br />
+  Rates and terms subject to change based on market conditions. Quote based on _____ credit score.
               </div>
 
     </td>
