@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
-import { Quote, QuoteStatus } from '../types';
+import { Quote, QuoteStatus, BrokerProfile } from '../types';
 import { generateHtmlEmail } from '../utils/emailTemplates';
 import { sendQuoteEmail } from '../services/emailService';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
@@ -9,9 +9,7 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { Campaign } from '../services/campaignService';
-
-// Profile usually passed via context
-const profile = DEFAULT_BROKER_PROFILE;
+import { ProfileService } from '../services/profileService';
 const activeColor = "text-banana-600 dark:text-banana-400";
 const activeBg = "bg-banana-400";
 
@@ -28,12 +26,26 @@ export const QuoteDetail = ({
 }) => {
     const { showToast } = useToast();
 
+    const [profile, setProfile] = useState<BrokerProfile>(DEFAULT_BROKER_PROFILE);
     const [isResending, setIsResending] = useState(false);
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [activeCampaigns, setActiveCampaigns] = useState<Campaign[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
     const [enrolling, setEnrolling] = useState(false);
     const [activeTab, setActiveTab] = useState<'details' | 'email'>('details');
+
+    // Load user's profile with senderEmailPrefix
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const userProfile = await ProfileService.getProfile();
+                if (userProfile) setProfile(userProfile);
+            } catch (err) {
+                console.error('Failed to load profile', err);
+            }
+        };
+        loadProfile();
+    }, []);
 
     const handleResend = async () => {
         setIsResending(true);
