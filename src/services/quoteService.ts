@@ -35,6 +35,22 @@ export const QuoteService = {
         return mapDbToQuote(data);
     },
 
+    async getPublicQuote(id: string): Promise<Quote | null> {
+        const { data, error } = await supabase.rpc('get_public_quote', { lookup_id: id });
+
+        if (error) {
+            console.error('Error fetching public quote:', error);
+            // Fallback for development if RPC isn't applied yet?
+            // Try direct fetch (will fail if RLS is strict, but good for local/admin)
+            // return this.getQuote(id);
+            return null;
+        }
+
+        if (!data) return null;
+
+        return mapDbToQuote(data);
+    },
+
     async createQuote(quote: Partial<Quote>): Promise<Quote> {
         const orgId = await ProfileService.getOrganizationId();
         if (!orgId) throw new Error('User not authenticated');

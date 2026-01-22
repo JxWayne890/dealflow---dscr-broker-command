@@ -156,8 +156,8 @@ export default function App() {
 
     if (view === 'schedule' && quoteId) {
       setCurrentView('public_schedule');
-      // Fetch the quote immediately even if not logged in
-      QuoteService.getQuote(quoteId).then(quote => {
+      // Fetch the quote publicly
+      QuoteService.getPublicQuote(quoteId).then(quote => {
         if (quote) setSelectedQuote(quote);
       });
     } else if (view === 'inquiry') {
