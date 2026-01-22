@@ -117,7 +117,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                   The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(quote.loanAmount || 0, quote.rate || 0, quote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
                 </p>
                 <div style="font-size:13px;color:#6b7280;text-align:center;">
-                  {/* Link removed per user request */}
+                  
                 </div>
               </div>
 
