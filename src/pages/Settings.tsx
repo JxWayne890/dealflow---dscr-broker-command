@@ -40,6 +40,11 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
     const [emailPrefixSuggestions, setEmailPrefixSuggestions] = useState<string[]>([]);
     const [checkingPrefix, setCheckingPrefix] = useState(false);
 
+    // Password state
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [updatingPassword, setUpdatingPassword] = useState(false);
+
     const TIMEZONES = [
         { value: 'UTC', name: 'UTC' },
         { value: 'America/New_York', name: 'Eastern Time' },
@@ -99,6 +104,33 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
             }
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleUpdatePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+        if (newPassword.length < 6) {
+            showToast('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        setUpdatingPassword(true);
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) throw error;
+
+            showToast('Password updated successfully', 'success');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            console.error('Failed to update password:', error);
+            showToast(error.message || 'Failed to update password', 'error');
+        } finally {
+            setUpdatingPassword(false);
         }
     };
 
@@ -539,6 +571,69 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
                                                 </div>
                                             </>
                                         )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Security Section */}
+                        <div className="p-8 pt-0 space-y-8">
+                            <div className="pt-8 border-t border-border/10">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-10 w-1 rounded-full bg-red-400" />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-foreground">Security</h2>
+                                        <p className="text-sm text-muted">Manage your password and account security.</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                    <div className="sm:col-span-3">
+                                        <label htmlFor="newPassword" className="block text-sm font-medium text-muted">New Password</label>
+                                        <div className="mt-1 relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Icons.Lock className="h-4 w-4 text-muted/50" />
+                                            </div>
+                                            <input
+                                                type="password"
+                                                name="newPassword"
+                                                id="newPassword"
+                                                value={newPassword}
+                                                onChange={e => setNewPassword(e.target.value)}
+                                                className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted">Confirm Password</label>
+                                        <div className="mt-1 relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Icons.Lock className="h-4 w-4 text-muted/50" />
+                                            </div>
+                                            <input
+                                                type="password"
+                                                name="confirmPassword"
+                                                id="confirmPassword"
+                                                value={confirmPassword}
+                                                onChange={e => setConfirmPassword(e.target.value)}
+                                                className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-6 flex justify-end">
+                                        <Button
+                                            type="button"
+                                            onClick={(e) => { handleUpdatePassword(e); }}
+                                            disabled={updatingPassword || !newPassword}
+                                            variant="secondary"
+                                            className="px-6"
+                                        >
+                                            {updatingPassword ? 'Updating...' : 'Update Password'}
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
