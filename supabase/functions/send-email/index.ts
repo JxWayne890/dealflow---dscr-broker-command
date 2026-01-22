@@ -37,6 +37,8 @@ serve(async (req) => {
         const fromDomain = Deno.env.get("FROM_EMAIL_DOMAIN") || "theofferhero.com";
         const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
 
+        console.log("[SEND-EMAIL] Sending from:", fromAddress, "to:", to);
+
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -57,20 +59,22 @@ serve(async (req) => {
 
         if (!res.ok) {
             console.error("Resend API Error:", data);
-            return new Response(JSON.stringify({ error: data }), {
-                status: 400,
+            // Return 200 with error in body so client can see actual error
+            return new Response(JSON.stringify({ error: data, success: false }), {
+                status: 200,
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
         }
 
-        return new Response(JSON.stringify(data), {
+        return new Response(JSON.stringify({ ...data, success: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
         });
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        console.error("Function Error:", error);
+        return new Response(JSON.stringify({ error: { message: error.message }, success: false }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500,
+            status: 200,
         });
     }
 });

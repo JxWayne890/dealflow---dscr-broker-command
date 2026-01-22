@@ -37,16 +37,23 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
             }
             return { success: false, error: error.message || "Unknown Cloud Error" };
         }
+        // New format: edge function always returns 200 with success/error in body
+        console.log('[EMAIL DEBUG] Response data:', data);
 
-        // Resend returns an ID like { id: "..." }
-        if (data?.id) {
+        if (data?.success === true) {
             return { success: true };
         } else if (data?.error) {
             console.error("Resend API Error (via Cloud):", data.error);
-            return { success: false, error: `Email Service Error: ${JSON.stringify(data.error)}` };
+            const errorMsg = data.error?.message || data.error?.name || JSON.stringify(data.error);
+            return { success: false, error: `Email Service Error: ${errorMsg}` };
         }
 
-        return { success: true }; // Fallback
+        // Fallback for old format (if data has id)
+        if (data?.id) {
+            return { success: true };
+        }
+
+        return { success: false, error: "Unknown response from email service" };
 
     } catch (error: any) {
         console.error("Failed to invoke send-email:", error);
