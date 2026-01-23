@@ -107,7 +107,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
             text-align: center; 
         }
         .footer-contact { font-weight: 600; color: #334155; font-size: 14px; margin-bottom: 10px; }
-        .footer-legal { font-size: 10px; color: #94a3b8; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+        .footer-legal { font-size: 11px; color: #94a3b8; line-height: 1.6; max-width: 600px; margin: 0 auto; }
         .footer-copyright { font-size: 10px; color: #cbd5e1; margin-top: 12px; }
     </style>
 </head>
@@ -196,7 +196,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
             ${profile.name} &nbsp;•&nbsp; ${formatPhoneNumber(profile.phone || '')} &nbsp;•&nbsp; ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color: #334155; text-decoration: underline;">${profile.website}</a>` : ''}
         </div>
         <div class="footer-legal">
-            This is not a commitment to lend. Rates and terms are subject to change based on market conditions, borrower creditworthiness, and property valuation. Actual terms may vary. Quote based on _____credit score.
+            This is not a commitment to lend. Rates and terms are subject to change based on market conditions, borrower creditworthiness, and property valuation. Actual terms may vary. Quote based on ___________ credit score.
         </div>
         <div class="footer-copyright">
             © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.
