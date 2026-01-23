@@ -125,7 +125,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                 <td class="header-right">
                     <div class="doc-title">Term Sheet</div>
                     <div class="doc-date">${today}</div>
-                    ${quote.lenderCode ? `<div style="margin-top: 10px; font-weight: 700; color: #fff; font-size: 13px; background: rgba(251, 191, 36, 0.2); padding: 4px 10px; border-radius: 4px; display: inline-block; border: 1px solid rgba(251, 191, 36, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">Ref: ${quote.lenderCode}</div>` : ''}
+                    ${quote.lenderCode ? `<div style="margin-top: 12px; font-weight: 700; color: #fff; font-size: 11px; background: rgba(251, 191, 36, 0.15); padding: 6px 12px; border-radius: 4px; display: inline-block; border: 1px solid rgba(251, 191, 36, 0.4); text-transform: uppercase; letter-spacing: 1px; line-height: 1;">Lender Code: ${quote.lenderCode}</div>` : ''}
                 </td>
             </tr>
         </table>
@@ -144,7 +144,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                 </div>
                 ${quote.lenderCode ? `
                 <div style="text-align: right;">
-                    <div class="property-label">Lender Reference</div>
+                    <div class="property-label">Lender Code</div>
                     <div style="font-size: 16px; font-weight: 700; color: #1e3a5f;">#${quote.lenderCode}</div>
                 </div>` : ''}
             </div>
