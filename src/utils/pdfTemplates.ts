@@ -196,7 +196,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
             ${profile.name} &nbsp;•&nbsp; ${formatPhoneNumber(profile.phone || '')} &nbsp;•&nbsp; ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color: #334155; text-decoration: underline;">${profile.website}</a>` : ''}
         </div>
         <div class="footer-legal">
-            This is not a commitment to lend. Rates and terms are subject to change based on market conditions, borrower creditworthiness, and property valuation. Actual terms may vary. Quote based on hypothetical credit score.
+            This is not a commitment to lend. quotes based on ____ credit score
         </div>
         <div class="footer-copyright">
             © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.
