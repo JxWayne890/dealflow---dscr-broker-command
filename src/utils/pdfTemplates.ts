@@ -169,8 +169,8 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                 <table class="terms-table">
                     <tr><td class="label">Lender Origination Fee</td><td class="value">$${(quote.originationFee || 0).toLocaleString()}</td></tr>
                     <tr><td class="label">Underwriting Fee</td><td class="value">$${(quote.uwFee || 0).toLocaleString()}</td></tr>
-                    <tr><td class="label">Est. Closing Costs</td><td class="value">$${(quote.closingFees || 0).toLocaleString()}</td></tr>
                     <tr><td class="label">Broker Fee</td><td class="value">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${(quote.brokerFee || 0).toLocaleString()}`}</td></tr>
+                    <tr><td class="label">Est. Closing Costs</td><td class="value">$${(quote.closingFees || 0).toLocaleString()}</td></tr>
                 </table>
             </div>
         </div>
