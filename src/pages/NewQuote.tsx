@@ -646,7 +646,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 Save as Draft
                             </Button>
                             <Button
-                                onClick={() => {
+                                onClick={async () => {
+                                    // 1. Generate and Download PDF
                                     const element = document.createElement('div');
                                     element.innerHTML = generateTermSheetHtml(formData, profile);
 
@@ -660,6 +661,29 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
                                     html2pdf().set(opt).from(element).save();
                                     showToast('Downloading Term Sheet PDF...', 'success');
+
+                                    // 2. Automatically Save to Database as DOWNLOADED
+                                    const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
+                                    const formDataWithUrl = { ...formData, scheduleUrl };
+
+                                    // Use HTML format for the stored preview if possible
+                                    const finalContent = generateHtmlEmail(formDataWithUrl, profile, formData.emailBody || '');
+
+                                    const newQuote: Quote = {
+                                        ...formDataWithUrl as Quote,
+                                        id: formData.id || Math.random().toString(36).substr(2, 9),
+                                        createdAt: new Date().toISOString(),
+                                        status: QuoteStatus.DOWNLOADED,
+                                        emailHtml: finalContent,
+                                        followUpSchedule: [
+                                            { id: Math.random().toString(36), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
+                                            { id: Math.random().toString(36), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
+                                            { id: Math.random().toString(36), dayOffset: 10, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10).toISOString() },
+                                        ]
+                                    };
+
+                                    // Trigger the actual save
+                                    onSave(newQuote);
                                 }}
                                 variant="outline"
                                 icon={Icons.FileText}
