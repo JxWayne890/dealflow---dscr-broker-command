@@ -158,7 +158,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                     <tr><td class="label">Loan Amount</td><td class="value">$${(quote.loanAmount || 0).toLocaleString()}</td></tr>
                     <tr><td class="label">Loan-to-Value (LTV)</td><td class="value">${quote.ltv || 0}%</td></tr>
                     <tr><td class="label">Interest Rate</td><td class="value">${quote.rate || 0}%</td></tr>
-                    <tr><td class="label">Loan Program</td><td class="value">DSCR ${quote.dealType ? `(${quote.dealType})` : ''}</td></tr>
+                    <tr><td class="label">Loan Program</td><td class="value">DSCR (${(quote.dealType || '').replace('Refi', 'Refinance').replace('(', ' - ').replace(')', '')})</td></tr>
                     <tr><td class="label">Loan Term</td><td class="value">${quote.termYears || 30} Years</td></tr>
                     <tr><td class="label">Rate Type</td><td class="value">${quote.rateType || 'Fixed'}</td></tr>
                     <tr><td class="label">Est. Monthly P&I</td><td class="value">$${(quote.monthlyPayment || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
