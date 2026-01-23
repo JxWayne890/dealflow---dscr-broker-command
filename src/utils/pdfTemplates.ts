@@ -107,7 +107,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
             text-align: center; 
         }
         .footer-contact { font-weight: 600; color: #334155; font-size: 14px; margin-bottom: 10px; }
-        .footer-legal { font-size: 11px; color: #94a3b8; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+        .footer-legal { font-size: 12px; color: #94a3b8; line-height: 1.6; max-width: 600px; margin: 0 auto; }
         .footer-copyright { font-size: 10px; color: #cbd5e1; margin-top: 12px; }
     </style>
 </head>
