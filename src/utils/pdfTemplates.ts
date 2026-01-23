@@ -153,6 +153,7 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                     <tr><td class="label">Rate Type</td><td class="value">${quote.rateType || 'Fixed'}</td></tr>
                     <tr><td class="label">Est. Monthly P&I</td><td class="value">$${(quote.monthlyPayment || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
                     <tr><td class="label">Prepayment Penalty</td><td class="value">${quote.prepayPenalty || 'None'}</td></tr>
+                    ${quote.lenderCode ? `<tr><td class="label">Lender Code</td><td class="value">${quote.lenderCode}</td></tr>` : ''}
                 </table>
             </div>
             <div class="terms-col">

@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
 import { QuoteService } from '../services/quoteService';
 import { generateTermSheetHtml } from '../utils/pdfTemplates';
+import { TrialLimitModal } from '../components/TrialLimitModal';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -27,6 +28,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     // UI State
     const [showSettings, setShowSettings] = useState(false);
     const [emailFormat, setEmailFormat] = useState<EmailFormat>('html');
+    const [showTrialLimitModal, setShowTrialLimitModal] = useState(false);
+    const [trialInfo, setTrialInfo] = useState({ emailsSent: 0, limit: 50 });
 
     // Profile State (Defaults for Demo)
     const [profile, setProfile] = useState<BrokerProfile>(DEFAULT_BROKER_PROFILE);
@@ -136,7 +139,21 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
         if (profile.autoSendQuoteEmail) {
             if (formData.investorEmail) {
+                // Check trial limit before sending
+                const trialCheck = await ProfileService.canSendEmail();
+                if (!trialCheck.allowed) {
+                    setTrialInfo({ emailsSent: trialCheck.emailsSent, limit: trialCheck.limit });
+                    setShowTrialLimitModal(true);
+                    setIsSending(false);
+                    return;
+                }
+
                 result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
+
+                // Increment email count on successful send
+                if (result.success) {
+                    await ProfileService.incrementEmailCount();
+                }
             }
         } else {
             console.log("Auto-send disabled, skipping email dispatch.");
@@ -826,6 +843,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                     )}
                 </div>
             </div>
+
+            {/* Trial Limit Modal */}
+            <TrialLimitModal
+                isOpen={showTrialLimitModal}
+                onClose={() => setShowTrialLimitModal(false)}
+                emailsSent={trialInfo.emailsSent}
+                limit={trialInfo.limit}
+            />
         </div >
     );
 };

@@ -120,6 +120,54 @@ export const ProfileService = {
             id: row.id,
             createdAt: row.created_at
         }));
+    },
+
+    async incrementEmailCount(): Promise<{ success: boolean; newCount: number }> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, newCount: 0 };
+
+        const { error } = await supabase.rpc('increment_email_count', { user_id: user.id });
+
+        if (error) {
+            console.error('Error incrementing email count:', error);
+            return { success: false, newCount: 0 };
+        }
+
+        // Fetch updated count
+        const { data } = await supabase
+            .from('profiles')
+            .select('emails_sent')
+            .eq('id', user.id)
+            .single();
+
+        return { success: true, newCount: data?.emails_sent || 0 };
+    },
+
+    async canSendEmail(): Promise<{ allowed: boolean; emailsSent: number; limit: number }> {
+        const FREE_TRIAL_LIMIT = 50;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { allowed: false, emailsSent: 0, limit: FREE_TRIAL_LIMIT };
+
+        const { data } = await supabase
+            .from('profiles')
+            .select('emails_sent, subscription_status')
+            .eq('id', user.id)
+            .single();
+
+        const emailsSent = data?.emails_sent || 0;
+        const status = data?.subscription_status || 'trial';
+
+        // Active subscribers have no limit
+        if (status === 'active') {
+            return { allowed: true, emailsSent, limit: Infinity };
+        }
+
+        // Trial users have a limit
+        return {
+            allowed: emailsSent < FREE_TRIAL_LIMIT,
+            emailsSent,
+            limit: FREE_TRIAL_LIMIT
+        };
     }
 };
 
@@ -139,7 +187,9 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     parentId: row.parent_id,
     permissions: row.permissions,
     inviteCode: row.invite_code,
-    onboardingStatus: row.onboarding_status
+    onboardingStatus: row.onboarding_status,
+    emailsSent: row.emails_sent || 0,
+    subscriptionStatus: row.subscription_status || 'trial'
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {

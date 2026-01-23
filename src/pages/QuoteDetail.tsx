@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { Campaign } from '../services/campaignService';
 import { ProfileService } from '../services/profileService';
+import { TrialLimitModal } from '../components/TrialLimitModal';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 const activeColor = "text-banana-600 dark:text-banana-400";
@@ -36,6 +37,8 @@ export const QuoteDetail = ({
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
     const [enrolling, setEnrolling] = useState(false);
     const [activeTab, setActiveTab] = useState<'details' | 'email'>('details');
+    const [showTrialLimitModal, setShowTrialLimitModal] = useState(false);
+    const [trialInfo, setTrialInfo] = useState({ emailsSent: 0, limit: 50 });
 
     // Load user's profile with senderEmailPrefix
     useEffect(() => {
@@ -52,12 +55,23 @@ export const QuoteDetail = ({
 
     const handleResend = async () => {
         setIsResending(true);
+
+        // Check trial limit before sending
+        const trialCheck = await ProfileService.canSendEmail();
+        if (!trialCheck.allowed) {
+            setTrialInfo({ emailsSent: trialCheck.emailsSent, limit: trialCheck.limit });
+            setShowTrialLimitModal(true);
+            setIsResending(false);
+            return;
+        }
+
         const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${quote.id}`;
         const quoteWithUrl = { ...quote, scheduleUrl };
         const html = quote.emailHtml || generateHtmlEmail(quoteWithUrl, profile, quote.emailBody || '');
         const result = await sendQuoteEmail(quote, html, profile);
 
         if (result.success) {
+            await ProfileService.incrementEmailCount();
             showToast('Email resent successfully!', 'success');
         } else {
             showToast(`Resend failed: ${result.error}`, 'error');
@@ -423,6 +437,14 @@ export const QuoteDetail = ({
                     </p>
                 </div>
             </Modal>
+
+            {/* Trial Limit Modal */}
+            <TrialLimitModal
+                isOpen={showTrialLimitModal}
+                onClose={() => setShowTrialLimitModal(false)}
+                emailsSent={trialInfo.emailsSent}
+                limit={trialInfo.limit}
+            />
         </div>
     );
 };
