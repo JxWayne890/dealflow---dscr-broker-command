@@ -16,11 +16,12 @@ import html2pdf from 'html2pdf.js';
 
 export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     onCancel: () => void,
-    onSave: (quote: Quote) => void,
+    onSave: (quote: Quote, shouldRedirect?: boolean) => void,
     investors: Investor[],
     onAddInvestor: (investor: Investor) => void
 }) => {
     const { showToast } = useToast();
+
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -192,12 +193,16 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             };
             // We can trigger this silent update
             // onAddInvestor(newInv); 
-            // However, strictly speaking, NewQuote props has onAddInvestor.
             onAddInvestor(newInv);
         }
 
         setIsSending(false);
         if (result.success) {
+            // Update step or show success, but SAVE first.
+            // When sending, we might want to stay on the success step, not redirect.
+            // Trigger save with NO redirect
+            onSave(newQuote, false);
+
             // Update the form data with the final object so Step 3 can use it if needed (mostly generic info)
             setFormData(newQuote);
             setStep(3); // Show Success View
@@ -638,7 +643,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         emailHtml: emailFormat === 'html' ? generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl } as Quote, profile, formData.emailBody || '') : undefined,
                                         followUpSchedule: [] // No follow ups for drafts usually, or paused
                                     };
-                                    onSave(draftQuote as Quote);
+                                    onSave(draftQuote as Quote, false);
                                 }}
                                 variant="secondary"
                                 className="px-6"
@@ -682,8 +687,8 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         ]
                                     };
 
-                                    // Trigger the actual save
-                                    onSave(newQuote);
+                                    // Trigger the actual save without redirect
+                                    onSave(newQuote, false);
                                 }}
                                 variant="outline"
                                 icon={Icons.FileText}

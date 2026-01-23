@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { Quote, QuoteStatus, View, Investor } from './types';
@@ -30,6 +30,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [dataInitializationComplete, setDataInitializationComplete] = useState(false);
+  const initialNavigationDone = useRef(false);
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -127,19 +128,21 @@ export default function App() {
 
         // Only force dashboard navigation if this is the very first time we're loading data
         // or if we're currently "logged out" (no profile)
-        // Explicitly force dashboard navigation on session load unless a specific view is requested via URL
-        // or we are in a special flow (like public schedule)
-        const params = new URLSearchParams(window.location.search);
-        const viewParam = params.get('view');
+        if (!initialNavigationDone.current) {
+          const params = new URLSearchParams(window.location.search);
+          const viewParam = params.get('view');
 
-        if (!viewParam) {
-          setCurrentView('dashboard');
-        } else if (viewParam === 'settings') {
-          // Support direct linking to settings if needed
-          setCurrentView('settings');
-        } else if (viewParam === 'dev') {
-          // Hidden dev dashboard
-          setCurrentView('dev');
+          if (!viewParam) {
+            setCurrentView('dashboard');
+          } else if (viewParam === 'settings') {
+            // Support direct linking to settings if needed
+            setCurrentView('settings');
+          } else if (viewParam === 'dev') {
+            // Hidden dev dashboard
+            setCurrentView('dev');
+          }
+
+          initialNavigationDone.current = true;
         }
 
         setProfile(fetchedProfile);
@@ -153,6 +156,7 @@ export default function App() {
       setInvestors([]);
       // If we signed out, data is "initialized" (as empty)
       setDataInitializationComplete(true);
+      initialNavigationDone.current = false;
     }
   }, [session]);
 
@@ -191,11 +195,13 @@ export default function App() {
     setCurrentView(view);
   };
 
-  const handleSaveQuote = async (newQuote: Quote) => {
+  const handleSaveQuote = async (newQuote: Quote, shouldRedirect: boolean = true) => {
     try {
       const saved = await QuoteService.createQuote(newQuote);
       setQuotes(prev => [saved, ...prev]);
-      setCurrentView('dashboard');
+      if (shouldRedirect) {
+        setCurrentView('dashboard');
+      }
       showToast('Quote saved successfully', 'success');
     } catch (e) {
       console.error("Failed to save quote", e);
