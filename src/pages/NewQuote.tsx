@@ -394,6 +394,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 />
                             </Field>
 
+                            <Field label="Based on Credit Score">
+                                <Input
+                                    placeholder="e.g. 700 or 720+"
+                                    value={formData.creditScore || ''}
+                                    onChange={e => setFormData({ ...formData, creditScore: e.target.value })}
+                                />
+                            </Field>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="Lender Origination ($)">
                                     <CurrencyInput

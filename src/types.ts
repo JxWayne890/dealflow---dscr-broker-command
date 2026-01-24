@@ -64,6 +64,7 @@ export interface Quote {
   scheduleUrl?: string;
   lenderCode?: string;
   prepayPenalty?: string;
+  creditScore?: string;
 }
 
 export interface User {

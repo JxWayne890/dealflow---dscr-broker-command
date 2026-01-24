@@ -148,7 +148,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
 
   <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
                 © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.<br />
-  Rates and terms subject to change based on market conditions. Quote based on _____ credit score.
+  Rates and terms subject to change based on market conditions. Quote based on ${quote.creditScore ? `<strong>${quote.creditScore}</strong>` : '_____'} credit score.
               </div>
 
     </td>
@@ -185,6 +185,6 @@ ${profile.title}
 ${profile.phone ? formatPhoneNumber(profile.phone) : ''}
 ${profile.website || ''}
 
-Rates and terms subject to change based on market conditions. Quote based on _____ credit score.
+Rates and terms subject to change based on market conditions. Quote based on ${quote.creditScore || '_____'} credit score.
 `;
 };
