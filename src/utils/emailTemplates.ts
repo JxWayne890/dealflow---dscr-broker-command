@@ -146,7 +146,7 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
   </tr>
   </table>
 
-  <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
+  <div style="margin-top:24px;font-size:14px;color:#9ca3af;text-align:center;line-height:1.5;">
                 © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.<br />
   Rates and terms subject to change based on market conditions. Quote based on ${quote.creditScore ? `<strong>${quote.creditScore}</strong>` : '_____'} credit score.
               </div>
