@@ -135,18 +135,23 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
         
         <!-- Property Section -->
         <div class="property-section">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <div class="property-label">Subject Property</div>
-                    <div class="property-address">${quote.propertyAddress || 'Property Address TBD'}</div>
-                    <div class="property-city">${quote.propertyCity ? `${quote.propertyCity}, ` : ''}${quote.propertyState || ''} ${quote.propertyZip || ''}</div>
-                </div>
-                ${quote.lenderCode ? `
-                <div style="text-align: right;">
-                    <div class="property-label">Lender Code</div>
-                    <div style="font-size: 18px; font-weight: 800; color: #d97706; text-shadow: 0px 1px 1px rgba(0,0,0,0.1);">#${quote.lenderCode}</div>
-                </div>` : ''}
-            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 50%; vertical-align: top; border-right: 1px solid #e2e8f0; padding-right: 20px;">
+                        <div class="property-label">Subject Property</div>
+                        <div class="property-address">${quote.propertyAddress || 'Property Address TBD'}</div>
+                        <div class="property-city">${quote.propertyCity ? `${quote.propertyCity}, ` : ''}${quote.propertyState || ''} ${quote.propertyZip || ''}</div>
+                    </td>
+                    <td style="width: 25%; vertical-align: top; text-align: center; border-right: 1px solid #e2e8f0; padding: 0 15px;">
+                        <div class="property-label">Based on Credit</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 4px;">${quote.creditScore || '—'}</div>
+                    </td>
+                    <td style="width: 25%; vertical-align: top; text-align: right; padding-left: 20px;">
+                        <div class="property-label">Lender Code</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #d97706; text-shadow: 0px 1px 1px rgba(0,0,0,0.1); margin-top: 4px;">${quote.lenderCode ? `#${quote.lenderCode}` : '—'}</div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <!-- Terms Grid -->
