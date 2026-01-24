@@ -440,7 +440,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <Field label="Total Estimated Costs">
                                 <div className="bg-banana-400/10 border border-banana-400/20 rounded-xl px-4 py-3 shadow-inner text-banana-900 dark:text-banana-100 font-extrabold text-xl flex items-center justify-between">
                                     <span className="text-xs uppercase tracking-widest opacity-60">Total sum of all fees:</span>
-                                    <span>$${((formData.originationFee || 0) + (formData.uwFee || 0) + (formData.brokerFee || 0) + (formData.closingFees || 0)).toLocaleString()}</span>
+                                    <span>${((formData.originationFee || 0) + (formData.uwFee || 0) + (formData.brokerFee || 0) + (formData.closingFees || 0)).toLocaleString()}</span>
                                 </div>
                             </Field>
 
