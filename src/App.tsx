@@ -52,6 +52,7 @@ export default function App() {
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [newQuoteKey, setNewQuoteKey] = useState<number>(0);
 
 
   // Theme State (Lifted from Layout)
@@ -182,7 +183,10 @@ export default function App() {
 
 
   // Navigation Handlers
-  const handleNewQuote = () => setCurrentView('new_quote');
+  const handleNewQuote = () => {
+    setNewQuoteKey(Date.now());
+    setCurrentView('new_quote');
+  };
   const handleViewQuote = (id: string) => {
     setSelectedQuoteId(id);
     const quote = quotes.find(q => q.id === id);
@@ -296,7 +300,7 @@ export default function App() {
       case 'quotes':
         return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
       case 'new_quote':
-        return <NewQuote investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
+        return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
         if (!selectedQuote) return null; // Should ideally handle 404
         return <QuoteDetail quote={selectedQuote} onBack={() => setCurrentView('dashboard')} onUpdateStatus={handleUpdateStatus} onUpdateQuote={handleUpdateQuote} />;
