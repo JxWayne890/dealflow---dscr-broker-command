@@ -175,7 +175,13 @@ export const generateTermSheetHtml = (quote: Partial<Quote>, profile: BrokerProf
                     <tr><td class="label">Lender Origination Fee</td><td class="value">$${(quote.originationFee || 0).toLocaleString()}</td></tr>
                     <tr><td class="label">Underwriting Fee</td><td class="value">$${(quote.uwFee || 0).toLocaleString()}</td></tr>
                     <tr><td class="label">Broker Fee</td><td class="value">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${(quote.brokerFee || 0).toLocaleString()}`}</td></tr>
-                    <tr><td class="label">Est. Closing Costs</td><td class="value">$${(quote.closingFees || 0).toLocaleString()}</td></tr>
+                    <tr><td class="label">Other Closing Fees</td><td class="value">$${(quote.closingFees || 0).toLocaleString()}</td></tr>
+                    <tr style="border-top: 2px solid #e2e8f0;">
+                        <td class="label" style="font-weight: 800; color: #0f172a; padding-top: 12px;">Est. Closing Costs</td>
+                        <td class="value" style="font-size: 16px; font-weight: 800; color: #0f172a; padding-top: 12px;">
+                            $${((quote.originationFee || 0) + (quote.uwFee || 0) + (quote.brokerFee || 0) + (quote.closingFees || 0)).toLocaleString()}
+                        </td>
+                    </tr>
                 </table>
             </div>
         </div>

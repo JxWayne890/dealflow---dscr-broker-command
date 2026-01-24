@@ -274,7 +274,8 @@ export const QuoteDetail = ({
                                             <DetailRow label="Origination Fee" value={`$${quote.originationFee?.toLocaleString()}`} />
                                             <DetailRow label="Underwriting Fee" value={`$${quote.uwFee?.toLocaleString()}`} />
                                             {quote.brokerFee && <DetailRow label="Broker Fee" value={`$${quote.brokerFee.toLocaleString()}`} />}
-                                            <DetailRow label="Est. Closing Fees" value={`$${quote.closingFees?.toLocaleString()}`} />
+                                            <DetailRow label="Other Closing Fees" value={`$${quote.closingFees?.toLocaleString()}`} />
+                                            <DetailRow label="Total Estimated Costs" value={<strong>{`$${((quote.originationFee || 0) + (quote.uwFee || 0) + (quote.brokerFee || 0) + (quote.closingFees || 0)).toLocaleString()}`}</strong>} />
                                             {quote.lenderCode && <DetailRow label="Lender Code" value={quote.lenderCode} />}
                                             <DetailRow label="Credit Score" value={quote.creditScore ? <strong>{quote.creditScore}</strong> : 'Not specified'} />
                                             <DetailRow label="Created At" value={new Date(quote.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })} />
