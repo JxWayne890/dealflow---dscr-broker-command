@@ -210,7 +210,15 @@ export default function App() {
         setQuotes(prev => prev.map(q => q.id === saved.id ? saved : q));
       } else {
         saved = await QuoteService.createQuote(newQuote);
-        setQuotes(prev => [saved, ...prev]);
+
+        setQuotes(prev => {
+          // Check if this quote already exists in our list (could happen with upsert merging)
+          const alreadyInList = prev.some(q => q.id === saved.id);
+          if (alreadyInList) {
+            return prev.map(q => q.id === saved.id ? saved : q);
+          }
+          return [saved, ...prev];
+        });
       }
 
       if (shouldRedirect) {
@@ -223,6 +231,60 @@ export default function App() {
       showToast("Failed to save quote", 'error');
       return null;
     }
+  };
+
+  const handleDeleteQuote = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this quote?')) return;
+    try {
+      const success = await QuoteService.deleteQuote(id);
+      if (success) {
+        setQuotes(prev => prev.filter(q => q.id !== id));
+        showToast('Quote deleted successfully', 'success');
+      }
+    } catch (e) {
+      console.error("Failed to delete quote", e);
+      showToast("Failed to delete quote", 'error');
+    }
+  };
+
+  const handleClearDuplicates = async () => {
+    if (!window.confirm('This will find and remove all duplicate quotes based on name, address, and amount. Proceed?')) return;
+
+    // Reverse sort to keep the LATEST one (first one we encounter if we look from start of a desc sorted list)
+    // Actually our quotes are usually newest first. Let's iterate and keep the first unique ones.
+    const seen = new Set();
+    const toDelete = [];
+
+    const quotesToProcess = [...quotes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    for (const q of quotesToProcess) {
+      const key = `${q.investorName}|${q.investorEmail}|${q.propertyAddress}|${q.loanAmount}|${q.rate}|${q.dealType}|${q.status}`;
+      if (seen.has(key)) {
+        toDelete.push(q.id);
+      } else {
+        seen.add(key);
+      }
+    }
+
+    if (toDelete.length === 0) {
+      showToast('No duplicates found', 'info');
+      return;
+    }
+
+    showToast(`Cleaning up ${toDelete.length} duplicates...`, 'info');
+
+    let deletedCount = 0;
+    for (const id of toDelete) {
+      try {
+        const success = await QuoteService.deleteQuote(id);
+        if (success) deletedCount++;
+      } catch (e) {
+        console.error(`Failed to delete duplicate ${id}`, e);
+      }
+    }
+
+    setQuotes(prev => prev.filter(q => !toDelete.includes(q.id)));
+    showToast(`Successfully removed ${deletedCount} duplicates.`, 'success');
   };
 
   const handleAddInvestor = async (newInvestor: Investor) => {

@@ -26,6 +26,21 @@ export const InvestorService = {
             user_id: orgId
         };
 
+        // Prevent duplicate investors by email
+        if (dbInvestor.email) {
+            const { data: existing } = await supabase
+                .from('investors')
+                .select('*')
+                .eq('user_id', orgId)
+                .eq('email', dbInvestor.email)
+                .maybeSingle();
+
+            if (existing) {
+                console.info('Investor with this email already exists.');
+                return mapDbToInvestor(existing);
+            }
+        }
+
         const { data, error } = await supabase
             .from('investors')
             .insert(dbInvestor)

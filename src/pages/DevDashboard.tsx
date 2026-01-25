@@ -95,9 +95,28 @@ export const DevDashboard: React.FC = () => {
         <div className="min-h-screen bg-slate-950 text-white p-8">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black mb-2">Dev Dashboard</h1>
-                    <p className="text-slate-400">All subscribers and their information</p>
+                <div className="mb-8 flex justify-between items-end">
+                    <div>
+                        <h1 className="text-3xl font-black mb-2">Dev Dashboard</h1>
+                        <p className="text-slate-400">All subscribers and their information</p>
+                    </div>
+                    <button
+                        onClick={async () => {
+                            if (!window.confirm('This will find and remove all duplicate quotes system-wide. Proceed?')) return;
+                            try {
+                                const { data, error } = await supabase.rpc('delete_duplicates_v2'); // We'll need to define this or use a query
+                                if (error) throw error;
+                                alert('Cleanup complete!');
+                            } catch (e) {
+                                console.error(e);
+                                alert('Failed to clear duplicates. Make sure the delete_duplicates SQL is applied.');
+                            }
+                        }}
+                        className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                    >
+                        <Icons.Trash className="w-4 h-4" />
+                        Clean Duplicate Quotes
+                    </button>
                 </div>
 
                 {/* Stats */}
