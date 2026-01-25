@@ -153,6 +153,13 @@ const mapQuoteToDb = (quote: Partial<Quote>): any => {
     const cleanUuid = (val?: string) => (val && val.trim() !== '' && val !== 'undefined') ? val : null;
     const cleanNum = (val?: number) => (val !== undefined && !isNaN(val)) ? val : null;
 
+    if (quote.id !== undefined) {
+        const id = cleanUuid(quote.id);
+        // Only include it if it's a valid UUID to avoid DB errors
+        if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+            db.id = id;
+        }
+    }
     if (quote.investorId !== undefined) db.investor_id = cleanUuid(quote.investorId);
     if (quote.investorName !== undefined) db.investor_name = quote.investorName;
     if (quote.investorEmail !== undefined) db.investor_email = quote.investorEmail;

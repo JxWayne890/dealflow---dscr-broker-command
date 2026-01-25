@@ -16,7 +16,7 @@ import html2pdf from 'html2pdf.js';
 
 export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     onCancel: () => void,
-    onSave: (quote: Quote, shouldRedirect?: boolean) => void,
+    onSave: (quote: Quote, shouldRedirect?: boolean) => Promise<Quote | null>,
     investors: Investor[],
     onAddInvestor: (investor: Investor) => void
 }) => {
@@ -48,7 +48,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
     }, []);
 
     const [formData, setFormData] = useState<Partial<Quote>>({
-        id: Math.random().toString(36).substr(2, 9), // Pre-generate ID for stable links
+        id: crypto.randomUUID(), // Pre-generate ID for stable links
         dealType: DealType.PURCHASE,
         propertyState: '',
         ltv: 75,
@@ -162,14 +162,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
         const newQuote: Quote = {
             ...formDataWithUrl as Quote,
-            id: formData.id || Math.random().toString(36).substr(2, 9),
+            id: formData.id || crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             status: result.success ? (profile.autoSendQuoteEmail ? QuoteStatus.SENT : QuoteStatus.ACTIVE) : QuoteStatus.DRAFT,
             emailHtml: emailFormat === 'html' ? finalContent : undefined,
             followUpSchedule: [
-                { id: Math.random().toString(36), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
-                { id: Math.random().toString(36), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
-                { id: Math.random().toString(36), dayOffset: 10, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10).toISOString() },
+                { id: crypto.randomUUID(), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
+                { id: crypto.randomUUID(), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
+                { id: crypto.randomUUID(), dayOffset: 10, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10).toISOString() },
             ]
         };
 
@@ -201,10 +201,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             // Update step or show success, but SAVE first.
             // When sending, we might want to stay on the success step, not redirect.
             // Trigger save with NO redirect
-            onSave(newQuote, false);
+            const saved = await onSave(newQuote, false);
 
             // Update the form data with the final object so Step 3 can use it if needed (mostly generic info)
-            setFormData(newQuote);
+            if (saved) setFormData(saved);
             setStep(3); // Show Success View
         } else {
             // Error handled above with alert
@@ -649,24 +649,29 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                         {/* Send Button Block (Desktop) */}
                         <div className="col-span-1 lg:col-span-2 hidden md:flex justify-end pt-4 gap-3">
                             <Button
-                                onClick={() => {
+                                onClick={async () => {
+                                    setIsSending(true);
                                     const draftQuote = {
                                         ...formData,
-                                        id: formData.id || Math.random().toString(36).substr(2, 9),
+                                        id: formData.id || crypto.randomUUID(),
                                         createdAt: new Date().toISOString(),
                                         status: QuoteStatus.DRAFT,
                                         emailHtml: emailFormat === 'html' ? generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl } as Quote, profile, formData.emailBody || '') : undefined,
                                         followUpSchedule: [] // No follow ups for drafts usually, or paused
                                     };
-                                    onSave(draftQuote as Quote, false);
+                                    const saved = await onSave(draftQuote as Quote, false);
+                                    if (saved) setFormData(saved);
+                                    setIsSending(false);
                                 }}
                                 variant="secondary"
                                 className="px-6"
+                                disabled={isSending}
                             >
-                                Save as Draft
+                                {isSending ? 'Saving...' : 'Save as Draft'}
                             </Button>
                             <Button
                                 onClick={async () => {
+                                    setIsSending(true);
                                     // 1. Generate and Download PDF
                                     const element = document.createElement('div');
                                     element.innerHTML = generateTermSheetHtml(formData, profile);
@@ -691,25 +696,28 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
                                     const newQuote: Quote = {
                                         ...formDataWithUrl as Quote,
-                                        id: formData.id || Math.random().toString(36).substr(2, 9),
+                                        id: formData.id || crypto.randomUUID(),
                                         createdAt: new Date().toISOString(),
                                         status: QuoteStatus.DOWNLOADED,
                                         emailHtml: finalContent,
                                         followUpSchedule: [
-                                            { id: Math.random().toString(36), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
-                                            { id: Math.random().toString(36), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
-                                            { id: Math.random().toString(36), dayOffset: 10, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10).toISOString() },
+                                            { id: crypto.randomUUID(), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
+                                            { id: crypto.randomUUID(), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
+                                            { id: crypto.randomUUID(), dayOffset: 10, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10).toISOString() },
                                         ]
                                     };
 
                                     // Trigger the actual save without redirect
-                                    onSave(newQuote, false);
+                                    const saved = await onSave(newQuote, false);
+                                    if (saved) setFormData(saved);
+                                    setIsSending(false);
                                 }}
                                 variant="outline"
                                 icon={Icons.FileText}
                                 className="px-6"
+                                disabled={isSending}
                             >
-                                Download Term Sheet
+                                {isSending ? 'Downloading...' : 'Download Term Sheet'}
                             </Button>
                             <Button
                                 onClick={handleSubmit}

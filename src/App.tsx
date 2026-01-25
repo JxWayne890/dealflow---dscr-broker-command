@@ -201,15 +201,27 @@ export default function App() {
 
   const handleSaveQuote = async (newQuote: Quote, shouldRedirect: boolean = true) => {
     try {
-      const saved = await QuoteService.createQuote(newQuote);
-      setQuotes(prev => [saved, ...prev]);
+      let saved: Quote;
+      const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      const exists = quotes.some(q => q.id === newQuote.id);
+
+      if (exists && newQuote.id && isUuid(newQuote.id)) {
+        saved = await QuoteService.updateQuote(newQuote.id, newQuote);
+        setQuotes(prev => prev.map(q => q.id === saved.id ? saved : q));
+      } else {
+        saved = await QuoteService.createQuote(newQuote);
+        setQuotes(prev => [saved, ...prev]);
+      }
+
       if (shouldRedirect) {
         setCurrentView('dashboard');
       }
       showToast('Quote saved successfully', 'success');
+      return saved;
     } catch (e) {
       console.error("Failed to save quote", e);
       showToast("Failed to save quote", 'error');
+      return null;
     }
   };
 
