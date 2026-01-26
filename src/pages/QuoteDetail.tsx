@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { Campaign } from '../services/campaignService';
 import { ProfileService } from '../services/profileService';
+import { QuoteService } from '../services/quoteService';
 import { TrialLimitModal } from '../components/TrialLimitModal';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
@@ -40,6 +41,9 @@ export const QuoteDetail = ({
     const [showTrialLimitModal, setShowTrialLimitModal] = useState(false);
     const [trialInfo, setTrialInfo] = useState({ emailsSent: 0, limit: 50 });
 
+    // Comparison quotes linked to this primary quote
+    const [comparisonQuotes, setComparisonQuotes] = useState<Quote[]>([]);
+
     // Load user's profile with senderEmailPrefix
     useEffect(() => {
         const loadProfile = async () => {
@@ -52,6 +56,19 @@ export const QuoteDetail = ({
         };
         loadProfile();
     }, []);
+
+    // Load comparison quotes linked to this primary quote
+    useEffect(() => {
+        const loadComparisonQuotes = async () => {
+            try {
+                const comparisons = await QuoteService.getComparisonQuotes(quote.id);
+                setComparisonQuotes(comparisons);
+            } catch (err) {
+                console.error('Failed to load comparison quotes:', err);
+            }
+        };
+        loadComparisonQuotes();
+    }, [quote.id]);
 
     const handleResend = async () => {
         setIsResending(true);
@@ -363,12 +380,16 @@ export const QuoteDetail = ({
 
                             <button
                                 onClick={() => {
+                                    // Combine primary quote with comparison quotes for PDF
+                                    const allQuotesForPdf = comparisonQuotes.length > 0
+                                        ? [quote, ...comparisonQuotes]
+                                        : quote;
                                     const element = document.createElement('div');
-                                    element.innerHTML = generateTermSheetHtml(quote, profile);
+                                    element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
 
                                     const opt = {
                                         margin: 0,
-                                        filename: `Term_Sheet_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.pdf`,
+                                        filename: `${comparisonQuotes.length > 0 ? 'Loan_Comparison' : 'Term_Sheet'}_${quote.investorName.replace(/\s+/g, '_')}_${new Date(quote.createdAt).toISOString().split('T')[0]}.pdf`,
                                         image: { type: 'jpeg' as const, quality: 0.98 },
                                         html2canvas: { scale: 2, useCORS: true },
                                         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }

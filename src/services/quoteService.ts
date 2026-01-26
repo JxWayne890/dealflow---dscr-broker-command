@@ -129,6 +129,65 @@ export const QuoteService = {
         }
 
         return true;
+    },
+
+    // Fetch comparison quotes (child quotes linked via parent_quote_id)
+    async getComparisonQuotes(parentQuoteId: string): Promise<Quote[]> {
+        const { data, error } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('parent_quote_id', parentQuoteId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching comparison quotes:', error);
+            return [];
+        }
+
+        return data.map(mapDbToQuote);
+    },
+
+    // Save comparison quotes - creates all child quotes linked to a parent
+    async createComparisonQuotes(parentQuoteId: string, comparisonQuotes: Partial<Quote>[]): Promise<Quote[]> {
+        if (!comparisonQuotes.length) return [];
+
+        const orgId = await ProfileService.getOrganizationId();
+        if (!orgId) throw new Error('User not authenticated');
+
+        const dbQuotes = comparisonQuotes.map(q => ({
+            ...mapQuoteToDb({ ...q, parentQuoteId }),
+            user_id: orgId
+        }));
+
+        const { data, error } = await supabase
+            .from('quotes')
+            .upsert(dbQuotes, {
+                onConflict: 'id',
+                ignoreDuplicates: false
+            })
+            .select();
+
+        if (error) {
+            console.error('Error saving comparison quotes:', error);
+            throw error;
+        }
+
+        return (data || []).map(mapDbToQuote);
+    },
+
+    // Delete all comparison quotes for a parent
+    async deleteComparisonQuotes(parentQuoteId: string): Promise<boolean> {
+        const { error } = await supabase
+            .from('quotes')
+            .delete()
+            .eq('parent_quote_id', parentQuoteId);
+
+        if (error) {
+            console.error('Error deleting comparison quotes:', error);
+            return false;
+        }
+
+        return true;
     }
 };
 
@@ -161,7 +220,12 @@ const mapDbToQuote = (row: any): Quote => ({
     followUpSchedule: row.follow_up_schedule || [],
     emailHtml: row.email_html,
     scheduleUrl: row.schedule_url,
-    lenderCode: row.lender_code
+    lenderCode: row.lender_code,
+    brokerFee: row.broker_fee,
+    brokerFeePercent: row.broker_fee_percent,
+    prepayPenalty: row.prepay_penalty,
+    creditScore: row.credit_score,
+    parentQuoteId: row.parent_quote_id
 });
 
 const mapQuoteToDb = (quote: Partial<Quote>): any => {
@@ -203,6 +267,11 @@ const mapQuoteToDb = (quote: Partial<Quote>): any => {
     if (quote.emailHtml !== undefined) db.email_html = quote.emailHtml;
     if (quote.scheduleUrl !== undefined) db.schedule_url = quote.scheduleUrl;
     if (quote.lenderCode !== undefined) db.lender_code = quote.lenderCode;
+    if (quote.brokerFee !== undefined) db.broker_fee = cleanNum(quote.brokerFee);
+    if (quote.brokerFeePercent !== undefined) db.broker_fee_percent = cleanNum(quote.brokerFeePercent);
+    if (quote.prepayPenalty !== undefined) db.prepay_penalty = quote.prepayPenalty;
+    if (quote.creditScore !== undefined) db.credit_score = quote.creditScore;
+    if (quote.parentQuoteId !== undefined) db.parent_quote_id = cleanUuid(quote.parentQuoteId);
 
     return db;
 };

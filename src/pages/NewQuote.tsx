@@ -207,10 +207,18 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
         setIsSending(false);
         if (result.success) {
-            // Update step or show success, but SAVE first.
             // When sending, we might want to stay on the success step, not redirect.
             // Trigger save with NO redirect
             const saved = await onSave(newQuote, false);
+
+            // Save comparison quotes if any exist
+            if (saved && comparisonQuotes.length > 0) {
+                try {
+                    await QuoteService.createComparisonQuotes(saved.id, comparisonQuotes);
+                } catch (err) {
+                    console.error('Failed to save comparison quotes:', err);
+                }
+            }
 
             // Update the form data with the final object so Step 3 can use it if needed (mostly generic info)
             if (saved) setFormData(saved);
@@ -933,6 +941,16 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
                                     // Trigger the actual save without redirect
                                     const saved = await onSave(newQuote, false);
+
+                                    // Save comparison quotes if any exist
+                                    if (saved && comparisonQuotes.length > 0) {
+                                        try {
+                                            await QuoteService.createComparisonQuotes(saved.id, comparisonQuotes);
+                                        } catch (err) {
+                                            console.error('Failed to save comparison quotes:', err);
+                                        }
+                                    }
+
                                     if (saved) setFormData(saved);
                                     setIsSending(false);
                                 }}
