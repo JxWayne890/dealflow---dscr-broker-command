@@ -149,22 +149,31 @@ export const QuoteService = {
 
     // Save comparison quotes - creates all child quotes linked to a parent
     async createComparisonQuotes(parentQuoteId: string, comparisonQuotes: Partial<Quote>[]): Promise<Quote[]> {
-        if (!comparisonQuotes.length) return [];
+        if (!comparisonQuotes.length) {
+            console.log('No comparison quotes to save');
+            return [];
+        }
 
         const orgId = await ProfileService.getOrganizationId();
         if (!orgId) throw new Error('User not authenticated');
 
-        const dbQuotes = comparisonQuotes.map(q => ({
-            ...mapQuoteToDb({ ...q, parentQuoteId }),
-            user_id: orgId
-        }));
+        console.log(`Saving ${comparisonQuotes.length} comparison quotes for parent: ${parentQuoteId}`);
+
+        const dbQuotes = comparisonQuotes.map(q => {
+            // Ensure each comparison quote has a new unique ID
+            const mapped = mapQuoteToDb({ ...q, parentQuoteId });
+            return {
+                ...mapped,
+                id: q.id || crypto.randomUUID(), // Ensure unique ID
+                user_id: orgId
+            };
+        });
+
+        console.log('Comparison quotes to insert:', dbQuotes);
 
         const { data, error } = await supabase
             .from('quotes')
-            .upsert(dbQuotes, {
-                onConflict: 'id',
-                ignoreDuplicates: false
-            })
+            .insert(dbQuotes)
             .select();
 
         if (error) {
@@ -172,6 +181,7 @@ export const QuoteService = {
             throw error;
         }
 
+        console.log('Successfully saved comparison quotes:', data);
         return (data || []).map(mapDbToQuote);
     },
 
