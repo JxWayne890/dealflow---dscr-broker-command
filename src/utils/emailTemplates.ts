@@ -123,6 +123,14 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
                 ${isComparison ? 'Comparison of Loan Options' : `Quote for ${firstQuote.propertyAddress ? `${firstQuote.propertyAddress} (${firstQuote.propertyState})` : firstQuote.propertyState || 'Your Deal'} - ${firstQuote.dealType || 'Loan'}`}
               </h1>
 
+              ${firstQuote.propertyAddress ? `
+              <div style="background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px;border:1px solid #e2e8f0;">
+                <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:600;letter-spacing:0.5px;margin-bottom:6px;">Subject Property</div>
+                <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">${firstQuote.propertyAddress}</div>
+                <div style="font-size:14px;color:#475569;">${[firstQuote.propertyCity, firstQuote.propertyState, firstQuote.propertyZip].filter(Boolean).join(', ')}</div>
+              </div>
+              ` : ''}
+
               ${finalBody}
 
               ${quotes.map((q, i) => renderQuoteBlock(q, i)).join('')}
