@@ -590,22 +590,41 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                         <h3 className="text-2xl font-bold text-foreground mb-2">Final Step: Activation</h3>
                         <p className="text-muted text-sm mb-8 px-4">Subscribe to the Elite Producer plan to activate your account and access all automation features.</p>
 
-                        <div className="bg-foreground/5 rounded-2xl p-6 mb-8 text-left border border-border/10">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-foreground font-bold italic">Elite Producer Plan</span>
-                                <span className="text-xl font-black text-banana-400">
-                                    {billingInterval === 'monthly' ? '$250' : '$2,500'}
-                                    <span className="text-xs text-muted font-normal">/{billingInterval === 'monthly' ? 'mo' : 'yr'}</span>
-                                </span>
-                            </div>
-                            <ul className="space-y-3">
-                                {['Automated Nurture Campaigns', 'Instant PDF Quote Gen', 'Visual Pipeline Management', 'Unlimited Seat Licensing'].map(f => (
-                                    <li key={f} className="flex items-center gap-2 text-xs text-muted">
-                                        <Icons.CheckCircle className="w-3 h-3 text-banana-400" />
-                                        {f}
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="space-y-3 mb-8">
+                            <button
+                                onClick={() => setBillingInterval('monthly')}
+                                className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between group/opt ${billingInterval === 'monthly' ? 'bg-banana-400/10 border-banana-400' : 'bg-surface border-border/10 hover:border-banana-400/30'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${billingInterval === 'monthly' ? 'border-banana-400 bg-banana-400' : 'border-border/20'}`}>
+                                        {billingInterval === 'monthly' && <Icons.Check className="w-3 h-3 text-slate-950" />}
+                                    </div>
+                                    <div className="text-left">
+                                        <div className={`text-sm font-bold ${billingInterval === 'monthly' ? 'text-foreground' : 'text-muted'}`}>Monthly Billing</div>
+                                        <div className="text-[10px] text-muted">Billed every 30 days</div>
+                                    </div>
+                                </div>
+                                <div className={`text-lg font-black ${billingInterval === 'monthly' ? 'text-banana-400' : 'text-muted'}`}>$250</div>
+                            </button>
+
+                            <button
+                                onClick={() => setBillingInterval('yearly')}
+                                className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between group/opt relative overflow-hidden ${billingInterval === 'yearly' ? 'bg-banana-400/10 border-banana-400' : 'bg-surface border-border/10 hover:border-banana-400/30'}`}
+                            >
+                                {billingInterval === 'yearly' && (
+                                    <div className="absolute top-0 right-0 bg-emerald-500 text-[8px] font-black text-white px-2 py-1 rounded-bl-lg uppercase tracking-tighter">Best Value</div>
+                                )}
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${billingInterval === 'yearly' ? 'border-banana-400 bg-banana-400' : 'border-border/20'}`}>
+                                        {billingInterval === 'yearly' && <Icons.Check className="w-3 h-3 text-slate-950" />}
+                                    </div>
+                                    <div className="text-left">
+                                        <div className={`text-sm font-bold ${billingInterval === 'yearly' ? 'text-foreground' : 'text-muted'}`}>Annual Billing</div>
+                                        <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Save $500/yr</div>
+                                    </div>
+                                </div>
+                                <div className={`text-lg font-black ${billingInterval === 'yearly' ? 'text-emerald-400' : 'text-muted'}`}>$2,500</div>
+                            </button>
                         </div>
 
                         {error && <div className="text-sm text-red-500 mb-6">{error}</div>}
