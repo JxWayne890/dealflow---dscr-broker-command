@@ -2,24 +2,95 @@ import { Quote, BrokerProfile } from '../types';
 import { calculateAmortizationSchedule } from './finance';
 import { formatPhoneNumber } from './formatters';
 
-export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile, messageBody: string): string => {
-  // Basic formatting for the message body (newlines to <br>)
-  // The user asked for NO <br> tags except where needed.
-  // We'll wrap paragraphs in <p> labels if possible, but simplest is to just use the one block for now.
-  // The user's mock uses a <p> tag for the body.
-  // Let's wrap the messageBody in a p tag style.
+export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[], profile: BrokerProfile, messageBody: string): string => {
+  const quotes = Array.isArray(quoteInput) ? quoteInput : [quoteInput];
+  const isComparison = quotes.length > 1;
 
-  // We need to be careful with newlines. If messageBody has newlines, we might need <br> inside the p?
-  // User said: "DO NOT add <br> tags for spacing except where explicitly needed." && "Use margin and padding instead of <br>"
-  // But for the user's *input text*, <br> is the only way to show line breaks within a single text block unless we split by newline and make multiple <p>s.
-  // I will stick to the previous safe replace for the body text itself, or split into paragraphs if I want to be fancy.
-  // For safety and strict adherence to "clean", let's split into paragraphs.
+  // Basic formatting for the message body (newlines to <br>)
   const bodyParagraphs = messageBody.split('\n').filter(line => line.trim()).map(line =>
     `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#374151;">${line}</p>`
   ).join('');
 
-  // If no body, use a default <p> to avoid breaking layout? Or just empty.
   const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here is the quote for your scenario.</p>`;
+
+  const renderQuoteBlock = (q: Partial<Quote>, index: number) => {
+    return `
+      <div style="margin-bottom: 32px; ${isComparison ? 'border-top: 2px solid #e5e7eb; padding-top: 24px;' : ''}">
+        ${isComparison ? `<h2 style="margin:0 0 16px 0;color:#111827;font-size:18px;font-weight:700;">Option ${index + 1}: ${q.dealType || 'Loan Terms'}</h2>` : ''}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+          <tr>
+            <td style="padding:24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="50%" style="padding-bottom:16px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Loan Amount</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">$${q.loanAmount?.toLocaleString()}</div>
+                  </td>
+                  <td width="50%" style="padding-bottom:16px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">LTV</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${q.ltv}%</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="50%">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Interest Rate</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${q.rate}%</div>
+                  </td>
+                  <td width="50%">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Term</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${q.termYears}-Year ${q.rateType || 'Fixed'}</div>
+                  </td>
+                </tr>
+                ${(q.monthlyPayment || q.closingFees || q.originationFee || q.uwFee) ? `
+                <tr>
+                  <td colspan="2" style="padding-top:16px;">
+                    <div style="border-top:1px solid #e5e7eb;padding-top:16px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          ${q.monthlyPayment ? `
+                          <td width="50%" valign="top" style="padding-bottom:12px;">
+                            <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Monthly P&I</div>
+                            <div style="font-size:18px;font-weight:700;color:#111827;">$${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          </td>` : ''}
+                          ${q.closingFees ? `
+                          <td width="50%" valign="top" style="padding-bottom:12px;">
+                            <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Est. Closing Fees</div>
+                            <div style="font-size:18px;font-weight:700;color:#111827;">$${q.closingFees.toLocaleString()}</div>
+                          </td>` : ''}
+                        </tr>
+                        ${(q.originationFee || q.uwFee || q.brokerFee) ? `
+                        <tr>
+                          ${q.originationFee ? `
+                          <td width="33%" valign="top">
+                            <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Origination</div>
+                            <div style="font-size:18px;font-weight:700;color:#111827;">$${q.originationFee.toLocaleString()}</div>
+                          </td>` : ''}
+                          ${q.uwFee ? `
+                          <td width="33%" valign="top">
+                            <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">UW Fee</div>
+                            <div style="font-size:18px;font-weight:700;color:#111827;">$${q.uwFee.toLocaleString()}</div>
+                          </td>` : ''}
+                          ${q.brokerFee ? `
+                            <td width="33%" valign="top">
+                              <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Broker Fee</div>
+                              <div style="font-size:18px;font-weight:700;color:#111827;">${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}</div>
+                            </td>` : ''}
+                        </tr>` : ''}
+                      </table>
+                    </div>
+                  </td>
+                </tr>` : ''}
+              </table>
+            </td>
+          </tr>
+        </table>
+        ${q.notes ? `<p style="margin:12px 0 0 0;font-size:14px;color:#4b5563;font-style:italic;">Note: ${q.notes}</p>` : ''}
+      </div>
+    `;
+  };
+
+  const firstQuote = quotes[0];
 
   return `<!DOCTYPE html>
 <html>
@@ -38,91 +109,21 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
               ${profile.logoUrl ? `<img src="${profile.logoUrl}" alt="${profile.name}" height="40" style="height:40px;display:block;" />` : `<div style="font-size:20px;font-weight:bold;color:#111827;">${profile.name}</div>`}
 
               <h1 style="margin:24px 0 12px 0;color:#111827;font-size:24px;font-weight:700;line-height:1.3;">
-                Quote for ${quote.propertyAddress ? `${quote.propertyAddress} (${quote.propertyState})` : quote.propertyState || 'Your Deal'} - ${quote.dealType || 'Loan'}
+                ${isComparison ? 'Comparison of Loan Options' : `Quote for ${firstQuote.propertyAddress ? `${firstQuote.propertyAddress} (${firstQuote.propertyState})` : firstQuote.propertyState || 'Your Deal'} - ${firstQuote.dealType || 'Loan'}`}
               </h1>
 
               ${finalBody}
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-                <tr>
-                  <td style="padding:24px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td width="50%" style="padding-bottom:16px;">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Loan Amount</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.loanAmount?.toLocaleString()}</div>
-                        </td>
-                        <td width="50%" style="padding-bottom:16px;">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">LTV</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.ltv}%</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td width="50%">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Interest Rate</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.rate}%</div>
-                        </td>
-                        <td width="50%">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Term</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.termYears}-Year ${quote.rateType || 'Fixed'}</div>
-                        </td>
-                      </tr>
-                      ${(quote.monthlyPayment || quote.closingFees || quote.originationFee || quote.uwFee) ? `
-                      <tr>
-                        <td colspan="2" style="padding-top:16px;">
-                          <div style="border-top:1px solid #e5e7eb;padding-top:16px;">
-                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                              <tr>
-                                ${quote.monthlyPayment ? `
-                                <td width="50%" valign="top" style="padding-bottom:12px;">
-                                  <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Monthly P&I</div>
-                                  <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                                </td>` : ''}
-                                ${quote.closingFees ? `
-                                <td width="50%" valign="top" style="padding-bottom:12px;">
-                                  <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Est. Closing Fees</div>
-                                  <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.closingFees.toLocaleString()}</div>
-                                </td>` : ''}
-                              </tr>
-                              ${(quote.originationFee || quote.uwFee || quote.brokerFee) ? `
-                              <tr>
-                                ${quote.originationFee ? `
-                                <td width="33%" valign="top">
-                                  <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Origination</div>
-                                  <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.originationFee.toLocaleString()}</div>
-                                </td>` : ''}
-                                ${quote.uwFee ? `
-                                <td width="33%" valign="top">
-                                  <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">UW Fee</div>
-                                  <div style="font-size:18px;font-weight:700;color:#111827;">$${quote.uwFee.toLocaleString()}</div>
-                                </td>` : ''}
-                                ${quote.brokerFee ? `
-                                  <td width="33%" valign="top">
-                                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Broker Fee</div>
-                                    <div style="font-size:18px;font-weight:700;color:#111827;">${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${quote.brokerFee.toLocaleString()}`}</div>
-                                  </td>` : ''}
-                              </tr>` : ''}
-                            </table>
-                          </div>
-                        </td>
-                      </tr>` : ''
-    }
-</table>
-  </td>
-  </tr>
-  </table>
-  <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;border:1px dashed #d1d5db;">
-    <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Amortization Highlights</h3>
-      <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;">
-        The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(quote.loanAmount || 0, quote.rate || 0, quote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
-          </p>
-          <div style="font-size:13px;color:#6b7280;text-align:center;">
+              ${quotes.map((q, i) => renderQuoteBlock(q, i)).join('')}
 
-            </div>
-            </div>
+              <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;border:1px dashed #d1d5db;">
+                <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Deal Overview</h3>
+                <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;">
+                  The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(firstQuote.loanAmount || 0, firstQuote.rate || 0, firstQuote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
+                </p>
+              </div>
 
-            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
@@ -131,49 +132,55 @@ export const generateHtmlEmail = (quote: Partial<Quote>, profile: BrokerProfile,
                     <img src="${profile.headshotUrl}"
                          alt="${profile.name}" width="60" height="60"
                          style="border-radius:50%;display:block;border:2px solid #e5e7eb;object-fit:cover;" />
-                  </td>` : ''
-    }
-<td valign="top" style="${profile.headshotUrl ? 'padding-left:12px;' : ''}">
-  <div style="font-weight:700;color:#111827;font-size:16px;">${profile.name}</div>
-    <div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.title || 'Loan Broker'}</div>
-                      ${profile.company ? `<div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.company}</div>` : ''}
-<div style="color:#6b7280;font-size:14px;margin-top:6px;">
-  ${profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${formatPhoneNumber(profile.phone)}</a>` : ''}
-                        ${profile.phone && profile.website ? '&nbsp;&nbsp;|&nbsp;&nbsp;' : ''}
-                        ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color:#6b7280;text-decoration:none;">${profile.website}</a>` : ''}
-</div>
-  </td>
-  </tr>
-  </table>
+                  </td>` : ''}
+                  <td valign="top" style="${profile.headshotUrl ? 'padding-left:12px;' : ''}">
+                    <div style="font-weight:700;color:#111827;font-size:16px;">${profile.name}</div>
+                    <div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.title || 'Loan Broker'}</div>
+                    ${profile.company ? `<div style="color:#4b5563;font-size:14px;margin-top:2px;">${profile.company}</div>` : ''}
+                    <div style="color:#6b7280;font-size:14px;margin-top:6px;">
+                      ${profile.phone ? `<a href="tel:${profile.phone.replace(/[^0-9+]/g, '')}" style="color:#6b7280;text-decoration:none;">${formatPhoneNumber(profile.phone)}</a>` : ''}
+                      ${profile.phone && profile.website ? '&nbsp;&nbsp;|&nbsp;&nbsp;' : ''}
+                      ${profile.website ? `<a href="${profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}" style="color:#6b7280;text-decoration:none;">${profile.website}</a>` : ''}
+                    </div>
+                  </td>
+                </tr>
+              </table>
 
-  <div style="margin-top:24px;font-size:14px;color:#9ca3af;text-align:center;line-height:1.5;">
+              <div style="margin-top:24px;font-size:14px;color:#9ca3af;text-align:center;line-height:1.5;">
                 © ${new Date().getFullYear()} ${profile.company || profile.name}. All rights reserved.<br />
-  Rates and terms subject to change based on market conditions. Quote based on ${quote.creditScore ? `<strong>${quote.creditScore}</strong>` : '_____'} credit score.
+                Rates and terms subject to change based on market conditions. Quote based on ${firstQuote.creditScore ? `<strong>${firstQuote.creditScore}</strong>` : '_____'} credit score.
               </div>
 
-    </td>
+            </td>
+          </tr>
+        </table>
+      </td>
     </tr>
-    </table>
-    </td>
-    </tr>
-    </table>
-    </body>
-    </html>`;
+  </table>
+</body>
+</html>`;
 };
 
-export const generatePlainText = (quote: Partial<Quote>, profile: BrokerProfile, messageBody: string): string => {
-  return `Subject: DSCR Loan Quote - ${quote.propertyAddress ? `${quote.propertyAddress} (${quote.propertyState})` : quote.propertyState || 'Property'}
+export const generatePlainText = (quoteInput: Partial<Quote> | Partial<Quote>[], profile: BrokerProfile, messageBody: string): string => {
+  const quotes = Array.isArray(quoteInput) ? quoteInput : [quoteInput];
+  const isComparison = quotes.length > 1;
+
+  const quoteSummaries = quotes.map((q, i) => {
+    return `
+${isComparison ? `OPTION ${i + 1}:` : 'DEAL TERMS:'}
+- Loan Amount: $${q.loanAmount?.toLocaleString()}
+- LTV: ${q.ltv}%
+- Rate: ${q.rate}%
+- Term: ${q.termYears} Years (${q.rateType || 'Fixed'})
+${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: $${q.originationFee.toLocaleString()}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
+  }).join('\n----------------------------------------\n');
+
+  return `Subject: ${isComparison ? 'DSCR Loan Comparison' : `DSCR Loan Quote - ${quotes[0].propertyAddress ? `${quotes[0].propertyAddress} (${quotes[0].propertyState})` : quotes[0].propertyState || 'Property'}`}
 
 ${messageBody}
 
 ----------------------------------------
-DEAL TERMS:
-- Loan Amount: $${quote.loanAmount?.toLocaleString()}
-- LTV: ${quote.ltv}%
-- Rate: ${quote.rate}%
-- Term: ${quote.termYears} Years (${quote.rateType || 'Fixed'})
-${quote.monthlyPayment ? `- Monthly P&I: $${quote.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${quote.originationFee ? `- Lender Origination: $${quote.originationFee.toLocaleString()}\n` : ''}${quote.uwFee ? `- UW Fee: $${quote.uwFee.toLocaleString()}\n` : ''}${quote.brokerFee ? `- Broker Fee: ${quote.brokerFeePercent ? `${quote.brokerFeePercent}%` : `$${quote.brokerFee.toLocaleString()}`}\n` : ''}${quote.closingFees ? `- Est. Closing Fees: $${quote.closingFees.toLocaleString()}\n` : ''}----------------------------------------
-
+${quoteSummaries}
 ----------------------------------------
 
 *Full 30-year amortization schedule is available upon request.
@@ -185,6 +192,7 @@ ${profile.title}
 ${profile.phone ? formatPhoneNumber(profile.phone) : ''}
 ${profile.website || ''}
 
-Rates and terms subject to change based on market conditions. Quote based on ${quote.creditScore || '_____'} credit score.
+Rates and terms subject to change based on market conditions. Quote based on ${quotes[0].creditScore || '_____'} credit score.
 `;
 };
+

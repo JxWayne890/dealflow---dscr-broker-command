@@ -65,6 +65,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
     const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('%');
 
+    // Comparison Quotes State (for multi-quote feature)
+    const [comparisonQuotes, setComparisonQuotes] = useState<Partial<Quote>[]>([]);
+    const [editingComparisonIndex, setEditingComparisonIndex] = useState<number | null>(null);
+
     // Available properties for the selected investor
     const [availableProperties, setAvailableProperties] = useState<string[]>([]);
 
@@ -127,12 +131,17 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
         const formDataWithUrl = { ...formData, scheduleUrl };
 
+        // Combine primary quote with comparison quotes for multi-quote emails
+        const quotesForEmail = comparisonQuotes.length > 0
+            ? [formDataWithUrl, ...comparisonQuotes]
+            : formDataWithUrl;
+
         // Generate the FINAL payload based on format
         let finalContent = '';
         if (emailFormat === 'html') {
-            finalContent = generateHtmlEmail(formDataWithUrl, profile, formData.emailBody || '');
+            finalContent = generateHtmlEmail(quotesForEmail, profile, formData.emailBody || '');
         } else {
-            finalContent = generatePlainText(formDataWithUrl, profile, formData.emailBody || '');
+            finalContent = generatePlainText(quotesForEmail, profile, formData.emailBody || '');
         }
 
         // Attempt real email send ONLY if auto-send is enabled
@@ -211,9 +220,12 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         }
     };
 
-    // Live HTML Preview
+    // Live HTML Preview - combine primary quote with any comparison quotes
     const previewScheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${formData.id}`;
-    const htmlPreview = generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl }, profile, formData.emailBody || '');
+    const allQuotes = comparisonQuotes.length > 0
+        ? [{ ...formData, scheduleUrl: previewScheduleUrl }, ...comparisonQuotes]
+        : { ...formData, scheduleUrl: previewScheduleUrl };
+    const htmlPreview = generateHtmlEmail(allQuotes, profile, formData.emailBody || '');
 
     return (
         <div className="flex flex-col h-full max-w-5xl mx-auto relative">
@@ -537,6 +549,215 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </Field>
                         </div>
 
+                        {/* Comparison Quotes Section */}
+                        <div className="bg-surface/30 backdrop-blur-xl p-6 rounded-xl border border-border/10 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Comparison Options</h3>
+                                    <p className="text-xs text-muted mt-1">Add alternative loan scenarios to send in the same email.</p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="text-sm px-3 py-1.5"
+                                    icon={Icons.Plus}
+                                    onClick={() => {
+                                        const newQuote: Partial<Quote> = {
+                                            id: crypto.randomUUID(),
+                                            // Clone shared info from primary quote
+                                            investorId: formData.investorId,
+                                            investorName: formData.investorName,
+                                            investorEmail: formData.investorEmail,
+                                            propertyAddress: formData.propertyAddress,
+                                            propertyCity: formData.propertyCity,
+                                            propertyState: formData.propertyState,
+                                            propertyZip: formData.propertyZip,
+                                            creditScore: formData.creditScore,
+                                            // Reset deal-specific terms for customization
+                                            dealType: formData.dealType,
+                                            loanAmount: formData.loanAmount,
+                                            ltv: formData.ltv,
+                                            rate: undefined,
+                                            termYears: 30,
+                                            rateType: 'Fixed',
+                                            monthlyPayment: undefined,
+                                            originationFee: undefined,
+                                            uwFee: undefined,
+                                            brokerFee: undefined,
+                                            brokerFeePercent: undefined,
+                                            closingFees: undefined,
+                                            prepayPenalty: undefined,
+                                            notes: '',
+                                            parentQuoteId: formData.id,
+                                        };
+                                        setComparisonQuotes(prev => [...prev, newQuote]);
+                                        setEditingComparisonIndex(comparisonQuotes.length);
+                                    }}
+                                >
+                                    Add Option
+                                </Button>
+                            </div>
+
+                            {comparisonQuotes.length === 0 ? (
+                                <div className="text-center py-8 text-muted text-sm border border-dashed border-border/20 rounded-xl">
+                                    <Icons.Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                                    <p>No comparison options yet.</p>
+                                    <p className="text-xs mt-1">Click "Add Option" to create side-by-side quotes.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {comparisonQuotes.map((cq, idx) => (
+                                        <div key={cq.id} className="bg-foreground/5 rounded-xl border border-border/10 overflow-hidden">
+                                            <div className="flex items-center justify-between p-4 border-b border-border/10">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="bg-banana-400 text-slate-900 text-xs font-black px-2 py-1 rounded-md">
+                                                        Option {idx + 2}
+                                                    </span>
+                                                    <span className="text-sm text-foreground font-medium">
+                                                        {cq.rate ? `${cq.rate}% @ ${cq.termYears}yr` : 'Customize terms...'}
+                                                    </span>
+                                                    {cq.monthlyPayment && (
+                                                        <span className="text-xs text-muted">
+                                                            ${cq.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}/mo
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setEditingComparisonIndex(editingComparisonIndex === idx ? null : idx)}
+                                                        className="text-xs text-banana-500 hover:text-banana-400 font-medium"
+                                                    >
+                                                        {editingComparisonIndex === idx ? 'Collapse' : 'Edit'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setComparisonQuotes(prev => prev.filter((_, i) => i !== idx))}
+                                                        className="text-xs text-red-400 hover:text-red-300 font-medium"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {editingComparisonIndex === idx && (
+                                                <div className="p-4 space-y-4">
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <Field label="Rate %">
+                                                            <Input
+                                                                type="number"
+                                                                step="0.125"
+                                                                placeholder="7.5"
+                                                                value={cq.rate || ''}
+                                                                onChange={e => {
+                                                                    const rate = Number(e.target.value);
+                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                        if (i !== idx) return q;
+                                                                        const principal = q.loanAmount || 0;
+                                                                        const monthlyRate = rate / 100 / 12;
+                                                                        const n = (q.termYears || 30) * 12;
+                                                                        const payment = monthlyRate > 0
+                                                                            ? principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+                                                                            : principal / n;
+                                                                        return { ...q, rate, monthlyPayment: Math.round(payment * 100) / 100 };
+                                                                    }));
+                                                                }}
+                                                            />
+                                                        </Field>
+                                                        <Field label="Term (Yr)">
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="30"
+                                                                value={cq.termYears || ''}
+                                                                onChange={e => {
+                                                                    const termYears = Number(e.target.value);
+                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                        if (i !== idx) return q;
+                                                                        const principal = q.loanAmount || 0;
+                                                                        const monthlyRate = (q.rate || 0) / 100 / 12;
+                                                                        const n = termYears * 12;
+                                                                        const payment = monthlyRate > 0
+                                                                            ? principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+                                                                            : principal / n;
+                                                                        return { ...q, termYears, monthlyPayment: Math.round(payment * 100) / 100 };
+                                                                    }));
+                                                                }}
+                                                            />
+                                                        </Field>
+                                                        <Field label="LTV %">
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="75"
+                                                                value={cq.ltv || ''}
+                                                                onChange={e => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, ltv: Number(e.target.value) } : q))}
+                                                            />
+                                                        </Field>
+                                                        <Field label="Loan Amount">
+                                                            <CurrencyInput
+                                                                value={cq.loanAmount || 0}
+                                                                onChange={val => {
+                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                        if (i !== idx) return q;
+                                                                        const monthlyRate = (q.rate || 0) / 100 / 12;
+                                                                        const n = (q.termYears || 30) * 12;
+                                                                        const payment = monthlyRate > 0
+                                                                            ? val * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+                                                                            : val / n;
+                                                                        return { ...q, loanAmount: val, monthlyPayment: Math.round(payment * 100) / 100 };
+                                                                    }));
+                                                                }}
+                                                            />
+                                                        </Field>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <Field label="Origination ($)">
+                                                            <CurrencyInput
+                                                                value={cq.originationFee || 0}
+                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, originationFee: val } : q))}
+                                                            />
+                                                        </Field>
+                                                        <Field label="UW Fee ($)">
+                                                            <CurrencyInput
+                                                                value={cq.uwFee || 0}
+                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, uwFee: val } : q))}
+                                                            />
+                                                        </Field>
+                                                        <Field label="Broker Fee ($)">
+                                                            <CurrencyInput
+                                                                value={cq.brokerFee || 0}
+                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, brokerFee: val } : q))}
+                                                            />
+                                                        </Field>
+                                                        <Field label="Other Fees ($)">
+                                                            <CurrencyInput
+                                                                value={cq.closingFees || 0}
+                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, closingFees: val } : q))}
+                                                            />
+                                                        </Field>
+                                                    </div>
+                                                    <Field label="Notes for this Option">
+                                                        <textarea
+                                                            className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow"
+                                                            rows={2}
+                                                            placeholder="e.g. Lower rate but higher points..."
+                                                            value={cq.notes || ''}
+                                                            onChange={e => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, notes: e.target.value } : q))}
+                                                        />
+                                                    </Field>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {comparisonQuotes.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-border/10 flex items-center justify-between">
+                                    <span className="text-sm text-muted">
+                                        <Icons.Mail className="w-4 h-4 inline mr-1 opacity-60" />
+                                        You will send <strong className="text-foreground">{comparisonQuotes.length + 1} quote options</strong> in one email.
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="flex justify-end pt-4 hidden md:flex">
                             <Button
                                 onClick={handleGenerateEmail}
@@ -640,7 +861,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     />
                                 ) : (
                                     <div className="w-full h-full p-8 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-gray-800 bg-white">
-                                        {generatePlainText(formData, profile, formData.emailBody || '')}
+                                        {generatePlainText(allQuotes, profile, formData.emailBody || '')}
                                     </div>
                                 )}
                             </div>
@@ -672,13 +893,16 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <Button
                                 onClick={async () => {
                                     setIsSending(true);
-                                    // 1. Generate and Download PDF
+                                    // 1. Generate and Download PDF - combine with comparison quotes
+                                    const allQuotesForPdf = comparisonQuotes.length > 0
+                                        ? [formData, ...comparisonQuotes]
+                                        : formData;
                                     const element = document.createElement('div');
-                                    element.innerHTML = generateTermSheetHtml(formData, profile);
+                                    element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
 
                                     const opt = {
                                         margin: 0,
-                                        filename: `Term_Sheet_${formData.investorName?.replace(/\s+/g, '_') || 'Quote'}_${new Date().toISOString().split('T')[0]}.pdf`,
+                                        filename: `${comparisonQuotes.length > 0 ? 'Loan_Comparison' : 'Term_Sheet'}_${formData.investorName?.replace(/\s+/g, '_') || 'Quote'}_${new Date().toISOString().split('T')[0]}.pdf`,
                                         image: { type: 'jpeg' as const, quality: 0.98 },
                                         html2canvas: { scale: 2, useCORS: true },
                                         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
@@ -746,12 +970,16 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <div className="grid grid-cols-1 gap-3 mb-6">
                                 <Button
                                     onClick={() => {
+                                        // Combine with comparison quotes for PDF
+                                        const allQuotesForPdf = comparisonQuotes.length > 0
+                                            ? [formData, ...comparisonQuotes]
+                                            : formData;
                                         const element = document.createElement('div');
-                                        element.innerHTML = generateTermSheetHtml(formData, profile);
+                                        element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
 
                                         const opt = {
                                             margin: 0,
-                                            filename: `Term_Sheet_${formData.investorName?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                                            filename: `${comparisonQuotes.length > 0 ? 'Loan_Comparison' : 'Term_Sheet'}_${formData.investorName?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
                                             image: { type: 'jpeg' as const, quality: 0.98 },
                                             html2canvas: { scale: 2, useCORS: true },
                                             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }

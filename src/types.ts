@@ -65,6 +65,7 @@ export interface Quote {
   lenderCode?: string;
   prepayPenalty?: string;
   creditScore?: string;
+  parentQuoteId?: string; // Links comparative quotes to a primary one
 }
 
 export interface User {
