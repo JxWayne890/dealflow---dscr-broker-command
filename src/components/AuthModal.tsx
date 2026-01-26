@@ -15,12 +15,14 @@ interface AuthModalProps {
     defaultMode?: 'signin' | 'signup';
     initialStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
     onProfileFound?: (profile: BrokerProfile) => void;
+    initialBillingInterval?: 'monthly' | 'yearly';
 }
 
 type AuthStep = 'auth' | 'onboarding' | 'join_type' | 'assistant_setup' | 'producer_setup' | 'payment' | 'email_confirmation';
 
-export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus, onProfileFound }: AuthModalProps) => {
+export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStatus, onProfileFound, initialBillingInterval = 'monthly' }: AuthModalProps) => {
     const { showToast } = useToast();
+    const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>(initialBillingInterval);
     const [authSubStep, setAuthSubStep] = useState<'email' | 'password'>('email');
     const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
     const [step, setStep] = useState<AuthStep>('auth');
@@ -282,6 +284,7 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
             const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ interval: billingInterval === 'monthly' ? 'month' : 'year' })
             });
             const data = await response.json();
             if (data.url) {
@@ -590,7 +593,10 @@ export const AuthModal = ({ isOpen, onClose, defaultMode = 'signin', initialStat
                         <div className="bg-foreground/5 rounded-2xl p-6 mb-8 text-left border border-border/10">
                             <div className="flex justify-between items-center mb-4">
                                 <span className="text-foreground font-bold italic">Elite Producer Plan</span>
-                                <span className="text-xl font-black text-banana-400">$250<span className="text-xs text-muted font-normal">/mo</span></span>
+                                <span className="text-xl font-black text-banana-400">
+                                    {billingInterval === 'monthly' ? '$250' : '$2,500'}
+                                    <span className="text-xs text-muted font-normal">/{billingInterval === 'monthly' ? 'mo' : 'yr'}</span>
+                                </span>
                             </div>
                             <ul className="space-y-3">
                                 {['Automated Nurture Campaigns', 'Instant PDF Quote Gen', 'Visual Pipeline Management', 'Unlimited Seat Licensing'].map(f => (

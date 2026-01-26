@@ -17,6 +17,9 @@ export default async function handler(req, res) {
     }
 
     try {
+        const { interval = 'month' } = req.body;
+        const amount = interval === 'year' ? 250000 : 25000;
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -24,12 +27,12 @@ export default async function handler(req, res) {
                     price_data: {
                         currency: 'usd',
                         product_data: {
-                            name: 'The OfferHero - Elite Producer Plan',
+                            name: `The OfferHero - Elite Producer (${interval === 'year' ? 'Annual' : 'Monthly'})`,
                             description: 'Full access to the DSCR Broker Command platform with automated nurture, instant quotes, and analytics.',
                         },
-                        unit_amount: 25000, // $250.00
+                        unit_amount: amount,
                         recurring: {
-                            interval: 'month',
+                            interval: interval,
                         },
                     },
                     quantity: 1,

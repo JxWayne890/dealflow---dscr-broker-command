@@ -59,6 +59,7 @@ export const Login = () => {
     const [activeManagementSlide, setActiveManagementSlide] = useState(0); // For Management Carousel
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(true);
+    const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -717,13 +718,49 @@ export const Login = () => {
                         <div className="relative group">
                             <div className="absolute -inset-px bg-gradient-to-b from-banana-400/20 to-transparent rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <div className={`relative p-8 rounded-[2.5rem] ${isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-banana-50/50 border-banana-200/50 shadow-xl'} border backdrop-blur-sm flex flex-col h-full`}>
-                                <div className="mb-8">
+                                <div className="mb-6">
                                     <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>Elite Producer</h3>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>$250</span>
-                                        <span className="text-slate-500 font-medium">/month</span>
-                                    </div>
-                                    <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} mt-4 text-sm leading-relaxed`}>The ultimate toolset for high-volume professionals looking for speed and automation.</p>
+                                    <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-xs leading-relaxed`}>
+                                        The ultimate toolset for high-volume professionals looking for speed and automation.
+                                    </p>
+                                </div>
+
+                                {/* In-Card Choice (Option B) */}
+                                <div className="space-y-3 mb-8">
+                                    <button
+                                        onClick={() => setBillingInterval('monthly')}
+                                        className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between group/opt ${billingInterval === 'monthly' ? 'bg-banana-400/10 border-banana-400' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${billingInterval === 'monthly' ? 'border-banana-400 bg-banana-400' : 'border-white/20'}`}>
+                                                {billingInterval === 'monthly' && <Icons.Check className="w-3 h-3 text-slate-950" />}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className={`text-sm font-bold ${billingInterval === 'monthly' ? 'text-white' : 'text-slate-400'}`}>Monthly Billing</div>
+                                                <div className="text-[10px] text-slate-500">Billed every 30 days</div>
+                                            </div>
+                                        </div>
+                                        <div className={`text-lg font-black ${billingInterval === 'monthly' ? 'text-banana-400' : 'text-slate-500'}`}>$250</div>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setBillingInterval('yearly')}
+                                        className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between group/opt relative overflow-hidden ${billingInterval === 'yearly' ? 'bg-banana-400/10 border-banana-400' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                    >
+                                        {billingInterval === 'yearly' && (
+                                            <div className="absolute top-0 right-0 bg-emerald-500 text-[8px] font-black text-white px-2 py-1 rounded-bl-lg uppercase tracking-tighter">Best Value</div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${billingInterval === 'yearly' ? 'border-banana-400 bg-banana-400' : 'border-white/20'}`}>
+                                                {billingInterval === 'yearly' && <Icons.Check className="w-3 h-3 text-slate-950" />}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className={`text-sm font-bold ${billingInterval === 'yearly' ? 'text-white' : 'text-slate-400'}`}>Annual Billing</div>
+                                                <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Save $500/yr</div>
+                                            </div>
+                                        </div>
+                                        <div className={`text-lg font-black ${billingInterval === 'yearly' ? 'text-emerald-400' : 'text-slate-500'}`}>$2,500</div>
+                                    </button>
                                 </div>
 
                                 <ul className="space-y-4 mb-10 flex-1">
@@ -859,6 +896,7 @@ export const Login = () => {
                 isOpen={authOpen}
                 onClose={() => setAuthOpen(false)}
                 defaultMode={authMode}
+                initialBillingInterval={billingInterval}
             />
         </div >
     );
