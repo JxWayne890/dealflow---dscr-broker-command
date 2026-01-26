@@ -740,6 +740,23 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                             />
                                                         </Field>
                                                     </div>
+
+                                                    {/* Calculated Summary Row */}
+                                                    <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-r from-emerald-500/10 to-banana-400/10 rounded-xl border border-emerald-500/20 mt-4">
+                                                        <div>
+                                                            <div className="text-xs text-muted uppercase font-semibold mb-1">Est. Monthly P&I</div>
+                                                            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                                                                ${cq.monthlyPayment?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '—'}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-muted uppercase font-semibold mb-1">Total Est. Closing Costs</div>
+                                                            <div className="text-xl font-bold text-foreground">
+                                                                ${((cq.originationFee || 0) + (cq.uwFee || 0) + (cq.brokerFee || 0) + (cq.closingFees || 0)).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <Field label="Notes for this Option">
                                                         <textarea
                                                             className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow"
