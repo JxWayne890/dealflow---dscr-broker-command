@@ -14,6 +14,11 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
   const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here is the quote for your scenario.</p>`;
 
   const renderQuoteBlock = (q: Partial<Quote>, index: number) => {
+    // Calculate equity build for THIS specific quote
+    const equityBuild = calculateAmortizationSchedule(q.loanAmount || 0, q.rate || 0, q.termYears || 30)
+      .slice(0, 12)
+      .reduce((acc, curr) => acc + curr.principal, 0);
+
     return `
       <div style="margin-bottom: 32px; ${isComparison ? 'border-top: 2px solid #e5e7eb; padding-top: 24px;' : ''}">
         ${isComparison ? `<h2 style="margin:0 0 16px 0;color:#111827;font-size:18px;font-weight:700;">Option ${index + 1}: ${q.dealType || 'Loan Terms'}</h2>` : ''}
@@ -85,6 +90,12 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
             </td>
           </tr>
         </table>
+        
+        <!-- Equity Build for THIS option -->
+        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);border:1px solid #a7f3d0;border-radius:8px;padding:14px 18px;margin-top:12px;">
+          <span style="font-size:14px;color:#166534;">📈 Year 1 equity build: <strong style="color:#15803d;">$${equityBuild.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></span>
+        </div>
+        
         ${q.notes ? `<p style="margin:12px 0 0 0;font-size:14px;color:#4b5563;font-style:italic;">Note: ${q.notes}</p>` : ''}
       </div>
     `;
@@ -115,13 +126,6 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
               ${finalBody}
 
               ${quotes.map((q, i) => renderQuoteBlock(q, i)).join('')}
-
-              <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;border:1px dashed #d1d5db;">
-                <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Deal Overview</h3>
-                <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;">
-                  The first year of your loan will build approximately <strong>$${calculateAmortizationSchedule(firstQuote.loanAmount || 0, firstQuote.rate || 0, firstQuote.termYears || 30).slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
-                </p>
-              </div>
 
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
