@@ -801,6 +801,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                         </Field>
                                                     </div>
 
+                                                    <Field label="Prepay Penalty">
+                                                        <Input
+                                                            placeholder="e.g. 5-4-3-2-1 or 3 Yr Hard"
+                                                            value={cq.prepayPenalty || ''}
+                                                            onChange={e => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, prepayPenalty: e.target.value } : q))}
+                                                        />
+                                                    </Field>
+
                                                     {/* Calculated Summary Row */}
                                                     <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-r from-emerald-500/10 to-banana-400/10 rounded-xl border border-emerald-500/20 mt-4">
                                                         <div>
