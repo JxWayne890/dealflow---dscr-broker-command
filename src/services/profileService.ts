@@ -172,6 +172,7 @@ export const ProfileService = {
 };
 
 const mapDbToProfile = (row: any): BrokerProfile => ({
+    id: row.id,
     name: row.name || '',
     email: row.email || '',
     company: row.company || '',
@@ -189,7 +190,9 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     inviteCode: row.invite_code,
     onboardingStatus: row.onboarding_status,
     emailsSent: row.emails_sent || 0,
-    subscriptionStatus: row.subscription_status || 'trial'
+    subscriptionStatus: row.subscription_status || 'trial',
+    websiteSubdomain: row.website_subdomain,
+    websiteSettings: row.website_settings || {}
 });
 
 const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
@@ -209,5 +212,7 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.permissions !== undefined) db.permissions = profile.permissions;
     if (profile.inviteCode !== undefined) db.invite_code = profile.inviteCode;
     if (profile.onboardingStatus !== undefined) db.onboarding_status = profile.onboardingStatus;
+    if (profile.websiteSubdomain !== undefined) db.website_subdomain = profile.websiteSubdomain;
+    if (profile.websiteSettings !== undefined) db.website_settings = profile.websiteSettings;
     return db;
 };

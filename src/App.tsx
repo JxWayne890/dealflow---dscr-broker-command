@@ -24,6 +24,8 @@ import { ProfileService } from './services/profileService';
 import { useToast } from './contexts/ToastContext';
 import { BrokerProfile } from './types';
 import { EmailConfirmation } from './pages/EmailConfirmation';
+import { PublicWebsite } from './pages/PublicWebsite';
+import { WebsiteBuilder } from './pages/WebsiteBuilder';
 
 export default function App() {
   const { showToast } = useToast();
@@ -408,6 +410,8 @@ export default function App() {
         return <Team profile={profile} />;
       case 'dev':
         return <DevDashboard />;
+      case 'website_builder':
+        return <WebsiteBuilder profile={profile} onProfileUpdate={setProfile} />;
       default:
         return (
           <Dashboard
@@ -440,6 +444,11 @@ export default function App() {
     const q = selectedQuote || (selectedQuoteId ? quotes.find(q => q.id === selectedQuoteId) : null);
     if (loadingData && !q) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading schedule...</div>;
     if (q) return <PublicSchedule quote={q} />;
+  }
+
+  // Handle Client Websites
+  if (window.location.pathname.startsWith('/site/')) {
+    return <PublicWebsite />;
   }
 
   // Handle Public Inquiry Page

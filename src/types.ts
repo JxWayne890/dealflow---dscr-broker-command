@@ -90,7 +90,18 @@ export interface Permissions {
   analytics: boolean;
 }
 
+export interface WebsitePage {
+  id: string;
+  profileId: string;
+  slug: string;
+  title: string;
+  content: any; // Flexible JSON content
+  isPublished: boolean;
+  order: number;
+}
+
 export interface BrokerProfile {
+  id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -110,10 +121,16 @@ export interface BrokerProfile {
   autoSendQuoteEmail?: boolean;
   emailsSent?: number;
   subscriptionStatus?: 'trial' | 'active' | 'expired';
+  websiteSubdomain?: string;
+  websiteSettings?: {
+    theme?: 'modern' | 'classic' | 'bold';
+    primaryColor?: string;
+    navLinks?: { label: string; url: string }[];
+  };
 }
 
 export type EmailFormat = 'text' | 'html';
 
 export type QuoteFilter = 'all' | 'drafts' | 'active' | 'won' | 'lost' | 'needs_follow_up';
 
-export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev';
+export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev' | 'website_builder';

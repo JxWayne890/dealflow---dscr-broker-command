@@ -126,6 +126,7 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                         {(!profile?.role || profile.role === 'admin' || profile.permissions?.analytics) && (
                             <NavItem view="analytics" icon={Icons.TrendingUp} label="Intelligence" color="emerald" />
                         )}
+                        <NavItem view="website_builder" icon={Icons.Globe} label="My Website" color="banana" />
                     </NavSection>
 
                 </div>

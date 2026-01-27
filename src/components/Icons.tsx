@@ -43,7 +43,9 @@ import {
   Link,
   CreditCard,
   Tag,
-  Layers
+  Layers,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 
 export const Icons = {
@@ -116,5 +118,7 @@ export const Icons = {
   Download,
   Link,
   Tag,
-  Layers
+  Layers,
+  Globe,
+  ExternalLink
 };
