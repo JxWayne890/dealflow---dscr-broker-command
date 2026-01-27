@@ -52,6 +52,7 @@ export interface Quote {
   monthlyPayment?: number;
   brokerFee?: number;
   brokerFeePercent?: number;
+  brokerFeeType?: '$' | '%';
   closingFees?: number;
   notes?: string;
   emailBody?: string;

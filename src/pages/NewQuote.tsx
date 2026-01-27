@@ -727,11 +727,71 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                                 onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, uwFee: val } : q))}
                                                             />
                                                         </Field>
-                                                        <Field label="Broker Fee ($)">
-                                                            <CurrencyInput
-                                                                value={cq.brokerFee || 0}
-                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, brokerFee: val } : q))}
-                                                            />
+                                                        <Field label="Broker Fee">
+                                                            <div className="flex gap-2">
+                                                                <div className="w-1/3">
+                                                                    <div className="relative">
+                                                                        <select
+                                                                            className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-2 py-2.5 pr-6 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 text-xs"
+                                                                            value={cq.brokerFeeType || '%'}
+                                                                            onChange={e => {
+                                                                                const newType = e.target.value as '$' | '%';
+                                                                                setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                                    if (i !== idx) return q;
+                                                                                    if (newType === '%' && q.loanAmount) {
+                                                                                        const pct = 1.0;
+                                                                                        return { ...q, brokerFeeType: newType, brokerFeePercent: pct, brokerFee: (q.loanAmount * pct) / 100 };
+                                                                                    }
+                                                                                    return { ...q, brokerFeeType: newType };
+                                                                                }));
+                                                                            }}
+                                                                        >
+                                                                            <option value="%">%</option>
+                                                                            <option value="$">$</option>
+                                                                        </select>
+                                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-muted">
+                                                                            <Icons.ChevronDown className="h-3 w-3" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    {(cq.brokerFeeType || '%') === '$' ? (
+                                                                        <CurrencyInput
+                                                                            value={cq.brokerFee || 0}
+                                                                            onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, brokerFee: val, brokerFeePercent: 0 } : q))}
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="relative">
+                                                                            <input
+                                                                                type="number"
+                                                                                step="0.125"
+                                                                                className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
+                                                                                placeholder="1.0"
+                                                                                value={cq.brokerFeePercent || ''}
+                                                                                onChange={e => {
+                                                                                    const val = parseFloat(e.target.value);
+                                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                                        if (i !== idx) return q;
+                                                                                        return {
+                                                                                            ...q,
+                                                                                            brokerFeePercent: val,
+                                                                                            brokerFee: q.loanAmount ? (q.loanAmount * val) / 100 : 0
+                                                                                        };
+                                                                                    }));
+                                                                                }}
+                                                                            />
+                                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                                                <span className="text-muted sm:text-sm">%</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {(cq.brokerFeeType || '%') === '%' && (cq.brokerFee || 0) > 0 && (
+                                                                <p className="text-xs font-semibold text-banana-600 dark:text-banana-400 mt-1.5 bg-banana-50 dark:bg-banana-900/20 px-2 py-1 rounded-md border border-banana-200 dark:border-banana-800/30 inline-block">
+                                                                    = ${cq.brokerFee?.toLocaleString()}
+                                                                </p>
+                                                            )}
                                                         </Field>
                                                         <Field label="Other Fees ($)">
                                                             <CurrencyInput
