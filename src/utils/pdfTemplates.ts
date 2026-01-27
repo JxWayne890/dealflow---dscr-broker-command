@@ -13,6 +13,22 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
             .slice(0, 12)
             .reduce((acc, curr) => acc + curr.principal, 0);
 
+        // Calculate brokerFee from percentage if not already set
+        const calculatedBrokerFee = q.brokerFee || (q.brokerFeePercent && q.loanAmount
+            ? (q.loanAmount * q.brokerFeePercent) / 100
+            : 0);
+
+        // Calculate monthly payment if not set
+        const calculatedMonthlyPayment = q.monthlyPayment || (() => {
+            const monthlyRate = (q.rate || 0) / 100 / 12;
+            const n = (q.termYears || 30) * 12;
+            const principal = q.loanAmount || 0;
+            if (monthlyRate > 0) {
+                return principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+            }
+            return principal / n;
+        })();
+
         // For comparison mode: Option 2+ gets a page break before it
         const pageBreakStyle = isComparison && index > 0 ? 'page-break-before: always;' : '';
 
@@ -33,7 +49,7 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                         <tr><td class="label">Loan Program</td><td class="value">DSCR (${(q.dealType || '').replace('Refi', 'Refinance').replace('(', ' - ').replace(')', '')})</td></tr>
                         <tr><td class="label">Loan Term</td><td class="value">${q.termYears || 30} Years</td></tr>
                         <tr><td class="label">Rate Type</td><td class="value">${q.rateType || 'Fixed'}</td></tr>
-                        <tr><td class="label">Est. Monthly P&I</td><td class="value highlight-value">$${(q.monthlyPayment || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+                        <tr><td class="label">Est. Monthly P&I</td><td class="value highlight-value">$${calculatedMonthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
                         <tr><td class="label">Prepayment Penalty</td><td class="value">${q.prepayPenalty || 'None'}</td></tr>
                     </table>
                 </div>
@@ -42,12 +58,12 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                     <table class="terms-table">
                         <tr><td class="label">Lender Origination Fee</td><td class="value">$${(q.originationFee || 0).toLocaleString()}</td></tr>
                         <tr><td class="label">Underwriting Fee</td><td class="value">$${(q.uwFee || 0).toLocaleString()}</td></tr>
-                        <tr><td class="label">Broker Fee</td><td class="value">${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${(q.brokerFee || 0).toLocaleString()}`}</td></tr>
+                        <tr><td class="label">Broker Fee</td><td class="value">${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${calculatedBrokerFee.toLocaleString()}`}</td></tr>
                         <tr><td class="label">Other Closing Fees</td><td class="value">$${(q.closingFees || 0).toLocaleString()}</td></tr>
                         <tr class="total-row">
                             <td class="label">Est. Closing Costs</td>
                             <td class="value total-value">
-                                $${((q.originationFee || 0) + (q.uwFee || 0) + (q.brokerFee || 0) + (q.closingFees || 0)).toLocaleString()}
+                                $${((q.originationFee || 0) + (q.uwFee || 0) + calculatedBrokerFee + (q.closingFees || 0)).toLocaleString()}
                             </td>
                         </tr>
                     </table>
