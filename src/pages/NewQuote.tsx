@@ -313,22 +313,20 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             <Field label="Property Address">
                                 {availableProperties.length > 0 ? (
                                     <div className="space-y-3">
-                                        <Select
+                                        <CustomSelect
                                             value={availableProperties.includes(formData.propertyAddress || '') ? formData.propertyAddress : 'new_property'}
-                                            onChange={e => {
-                                                const val = e.target.value;
+                                            options={[
+                                                { label: 'Enter a new address...', value: 'new_property' },
+                                                ...availableProperties.map(p => ({ label: p, value: p }))
+                                            ]}
+                                            onChange={val => {
                                                 if (val === 'new_property') {
                                                     setFormData({ ...formData, propertyAddress: '' });
                                                 } else {
                                                     setFormData({ ...formData, propertyAddress: val });
                                                 }
                                             }}
-                                        >
-                                            <option value="new_property">Enter a new address...</option>
-                                            {availableProperties.map((p, i) => (
-                                                <option key={i} value={p}>{p}</option>
-                                            ))}
-                                        </Select>
+                                        />
 
                                         {(!formData.propertyAddress || !availableProperties.includes(formData.propertyAddress)) && (
                                             <AddressAutocomplete
@@ -374,9 +372,11 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     </Field>
                                 </div>
                                 <Field label="Type">
-                                    <Select value={formData.dealType} onChange={e => setFormData({ ...formData, dealType: e.target.value as DealType })}>
-                                        {Object.values(DealType).map(t => <option key={t} value={t}>{t}</option>)}
-                                    </Select>
+                                    <CustomSelect
+                                        value={formData.dealType}
+                                        options={Object.values(DealType).map(t => ({ label: t, value: t }))}
+                                        onChange={val => setFormData({ ...formData, dealType: val as DealType })}
+                                    />
                                 </Field>
                             </div>
 
@@ -396,10 +396,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     <Input type="number" step="0.125" placeholder="7.5" value={formData.rate || ''} onChange={e => setFormData({ ...formData, rate: Number(e.target.value) })} />
                                 </Field>
                                 <Field label="Type">
-                                    <Select value={formData.rateType || 'Fixed'} onChange={e => setFormData({ ...formData, rateType: e.target.value as any })}>
-                                        <option value="Fixed">Fixed</option>
-                                        <option value="ARM">ARM</option>
-                                    </Select>
+                                    <CustomSelect
+                                        value={formData.rateType || 'Fixed'}
+                                        options={[
+                                            { label: 'Fixed', value: 'Fixed' },
+                                            { label: 'ARM', value: 'ARM' }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, rateType: val as any })}
+                                    />
                                 </Field>
                                 <Field label="Term (Yr)">
                                     <Input type="number" placeholder="30" value={formData.termYears || ''} onChange={e => setFormData({ ...formData, termYears: Number(e.target.value) })} />
@@ -461,28 +465,21 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 <Field label="Broker Fee">
                                     <div className="flex gap-2">
                                         <div className="w-1/3">
-                                            <div className="relative">
-                                                <select
-                                                    className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-3 py-2.5 pr-8 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
-                                                    value={brokerFeeType}
-                                                    onChange={e => {
-                                                        const newVal = e.target.value as '$' | '%';
-                                                        setBrokerFeeType(newVal);
-                                                        // Reset values to avoid confusion when switching?
-                                                        // Or just recalculate. Let's recalculate if switching to %
-                                                        if (newVal === '%' && formData.loanAmount) {
-                                                            const pct = 1.0; // Default to 1% if starting fresh?
-                                                            setFormData(p => ({ ...p, brokerFeePercent: pct, brokerFee: (p.loanAmount! * pct) / 100 }));
-                                                        }
-                                                    }}
-                                                >
-                                                    <option value="$">Flat ($)</option>
-                                                    <option value="%">Percent (%)</option>
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
-                                                    <Icons.ChevronDown className="h-4 w-4" />
-                                                </div>
-                                            </div>
+                                            <CustomSelect
+                                                value={brokerFeeType}
+                                                options={[
+                                                    { label: 'Flat ($)', value: '$' },
+                                                    { label: 'Percent (%)', value: '%' }
+                                                ]}
+                                                onChange={val => {
+                                                    const newVal = val as '$' | '%';
+                                                    setBrokerFeeType(newVal);
+                                                    if (newVal === '%' && formData.loanAmount) {
+                                                        const pct = 1.0;
+                                                        setFormData(p => ({ ...p, brokerFeePercent: pct, brokerFee: (p.loanAmount! * pct) / 100 }));
+                                                    }
+                                                }}
+                                            />
                                         </div>
                                         <div className="flex-1">
                                             {brokerFeeType === '$' ? (
@@ -647,7 +644,33 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
                                             {editingComparisonIndex === idx && (
                                                 <div className="p-4 space-y-4">
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <Field label="Type">
+                                                            <CustomSelect
+                                                                value={cq.dealType || DealType.PURCHASE}
+                                                                options={Object.values(DealType).map(t => ({ label: t, value: t }))}
+                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, dealType: val as DealType } : q))}
+                                                            />
+                                                        </Field>
+                                                        <Field label="Loan Amount">
+                                                            <CurrencyInput
+                                                                value={cq.loanAmount || 0}
+                                                                onChange={val => {
+                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                        if (i !== idx) return q;
+                                                                        const monthlyRate = (q.rate || 0) / 100 / 12;
+                                                                        const n = (q.termYears || 30) * 12;
+                                                                        const payment = monthlyRate > 0
+                                                                            ? val * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+                                                                            : val / n;
+                                                                        return { ...q, loanAmount: val, monthlyPayment: Math.round(payment * 100) / 100 };
+                                                                    }));
+                                                                }}
+                                                            />
+                                                        </Field>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         <Field label="Rate %">
                                                             <Input
                                                                 type="number"
@@ -697,22 +720,6 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                                 onChange={e => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, ltv: Number(e.target.value) } : q))}
                                                             />
                                                         </Field>
-                                                        <Field label="Loan Amount">
-                                                            <CurrencyInput
-                                                                value={cq.loanAmount || 0}
-                                                                onChange={val => {
-                                                                    setComparisonQuotes(prev => prev.map((q, i) => {
-                                                                        if (i !== idx) return q;
-                                                                        const monthlyRate = (q.rate || 0) / 100 / 12;
-                                                                        const n = (q.termYears || 30) * 12;
-                                                                        const payment = monthlyRate > 0
-                                                                            ? val * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
-                                                                            : val / n;
-                                                                        return { ...q, loanAmount: val, monthlyPayment: Math.round(payment * 100) / 100 };
-                                                                    }));
-                                                                }}
-                                                            />
-                                                        </Field>
                                                     </div>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                         <Field label="Origination ($)">
@@ -730,29 +737,24 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                         <Field label="Broker Fee">
                                                             <div className="flex gap-2">
                                                                 <div className="w-1/3">
-                                                                    <div className="relative">
-                                                                        <select
-                                                                            className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-2 py-2.5 pr-6 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 text-xs"
-                                                                            value={cq.brokerFeeType || '%'}
-                                                                            onChange={e => {
-                                                                                const newType = e.target.value as '$' | '%';
-                                                                                setComparisonQuotes(prev => prev.map((q, i) => {
-                                                                                    if (i !== idx) return q;
-                                                                                    if (newType === '%' && q.loanAmount) {
-                                                                                        const pct = 1.0;
-                                                                                        return { ...q, brokerFeeType: newType, brokerFeePercent: pct, brokerFee: (q.loanAmount * pct) / 100 };
-                                                                                    }
-                                                                                    return { ...q, brokerFeeType: newType };
-                                                                                }));
-                                                                            }}
-                                                                        >
-                                                                            <option value="%">%</option>
-                                                                            <option value="$">$</option>
-                                                                        </select>
-                                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-muted">
-                                                                            <Icons.ChevronDown className="h-3 w-3" />
-                                                                        </div>
-                                                                    </div>
+                                                                    <CustomSelect
+                                                                        value={cq.brokerFeeType || '%'}
+                                                                        options={[
+                                                                            { label: '%', value: '%' },
+                                                                            { label: '$', value: '$' }
+                                                                        ]}
+                                                                        onChange={val => {
+                                                                            const newType = val as '$' | '%';
+                                                                            setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                                if (i !== idx) return q;
+                                                                                if (newType === '%' && q.loanAmount) {
+                                                                                    const pct = 1.0;
+                                                                                    return { ...q, brokerFeeType: newType, brokerFeePercent: pct, brokerFee: (q.loanAmount * pct) / 100 };
+                                                                                }
+                                                                                return { ...q, brokerFeeType: newType };
+                                                                            }));
+                                                                        }}
+                                                                    />
                                                                 </div>
                                                                 <div className="flex-1">
                                                                     {(cq.brokerFeeType || '%') === '$' ? (
@@ -1467,13 +1469,3 @@ const CustomSelect = ({
     );
 };
 
-const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-    <div className="relative">
-        <select className="block w-full appearance-none rounded-lg bg-surface border-border/10 border px-3 py-2.5 pr-8 shadow-sm text-foreground focus:border-banana-400 focus:ring-banana-400 sm:text-sm transition-shadow" {...props}>
-            {props.children}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted">
-            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-        </div>
-    </div>
-);

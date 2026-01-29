@@ -180,6 +180,7 @@ export const generatePlainText = (quoteInput: Partial<Quote> | Partial<Quote>[],
   const quoteSummaries = quotes.map((q, i) => {
     return `
 ${isComparison ? `OPTION ${i + 1}:` : 'DEAL TERMS:'}
+- Type: ${q.dealType || 'Purchase'}
 - Loan Amount: $${q.loanAmount?.toLocaleString()}
 - LTV: ${q.ltv}%
 - Rate: ${q.rate}%
