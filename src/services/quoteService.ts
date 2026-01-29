@@ -131,6 +131,20 @@ export const QuoteService = {
         return true;
     },
 
+    async deleteQuotes(ids: string[]): Promise<boolean> {
+        const { error } = await supabase
+            .from('quotes')
+            .delete()
+            .in('id', ids);
+
+        if (error) {
+            console.error('Error deleting quotes:', error);
+            return false;
+        }
+
+        return true;
+    },
+
     // Fetch comparison quotes (child quotes linked via parent_quote_id)
     async getComparisonQuotes(parentQuoteId: string): Promise<Quote[]> {
         const { data, error } = await supabase

@@ -10,14 +10,38 @@ type SortConfig = {
     direction: 'asc' | 'desc';
 } | null;
 
-export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus, initialFilter = 'all' }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onUpdateStatus?: (id: string, status: QuoteStatus) => void, initialFilter?: string }) => {
+export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus, onBulkDelete, initialFilter = 'all' }: {
+    quotes: Quote[],
+    investors?: Investor[],
+    onViewQuote: (id: string) => void,
+    onUpdateStatus?: (id: string, status: QuoteStatus) => void,
+    onBulkDelete?: (ids: string[]) => void,
+    initialFilter?: string
+}) => {
     const [activeTab, setActiveTab] = React.useState<string>(initialFilter);
     const [sort, setSort] = React.useState<SortConfig>({ key: 'createdAt', direction: 'desc' });
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [selectedQuoteIds, setSelectedQuoteIds] = React.useState<string[]>([]);
 
     React.useEffect(() => {
         setActiveTab(initialFilter);
+        setSelectedQuoteIds([]);
     }, [initialFilter]);
+
+    const toggleSelectAll = () => {
+        if (selectedQuoteIds.length === filteredAndSortedQuotes.length) {
+            setSelectedQuoteIds([]);
+        } else {
+            setSelectedQuoteIds(filteredAndSortedQuotes.map(q => q.id));
+        }
+    };
+
+    const toggleSelect = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation(); // Don't navigate to detail page
+        setSelectedQuoteIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
 
     const handleSort = (key: 'investorName' | 'loanAmount' | 'createdAt' | 'status') => {
         setSort(prev => {
@@ -155,6 +179,19 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                         </button>
                     )}
                 </div>
+
+                {selectedQuoteIds.length > 0 && onBulkDelete && (
+                    <button
+                        onClick={() => {
+                            onBulkDelete(selectedQuoteIds);
+                            setSelectedQuoteIds([]);
+                        }}
+                        className="flex items-center justify-center p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/20 transition-all animate-in fade-in zoom-in duration-200"
+                        title={`Delete ${selectedQuoteIds.length} quotes`}
+                    >
+                        <Icons.Trash className="w-5 h-5" />
+                    </button>
+                )}
             </header>
 
             {/* Desktop Table View */}
@@ -162,6 +199,14 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                 <table className="min-w-full divide-y divide-white/5">
                     <thead className="bg-white/5">
                         <tr>
+                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider w-10">
+                                <input
+                                    type="checkbox"
+                                    className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                    checked={filteredAndSortedQuotes.length > 0 && selectedQuoteIds.length === filteredAndSortedQuotes.length}
+                                    onChange={toggleSelectAll}
+                                />
+                            </th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('investorName')}
@@ -210,7 +255,16 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                             </tr>
                         ) : (
                             filteredAndSortedQuotes.map((quote) => (
-                                <tr key={quote.id} className="hover:bg-white/[0.04] cursor-pointer transition-all group">
+                                <tr key={quote.id} className={`hover:bg-white/[0.04] cursor-pointer transition-all group ${selectedQuoteIds.includes(quote.id) ? 'bg-white/[0.06]' : ''}`}>
+                                    <td className="px-8 py-6 whitespace-nowrap">
+                                        <input
+                                            type="checkbox"
+                                            className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                            checked={selectedQuoteIds.includes(quote.id)}
+                                            onClick={(e) => toggleSelect(e, quote.id)}
+                                            onChange={() => { }} // Controlled component
+                                        />
+                                    </td>
                                     <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
                                         <div className="text-base font-bold text-foreground group-hover:text-banana-400 transition-colors">{quote.investorName}</div>
                                         <div className="text-[11px] text-muted font-medium opacity-70 italic">{quote.investorEmail}</div>
@@ -256,9 +310,18 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                 {filteredAndSortedQuotes.map(quote => (
                     <div
                         key={quote.id}
-                        className="bg-surface/30 backdrop-blur-xl p-6 rounded-[2rem] border border-border/5 shadow-xl active:scale-[0.98] transition-transform flex flex-col group"
+                        className={`bg-surface/30 backdrop-blur-xl p-6 rounded-[2rem] border border-border/5 shadow-xl active:scale-[0.98] transition-transform flex flex-col group relative ${selectedQuoteIds.includes(quote.id) ? 'ring-2 ring-banana-500/50 bg-surface/50' : ''}`}
                     >
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="absolute top-4 right-4 z-10">
+                            <input
+                                type="checkbox"
+                                className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                checked={selectedQuoteIds.includes(quote.id)}
+                                onClick={(e) => toggleSelect(e, quote.id)}
+                                onChange={() => { }} // Controlled
+                            />
+                        </div>
+                        <div className="flex justify-between items-start mb-4 pr-10">
                             <div>
                                 <h3 className="text-lg font-semibold text-foreground" onClick={() => onViewQuote(quote.id)}>{quote.investorName}</h3>
                                 <p className="text-[10px] font-medium text-muted uppercase tracking-widest">{quote.dealType} • {quote.propertyState}</p>

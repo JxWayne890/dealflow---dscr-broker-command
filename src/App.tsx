@@ -249,6 +249,20 @@ export default function App() {
     }
   };
 
+  const handleBulkDeleteQuotes = async (ids: string[]) => {
+    if (!window.confirm(`Are you sure you want to delete ${ids.length} quotes?`)) return;
+    try {
+      const success = await QuoteService.deleteQuotes(ids);
+      if (success) {
+        setQuotes(prev => prev.filter(q => !ids.includes(q.id)));
+        showToast(`${ids.length} quotes deleted successfully`, 'success');
+      }
+    } catch (e) {
+      console.error("Failed to bulk delete quotes", e);
+      showToast("Failed to bulk delete quotes", 'error');
+    }
+  };
+
   const handleClearDuplicates = async () => {
     if (!window.confirm('This will find and remove all duplicate quotes based on name, address, and amount. Proceed?')) return;
 
@@ -374,7 +388,7 @@ export default function App() {
       case 'dashboard':
         return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} profile={profile} isDark={isDark} />;
       case 'quotes':
-        return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} initialFilter={currentQuoteFilter} />;
+        return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} onBulkDelete={handleBulkDeleteQuotes} initialFilter={currentQuoteFilter} />;
       case 'new_quote':
         return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
