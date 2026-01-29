@@ -73,19 +73,19 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
         return quotes.filter(q => {
             const date = new Date(q.createdAt);
             const monthName = monthNames[date.getMonth()];
-            const amountStr = q.loanAmount.toString();
-            const formattedAmount = q.loanAmount.toLocaleString();
+            const amountStr = (q.loanAmount || 0).toString();
+            const formattedAmount = (q.loanAmount || 0).toLocaleString();
 
             const investor = investors.find(inv => inv.id === q.investorId);
             const phoneClean = investor?.phone?.replace(/[^0-9]/g, '');
             const queryClean = query.replace(/[^0-9]/g, '');
 
-            return q.investorName.toLowerCase().includes(query) ||
-                q.investorEmail.toLowerCase().includes(query) ||
+            return (q.investorName || '').toLowerCase().includes(query) ||
+                (q.investorEmail || '').toLowerCase().includes(query) ||
                 (q.propertyAddress && q.propertyAddress.toLowerCase().includes(query)) ||
                 (q.propertyCity && q.propertyCity.toLowerCase().includes(query)) ||
                 (q.propertyZip && q.propertyZip.toLowerCase().includes(query)) ||
-                q.propertyState.toLowerCase().includes(query) ||
+                (q.propertyState || '').toLowerCase().includes(query) ||
                 (investor?.company && investor.company.toLowerCase().includes(query)) ||
                 (investor?.phone && investor.phone.toLowerCase().includes(query)) ||
                 (phoneClean && queryClean && phoneClean.includes(queryClean)) ||

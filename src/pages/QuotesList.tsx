@@ -61,12 +61,12 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                 const phoneClean = investor?.phone?.replace(/[^0-9]/g, '');
                 const queryClean = query.replace(/[^0-9]/g, '');
 
-                return q.investorName.toLowerCase().includes(query) ||
-                    q.investorEmail.toLowerCase().includes(query) ||
+                return (q.investorName || '').toLowerCase().includes(query) ||
+                    (q.investorEmail || '').toLowerCase().includes(query) ||
                     (q.propertyAddress && q.propertyAddress.toLowerCase().includes(query)) ||
                     (q.propertyCity && q.propertyCity.toLowerCase().includes(query)) ||
                     (q.propertyZip && q.propertyZip.toLowerCase().includes(query)) ||
-                    q.propertyState.toLowerCase().includes(query) ||
+                    (q.propertyState || '').toLowerCase().includes(query) ||
                     (investor?.company && investor.company.toLowerCase().includes(query)) ||
                     (investor?.phone && investor.phone.toLowerCase().includes(query)) ||
                     (phoneClean && queryClean && phoneClean.includes(queryClean)) ||
