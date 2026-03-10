@@ -133,4 +133,15 @@ export type EmailFormat = 'text' | 'html';
 
 export type QuoteFilter = 'all' | 'drafts' | 'active' | 'won' | 'lost' | 'needs_follow_up';
 
-export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev' | 'website_builder';
+export interface EducationTutorial {
+  id: string;
+  title: string;
+  description?: string;
+  videoUrl: string;
+  category: string;
+  thumbnailUrl?: string;
+  orderIndex: number;
+  createdAt: string;
+}
+
+export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev' | 'education';

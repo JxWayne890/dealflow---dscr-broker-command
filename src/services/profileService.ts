@@ -168,6 +168,27 @@ export const ProfileService = {
             emailsSent,
             limit: FREE_TRIAL_LIMIT
         };
+    },
+
+    async getPublicProfile(quoteId: string): Promise<{ data: BrokerProfile | null }> {
+        // Fetch the user_id associated with this quote first
+        const { data: quote, error: qError } = await supabase
+            .from('quotes')
+            .select('user_id')
+            .eq('id', quoteId)
+            .single();
+
+        if (qError || !quote) return { data: null };
+
+        // Then fetch that user's profile
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', quote.user_id)
+            .single();
+
+        if (error) return { data: null };
+        return { data: mapDbToProfile(data) };
     }
 };
 

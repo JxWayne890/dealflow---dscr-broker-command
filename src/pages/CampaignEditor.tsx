@@ -4,6 +4,8 @@ import { Icons } from '../components/Icons';
 import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { AnalogTimePicker } from '../components/AnalogTimePicker';
+import { supabase } from '../lib/supabase';
+import { ProfileService } from '../services/profileService';
 
 // Helper component for syntax highlighting variables in inputs/textareas
 function VariableInput({
@@ -113,6 +115,15 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
     const [selectedStepOrder, setSelectedStepOrder] = useState<number | null>(null);
     const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
     const [showTimePicker, setShowTimePicker] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewContent, setPreviewContent] = useState<{ subject: string, body: string, stepTitle?: string } | null>(null);
+
+    // Enroll Leads state
+    const [showEnrollModal, setShowEnrollModal] = useState(false);
+    const [availableQuotes, setAvailableQuotes] = useState<any[]>([]);
+    const [enrollSearch, setEnrollSearch] = useState('');
+    const [enrolling, setEnrolling] = useState<string | null>(null);
+    const [loadingQuotes, setLoadingQuotes] = useState(false);
 
     useEffect(() => {
         if (campaignId) {
@@ -216,6 +227,69 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
         } catch (error) {
             console.error('Delete failed', error);
             showToast('Failed to delete campaign', 'error');
+        }
+    };
+
+    const handlePreviewEmail = async (sub: CampaignSubscription, step: CampaignStep, stepOrder: number) => {
+        try {
+            const profile = await ProfileService.getProfile();
+            let bodyTemplate = step.body_template || '';
+            let subjectTemplate = step.subject_template || '';
+
+            const variables: Record<string, string> = {
+                firstName: sub.quotes?.investorName?.split(' ')[0] || 'there',
+                fullName: sub.quotes?.investorName || 'Investor',
+                address: sub.quotes?.propertyAddress || 'Property',
+                dealType: sub.quotes?.dealType || 'Deal',
+                senderName: profile?.name || 'Your Name',
+                companyName: profile?.company || 'Your Company'
+            };
+
+            for (const [key, value] of Object.entries(variables)) {
+                const regex = new RegExp(`{{${key}}}`, 'g');
+                bodyTemplate = bodyTemplate.replace(regex, value);
+                subjectTemplate = subjectTemplate.replace(regex, value);
+            }
+
+            // Fetch comparison quotes to preview full options
+            const { data: compData } = await supabase
+                .from('quotes')
+                .select('*')
+                .eq('parent_quote_id', sub.quotes?.id)
+                .order('created_at', { ascending: true });
+
+            const mapToQuoteObj = (q: any) => ({
+                id: q.id || q.quotes?.id,
+                investorName: q.investor_name || q.investorName,
+                investorEmail: q.investor_email || q.investorEmail,
+                propertyAddress: q.property_address || q.propertyAddress,
+                propertyState: q.property_state || q.propertyState,
+                loanAmount: q.loan_amount || q.loanAmount,
+                ltv: q.ltv || q.ltv,
+                rate: q.rate || q.rate,
+                termYears: q.term_years || q.termYears,
+                rateType: q.rate_type || q.rateType,
+                monthlyPayment: q.monthly_payment || q.monthlyPayment,
+                closingFees: q.closing_fees || q.closingFees,
+                originationFee: q.origination_fee || q.originationFee,
+                uwFee: q.uw_fee || q.uwFee,
+                dealType: q.deal_type || q.dealType,
+            });
+
+            const mainQuoteObj = mapToQuoteObj(sub.quotes || {});
+            const comparisonQuoteObjs = (compData || []).map(mapToQuoteObj);
+            const allOptions = [mainQuoteObj, ...comparisonQuoteObjs];
+
+            // Must import generateHtmlEmail at the top if not already, or we can use dynamic import here if preferred. 
+            // Wait, I will just add the import at the top of the file in the previous tools, let's assume it's imported.
+            const { generateHtmlEmail } = await import('../utils/emailTemplates');
+            const htmlPreview = generateHtmlEmail(allOptions as any, profile as any, bodyTemplate);
+
+            setPreviewContent({ subject: subjectTemplate, body: htmlPreview, stepTitle: `Step ${stepOrder}` });
+            setShowPreviewModal(true);
+        } catch (e) {
+            console.error('Failed to preview', e);
+            showToast('Failed to generate preview', 'error');
         }
     };
 
@@ -462,163 +536,214 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
 
             {/* View: Leads */}
             {view === 'leads' && (
-                <div className="bg-surface/30 backdrop-blur-xl rounded-xl shadow-sm border border-border/10 overflow-hidden overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border/10">
-                        <thead className="bg-foreground/5">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Investor / Deal</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Current Step</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Next Run</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-transparent divide-y divide-border/10">
-                            {subs.length === 0 ? (
+                <>
+                    <div className="flex justify-end mb-4">
+                        <button
+                            onClick={async () => {
+                                if (!campaignId) { showToast('Save the campaign first', 'error'); return; }
+                                setShowEnrollModal(true);
+                                setEnrollSearch('');
+                                setLoadingQuotes(true);
+                                try {
+                                    const { data, error } = await supabase
+                                        .from('quotes')
+                                        .select('id, investor_name, investor_email, deal_type, loan_amount, property_address')
+                                        .order('created_at', { ascending: false });
+                                    if (error) throw error;
+
+                                    // 1. Get emails already enrolled in this campaign
+                                    const enrolledEmails = new Set(subs.map(s => s.quotes?.investorEmail?.toLowerCase()).filter(Boolean));
+
+                                    // 2. Filter for unique emails that aren't already enrolled
+                                    const uniqueMap = new Map();
+                                    (data || []).forEach(q => {
+                                        const email = q.investor_email?.toLowerCase();
+                                        if (email && !enrolledEmails.has(email) && !uniqueMap.has(email)) {
+                                            uniqueMap.set(email, q);
+                                        }
+                                    });
+
+                                    setAvailableQuotes(Array.from(uniqueMap.values()));
+                                } catch (err) {
+                                    console.error('Failed to fetch quotes', err);
+                                    showToast('Failed to load leads', 'error');
+                                } finally {
+                                    setLoadingQuotes(false);
+                                }
+                            }}
+                            className="flex items-center space-x-2 px-4 py-2 bg-banana-400 text-slate-900 rounded-lg hover:bg-banana-500 transition shadow-sm font-medium"
+                        >
+                            <Icons.Plus size={18} />
+                            <span>Enroll Lead</span>
+                        </button>
+                    </div>
+                    <div className="bg-surface/30 backdrop-blur-xl rounded-xl shadow-sm border border-border/10 overflow-hidden overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border/10">
+                            <thead className="bg-foreground/5">
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-muted text-sm">
-                                        No leads are currently enrolled in this campaign.
-                                    </td>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Investor / Deal</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Current Step</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Next Run</th>
                                 </tr>
-                            ) : (
-                                subs.map((sub) => (
-                                    <React.Fragment key={sub.id}>
-                                        <tr
-                                            className="hover:bg-foreground/5 cursor-pointer transition-colors"
-                                            onClick={() => setExpandedSubId(expandedSubId === sub.id ? null : sub.id)}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <Icons.ChevronDown
-                                                        className={`w-4 h-4 mr-3 text-muted transition-transform ${expandedSubId === sub.id ? 'rotate-180' : ''}`}
-                                                    />
-                                                    <div>
-                                                        <div className="text-sm font-medium text-foreground">{sub.quotes?.investorName || 'Unknown Investor'}</div>
-                                                        <div className="text-[10px] text-muted/60 font-medium">{sub.quotes?.investorEmail}</div>
-                                                        <div className="text-xs text-muted">
-                                                            {sub.quotes?.dealType} • ${sub.quotes?.loanAmount?.toLocaleString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        ${sub.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                        sub.status === 'completed' ? 'bg-foreground/10 text-muted' :
-                                                            'bg-red-500/10 text-red-500'}`}>
-                                                    {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-                                                {sub.status === 'completed' ? (
-                                                    <span className="text-muted italic">Journey Complete</span>
-                                                ) : (
-                                                    <div>
-                                                        <span className="font-medium text-foreground">Step {sub.current_step_index + 1}</span>
-                                                        <span className="text-xs text-muted block max-w-[200px] truncate" title={getPersonalizedSubject(
-                                                            steps[sub.current_step_index]?.subject_template || 'Unknown Step',
-                                                            sub
-                                                        )}>
-                                                            {getPersonalizedSubject(
-                                                                steps[sub.current_step_index]?.subject_template || 'Unknown Step',
-                                                                sub
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-                                                <div className="flex items-center justify-between group">
-                                                    <span>
-                                                        {sub.next_run_at ? new Date(sub.next_run_at).toLocaleDateString() : 'N/A'}
-                                                    </span>
-                                                    {sub.status === 'active' && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedSubId(sub.id);
-                                                                setSelectedStepOrder(null); // Default to next
-                                                                setShowSendNowModal(true);
-                                                            }}
-                                                            className="text-xs bg-banana-400/10 text-banana-600 dark:text-banana-400 px-2 py-1 rounded border border-banana-400/20 hover:bg-banana-400/20 transition flex items-center space-x-1 opacity-0 group-hover:opacity-100"
-                                                        >
-                                                            <Icons.Send size={12} />
-                                                            <span>Send Next</span>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {expandedSubId === sub.id && (
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-4 bg-foreground/[0.02] border-t border-b border-border/10">
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <h4 className="text-sm font-bold text-muted uppercase tracking-tight">Timeline & Steps</h4>
-                                                            <p className="text-xs text-muted">Started on {new Date(sub.created_at).toLocaleDateString()}</p>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 gap-3">
-                                                            {steps.map((step, idx) => {
-                                                                const isCompleted = idx < sub.current_step_index;
-                                                                const isCurrent = idx === sub.current_step_index;
-                                                                const isFuture = idx > sub.current_step_index;
-
-                                                                // Calculate originally scheduled date
-                                                                // This is an estimate based on day offsets
-                                                                const totalOffset = steps.slice(0, idx + 1).reduce((acc, s) => acc + s.delay_days, 0);
-                                                                const estDate = new Date(sub.created_at);
-                                                                estDate.setDate(estDate.getDate() + totalOffset);
-
-                                                                return (
-                                                                    <div
-                                                                        key={idx}
-                                                                        className={`flex items-center justify-between p-3 rounded-lg border bg-surface shadow-sm ${isCurrent ? 'border-banana-400 ring-1 ring-banana-400' : 'border-border/10'}`}
-                                                                    >
-                                                                        <div className="flex items-center space-x-4">
-                                                                            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400' : isCurrent ? 'bg-banana-400/10 border-banana-400 text-banana-600 dark:text-banana-400' : 'bg-foreground/5 border-border/10 text-muted'}`}>
-                                                                                {isCompleted ? <Icons.CheckCircle size={16} /> : <span className="text-xs font-bold">{idx + 1}</span>}
-                                                                            </div>
-                                                                            <div>
-                                                                                <p className="text-sm font-medium text-foreground">{step.subject_template}</p>
-                                                                                <div className="flex items-center space-x-2 text-xs text-muted">
-                                                                                    <span>Delay: {step.delay_days}d</span>
-                                                                                    <span>•</span>
-                                                                                    <span>Scheduled: {estDate.toLocaleDateString()}</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center space-x-2">
-                                                                            {isCompleted && (
-                                                                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10 px-2 py-1 rounded">Sent</span>
-                                                                            )}
-                                                                            {isCurrent && (
-                                                                                <span className="text-xs font-medium text-banana-600 dark:text-banana-400 bg-banana-400/10 px-2 py-1 rounded">Up Next</span>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setSelectedSubId(sub.id);
-                                                                                    setSelectedStepOrder(idx + 1);
-                                                                                    setShowSendNowModal(true);
-                                                                                }}
-                                                                                className={`text-xs px-3 py-1.5 rounded-md font-medium transition ${isCurrent ? 'bg-banana-400 text-slate-900 hover:bg-banana-500' : 'bg-surface text-muted border border-border/10 hover:bg-foreground/5'}`}
-                                                                            >
-                                                                                Send Now
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
+                            </thead>
+                            <tbody className="bg-transparent divide-y divide-border/10">
+                                {subs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-12 text-center text-muted text-sm">
+                                            No leads are currently enrolled in this campaign.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    subs.map((sub) => (
+                                        <React.Fragment key={sub.id}>
+                                            <tr
+                                                className="hover:bg-foreground/5 cursor-pointer transition-colors"
+                                                onClick={() => setExpandedSubId(expandedSubId === sub.id ? null : sub.id)}
+                                            >
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <Icons.ChevronDown
+                                                            className={`w-4 h-4 mr-3 text-muted transition-transform ${expandedSubId === sub.id ? 'rotate-180' : ''}`}
+                                                        />
+                                                        <div>
+                                                            <div className="text-sm font-medium text-foreground">{sub.quotes?.investorName || 'Unknown Investor'}</div>
+                                                            <div className="text-[10px] text-muted/60 font-medium">{sub.quotes?.investorEmail}</div>
+                                                            <div className="text-xs text-muted">
+                                                                {sub.quotes?.dealType} • ${sub.quotes?.loanAmount?.toLocaleString()}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                        ${sub.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                            sub.status === 'completed' ? 'bg-foreground/10 text-muted' :
+                                                                'bg-red-500/10 text-red-500'}`}>
+                                                        {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+                                                    {sub.status === 'completed' ? (
+                                                        <span className="text-muted italic">Journey Complete</span>
+                                                    ) : (
+                                                        <div>
+                                                            <span className="font-medium text-foreground">Step {sub.current_step_index + 1}</span>
+                                                            <span className="text-xs text-muted block max-w-[200px] truncate" title={getPersonalizedSubject(
+                                                                steps[sub.current_step_index]?.subject_template || 'Unknown Step',
+                                                                sub
+                                                            )}>
+                                                                {getPersonalizedSubject(
+                                                                    steps[sub.current_step_index]?.subject_template || 'Unknown Step',
+                                                                    sub
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+                                                    <div className="flex items-center justify-between group">
+                                                        <span>
+                                                            {sub.next_run_at ? new Date(sub.next_run_at).toLocaleDateString() : 'N/A'}
+                                                        </span>
+                                                        {sub.status === 'active' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedSubId(sub.id);
+                                                                    setSelectedStepOrder(null); // Default to next
+                                                                    setShowSendNowModal(true);
+                                                                }}
+                                                                className="text-xs bg-banana-400/10 text-banana-600 dark:text-banana-400 px-2 py-1 rounded border border-banana-400/20 hover:bg-banana-400/20 transition flex items-center space-x-1 opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                <Icons.Send size={12} />
+                                                                <span>Send Next</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        )}
-                                    </React.Fragment>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                            {expandedSubId === sub.id && (
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-4 bg-foreground/[0.02] border-t border-b border-border/10">
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h4 className="text-sm font-bold text-muted uppercase tracking-tight">Timeline & Steps</h4>
+                                                                <p className="text-xs text-muted">Started on {new Date(sub.created_at).toLocaleDateString()}</p>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 gap-3">
+                                                                {steps.map((step, idx) => {
+                                                                    const isCompleted = idx < sub.current_step_index;
+                                                                    const isCurrent = idx === sub.current_step_index;
+                                                                    const isFuture = idx > sub.current_step_index;
+
+                                                                    // Calculate originally scheduled date
+                                                                    // This is an estimate based on day offsets
+                                                                    const totalOffset = steps.slice(0, idx + 1).reduce((acc, s) => acc + s.delay_days, 0);
+                                                                    const estDate = new Date(sub.created_at);
+                                                                    estDate.setDate(estDate.getDate() + totalOffset);
+
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className={`flex items-center justify-between p-3 rounded-lg border bg-surface shadow-sm ${isCurrent ? 'border-banana-400 ring-1 ring-banana-400' : 'border-border/10'}`}
+                                                                        >
+                                                                            <div className="flex items-center space-x-4">
+                                                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400' : isCurrent ? 'bg-banana-400/10 border-banana-400 text-banana-600 dark:text-banana-400' : 'bg-foreground/5 border-border/10 text-muted'}`}>
+                                                                                    {isCompleted ? <Icons.CheckCircle size={16} /> : <span className="text-xs font-bold">{idx + 1}</span>}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-sm font-medium text-foreground">{step.subject_template}</p>
+                                                                                    <div className="flex items-center space-x-2 text-xs text-muted">
+                                                                                        <span>Delay: {step.delay_days}d</span>
+                                                                                        <span>•</span>
+                                                                                        <span>Scheduled: {estDate.toLocaleDateString()}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex items-center space-x-2">
+                                                                                {isCompleted && (
+                                                                                    <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10 px-2 py-1 rounded">Sent</span>
+                                                                                )}
+                                                                                {isCurrent && (
+                                                                                    <span className="text-xs font-medium text-banana-600 dark:text-banana-400 bg-banana-400/10 px-2 py-1 rounded">Up Next</span>
+                                                                                )}
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handlePreviewEmail(sub, step, idx + 1);
+                                                                                    }}
+                                                                                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition bg-surface text-muted border border-border/10 hover:bg-foreground/5`}
+                                                                                >
+                                                                                    Preview
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setSelectedSubId(sub.id);
+                                                                                        setSelectedStepOrder(idx + 1);
+                                                                                        setShowSendNowModal(true);
+                                                                                    }}
+                                                                                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition ${isCurrent ? 'bg-banana-400 text-slate-900 hover:bg-banana-500' : 'bg-surface text-muted border border-border/10 hover:bg-foreground/5'}`}
+                                                                                >
+                                                                                    Send Now
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
             )}
 
             {/* Modals */}
@@ -683,6 +808,33 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                 )}
             </Modal>
 
+            <Modal
+                isOpen={showPreviewModal}
+                onClose={() => {
+                    setShowPreviewModal(false);
+                    setPreviewContent(null);
+                }}
+                title={`Preview: ${previewContent?.stepTitle || 'Email'}`}
+                maxWidth="sm:max-w-3xl md:max-w-4xl"
+            >
+                {previewContent && (
+                    <div className="space-y-4 text-sm bg-surface p-6 rounded-xl border border-border/5 text-left flex flex-col h-[70vh]">
+                        <div className="border-b border-border/10 pb-4 flex-shrink-0">
+                            <span className="text-muted font-bold text-[10px] uppercase tracking-wider block mb-1">Subject</span>
+                            <span className="font-semibold text-foreground text-sm">{previewContent.subject}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col min-h-0 bg-white rounded-lg border border-slate-200 overflow-hidden shadow-inner">
+                            <iframe
+                                title="email-preview"
+                                srcDoc={previewContent.body}
+                                className="w-full h-full border-0 bg-white"
+                                sandbox="allow-same-origin"
+                            />
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
             {showTimePicker && (
                 <AnalogTimePicker
                     value={preferredRunTime}
@@ -690,6 +842,91 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                     onClose={() => setShowTimePicker(false)}
                 />
             )}
+
+            {/* Enroll Lead Modal */}
+            <Modal
+                isOpen={showEnrollModal}
+                onClose={() => setShowEnrollModal(false)}
+                title="Enroll a Lead in This Campaign"
+            >
+                <div className="space-y-4">
+                    <div className="relative">
+                        <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, email, or address..."
+                            value={enrollSearch}
+                            onChange={(e) => setEnrollSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border/10 text-foreground text-sm focus:ring-2 focus:ring-banana-400 outline-none"
+                            autoFocus
+                        />
+                    </div>
+
+                    <div className="max-h-[320px] overflow-y-auto space-y-2">
+                        {loadingQuotes ? (
+                            <div className="py-8 flex justify-center">
+                                <Icons.RefreshCw className="animate-spin text-muted" size={24} />
+                            </div>
+                        ) : (() => {
+                            const filtered = availableQuotes.filter(q => {
+                                if (!enrollSearch) return true;
+                                const s = enrollSearch.toLowerCase();
+                                return (
+                                    (q.investor_name || '').toLowerCase().includes(s) ||
+                                    (q.investor_email || '').toLowerCase().includes(s) ||
+                                    (q.property_address || '').toLowerCase().includes(s)
+                                );
+                            });
+                            if (filtered.length === 0) {
+                                return (
+                                    <div className="py-8 text-center text-muted text-sm">
+                                        {availableQuotes.length === 0 ? 'All leads are already enrolled.' : 'No matches found.'}
+                                    </div>
+                                );
+                            }
+                            return filtered.map(q => (
+                                <div
+                                    key={q.id}
+                                    className="flex items-center justify-between p-3 rounded-lg border border-border/10 hover:border-banana-400/30 hover:bg-banana-400/5 transition group"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-foreground truncate">{q.investor_name || 'Unnamed'}</p>
+                                        <p className="text-[11px] text-muted truncate">{q.investor_email}</p>
+                                    </div>
+                                    <button
+                                        disabled={enrolling === q.id}
+                                        onClick={async () => {
+                                            setEnrolling(q.id);
+                                            try {
+                                                await campaignService.subscribeLead(campaignId!, q.id);
+                                                showToast(`${q.investor_name || 'Lead'} enrolled!`, 'success');
+                                                // Remove from available list
+                                                setAvailableQuotes(prev => prev.filter(x => x.id !== q.id));
+                                                // Refresh subscriptions
+                                                const updated = await campaignService.getCampaignSubscriptions(campaignId!);
+                                                setSubs(updated || []);
+                                            } catch (err: any) {
+                                                console.error('Enrollment failed', err);
+                                                showToast(err?.message || 'Failed to enroll lead', 'error');
+                                            } finally {
+                                                setEnrolling(null);
+                                            }
+                                        }}
+                                        className="flex-shrink-0 ml-3 flex items-center space-x-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-banana-400 text-slate-900 hover:bg-banana-500 transition disabled:opacity-50"
+                                    >
+                                        {enrolling === q.id ? (
+                                            <Icons.RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                            <Icons.Plus size={14} />
+                                        )}
+                                        <span>{enrolling === q.id ? 'Adding...' : 'Enroll'}</span>
+                                    </button>
+                                </div>
+                            ));
+                        })()}
+                    </div>
+                </div>
+            </Modal>
         </div>
 
     );

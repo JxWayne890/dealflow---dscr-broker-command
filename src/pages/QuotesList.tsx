@@ -2,6 +2,7 @@ import React from 'react';
 import { Icons } from '../components/Icons';
 import { StatusBadge } from '../components/StatusBadge';
 import { Quote, QuoteStatus, View, Investor } from '../types';
+import { Campaign, CampaignSubscription } from '../services/campaignService';
 
 import { StatusDropdown } from '../components/StatusDropdown';
 
@@ -10,12 +11,29 @@ type SortConfig = {
     direction: 'asc' | 'desc';
 } | null;
 
-export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus, onBulkDelete, initialFilter = 'all' }: {
+export const QuotesList = ({
+    quotes,
+    investors = [],
+    campaigns = [],
+    subscriptions = [],
+    onViewQuote,
+    onUpdateStatus,
+    onBulkDelete,
+    onEnrollLead,
+    onBulkEnrollLeads,
+    isEnrollingLeads = false,
+    initialFilter = 'all'
+}: {
     quotes: Quote[],
     investors?: Investor[],
+    campaigns?: Campaign[],
+    subscriptions?: CampaignSubscription[],
     onViewQuote: (id: string) => void,
     onUpdateStatus?: (id: string, status: QuoteStatus) => void,
     onBulkDelete?: (ids: string[]) => void,
+    onEnrollLead?: (quoteId: string, campaignId: string | null) => void,
+    onBulkEnrollLeads?: (quoteIds: string[], campaignId: string) => void,
+    isEnrollingLeads?: boolean,
     initialFilter?: string
 }) => {
     const [activeTab, setActiveTab] = React.useState<string>(initialFilter);
@@ -180,17 +198,46 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                     )}
                 </div>
 
-                {selectedQuoteIds.length > 0 && onBulkDelete && (
-                    <button
-                        onClick={() => {
-                            onBulkDelete(selectedQuoteIds);
-                            setSelectedQuoteIds([]);
-                        }}
-                        className="flex items-center justify-center p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/20 transition-all animate-in fade-in zoom-in duration-200"
-                        title={`Delete ${selectedQuoteIds.length} quotes`}
-                    >
-                        <Icons.Trash className="w-5 h-5" />
-                    </button>
+                {selectedQuoteIds.length > 0 && (
+                    <div className="flex items-center gap-3">
+                        {onBulkEnrollLeads && campaigns.length > 0 && (
+                            <div className="relative group">
+                                <select
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            const campId = e.target.value === 'none' ? '' : e.target.value;
+                                            onBulkEnrollLeads(selectedQuoteIds, campId);
+                                            setSelectedQuoteIds([]);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                    disabled={isEnrollingLeads}
+                                    className="appearance-none p-3 pl-4 pr-10 bg-white dark:bg-surface hover:bg-slate-50 dark:hover:bg-surfaceHighlight text-slate-800 dark:text-slate-200 font-semibold rounded-xl shadow-lg border border-slate-200 dark:border-white/10 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <option value="" disabled selected className="text-muted">{isEnrollingLeads ? 'Enrolling...' : 'Add to Campaign...'}</option>
+                                    <option value="none" className="bg-surface text-red-500 font-bold py-2">No Campaign (Remove)</option>
+                                    {campaigns.map(c => (
+                                        <option key={c.id} value={c.id} className="bg-surface text-foreground py-2">{c.name}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500 dark:text-slate-400">
+                                    <Icons.ChevronDown className="w-4 h-4" />
+                                </div>
+                            </div>
+                        )}
+                        {onBulkDelete && (
+                            <button
+                                onClick={() => {
+                                    onBulkDelete(selectedQuoteIds);
+                                    setSelectedQuoteIds([]);
+                                }}
+                                className="flex items-center justify-center p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/20 transition-all animate-in fade-in zoom-in duration-200"
+                                title={`Delete ${selectedQuoteIds.length} quotes`}
+                            >
+                                <Icons.Trash className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
                 )}
             </header>
 
@@ -199,10 +246,10 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                 <table className="min-w-full divide-y divide-white/5">
                     <thead className="bg-white/5">
                         <tr>
-                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider w-10">
+                            <th scope="col" className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider w-10">
                                 <input
                                     type="checkbox"
-                                    className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                    className="appearance-none h-4 w-4 rounded border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1 after:top-[1px] after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block shadow-sm"
                                     checked={filteredAndSortedQuotes.length > 0 && selectedQuoteIds.length === filteredAndSortedQuotes.length}
                                     onChange={toggleSelectAll}
                                 />
@@ -210,40 +257,41 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                             <th
                                 scope="col"
                                 onClick={() => handleSort('investorName')}
-                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
+                                className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-1">Investor Quote <SortIndicator column="investorName" /></div>
                             </th>
-                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Deployment</th>
+                            <th scope="col" className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Deployment</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('loanAmount')}
-                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
+                                className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-1">Volume <SortIndicator column="loanAmount" /></div>
                             </th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('createdAt')}
-                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
+                                className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-1">Date <SortIndicator column="createdAt" /></div>
                             </th>
-                            <th scope="col" className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Configuration</th>
+                            <th scope="col" className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Campaign</th>
+                            <th scope="col" className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider">Configuration</th>
                             <th
                                 scope="col"
                                 onClick={() => handleSort('status')}
-                                className="px-8 py-5 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
+                                className="px-4 py-4 text-left text-[10px] font-semibold text-muted uppercase tracking-wider cursor-pointer hover:bg-white/5 transition-colors group"
                             >
                                 <div className="flex items-center gap-1">Status <SortIndicator column="status" /></div>
                             </th>
-                            <th scope="col" className="relative px-8 py-5 text-center text-[10px] font-semibold text-muted uppercase tracking-wider">Access</th>
+                            <th scope="col" className="relative px-4 py-4 text-center text-[10px] font-semibold text-muted uppercase tracking-wider w-8"></th>
                         </tr>
                     </thead>
                     <tbody className="bg-transparent divide-y divide-white/5">
                         {filteredAndSortedQuotes.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-8 py-24 text-center">
+                                <td colSpan={8} className="px-8 py-24 text-center">
                                     <div className="flex flex-col items-center justify-center opacity-40">
                                         <div className="p-4 bg-white/5 rounded-2xl mb-4 text-muted">
                                             <Icons.AlertCircle className="w-8 h-8" />
@@ -256,36 +304,62 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                         ) : (
                             filteredAndSortedQuotes.map((quote) => (
                                 <tr key={quote.id} className={`hover:bg-white/[0.04] cursor-pointer transition-all group ${selectedQuoteIds.includes(quote.id) ? 'bg-white/[0.06]' : ''}`}>
-                                    <td className="px-8 py-6 whitespace-nowrap">
+                                    <td className="px-4 py-4 whitespace-nowrap">
                                         <input
                                             type="checkbox"
-                                            className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                            className="appearance-none h-4 w-4 rounded border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1 after:top-[1px] after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block shadow-sm"
                                             checked={selectedQuoteIds.includes(quote.id)}
                                             onClick={(e) => toggleSelect(e, quote.id)}
                                             onChange={() => { }} // Controlled component
                                         />
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-base font-bold text-foreground group-hover:text-banana-400 transition-colors">{quote.investorName}</div>
-                                        <div className="text-[11px] text-muted font-medium opacity-70 italic">{quote.investorEmail}</div>
+                                    <td className="px-4 py-4 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="text-sm font-bold text-foreground group-hover:text-banana-400 transition-colors">{quote.investorName}</div>
+                                        <span className="text-[10px] text-muted font-medium opacity-70 italic truncate max-w-[150px] inline-block">{quote.investorEmail}</span>
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                    <td className="px-4 py-4 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs font-semibold text-foreground/80">{quote.propertyState}</span>
-                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surfaceHighlight/50 border border-border/5 text-muted tracking-wide uppercase">{quote.dealType}</span>
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surfaceHighlight/50 border border-border/5 text-muted tracking-wide uppercase">{quote.dealType}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap text-base font-bold text-foreground" onClick={() => onViewQuote(quote.id)}>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-foreground" onClick={() => onViewQuote(quote.id)}>
                                         ${quote.loanAmount?.toLocaleString() || '0'}
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap text-xs font-medium text-foreground/70" onClick={() => onViewQuote(quote.id)}>
-                                        {new Date(quote.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-foreground/70" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="flex flex-col">
+                                            <span>{new Date(quote.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                            <span className="text-[9px] text-muted">{new Date(quote.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
-                                        <div className="text-xs font-bold text-foreground/70 uppercase">{quote.termYears}Y Fixed Duration</div>
-                                        <div className="text-[10px] text-muted font-medium tracking-widest uppercase">{quote.rate}% Rate Floor</div>
+                                    <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                        <div className="relative inline-block w-36">
+                                            <select
+                                                className={`appearance-none w-full text-[11px] font-bold outline-none transition-all duration-200 pl-3 pr-7 py-1.5 rounded-full border disabled:opacity-50 disabled:cursor-not-allowed ${subscriptions.find(s => s.lead_id === quote.id)?.campaign_id
+                                                    ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20 cursor-pointer'
+                                                    : 'bg-slate-500/5 text-slate-500 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/10 cursor-pointer'
+                                                    }`}
+                                                value={subscriptions.find(s => s.lead_id === quote.id)?.campaign_id || ''}
+                                                disabled={isEnrollingLeads}
+                                                onChange={(e) => {
+                                                    if (onEnrollLead) onEnrollLead(quote.id, e.target.value || null);
+                                                }}
+                                            >
+                                                <option value="" className="bg-surface">No Campaign</option>
+                                                {campaigns.map(c => (
+                                                    <option key={c.id} value={c.id} className="bg-surface">{c.name}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none">
+                                                <Icons.ChevronDown className={`w-3.5 h-3.5 ${subscriptions.find(s => s.lead_id === quote.id)?.campaign_id ? 'text-indigo-500' : 'text-slate-400'}`} />
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap">
+                                    <td className="px-4 py-4 whitespace-nowrap" onClick={() => onViewQuote(quote.id)}>
+                                        <div className="text-[10px] font-bold text-foreground/70 uppercase">{quote.termYears}Y Fixed Duration</div>
+                                        <div className="text-[9px] text-muted font-medium tracking-widest uppercase">{quote.rate}% Rate Floor</div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
                                         {onUpdateStatus ? (
                                             <StatusDropdown
                                                 currentStatus={quote.status}
@@ -295,8 +369,8 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                                             <StatusBadge status={quote.status} />
                                         )}
                                     </td>
-                                    <td className="px-8 py-6 whitespace-nowrap text-right" onClick={() => onViewQuote(quote.id)}>
-                                        <Icons.ChevronRight className="w-6 h-6 mx-auto text-muted/40 group-hover:text-banana-400 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                                    <td className="px-4 py-4 whitespace-nowrap text-right" onClick={() => onViewQuote(quote.id)}>
+                                        <Icons.ChevronRight className="w-5 h-5 mx-auto text-muted/40 group-hover:text-banana-400 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
                                     </td>
                                 </tr>
                             ))
@@ -315,7 +389,7 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                         <div className="absolute top-4 right-4 z-10">
                             <input
                                 type="checkbox"
-                                className="appearance-none h-5 w-5 rounded-md border border-white/10 bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1.5 after:top-0.5 after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block"
+                                className="appearance-none h-4 w-4 rounded border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 checked:bg-banana-500 checked:border-banana-500 text-banana-500 focus:ring-banana-500 focus:ring-offset-0 transition-all cursor-pointer relative after:content-[''] after:hidden after:absolute after:left-1 after:top-[1px] after:w-1.5 after:h-2.5 after:border-r-2 after:border-b-2 after:border-white after:rotate-45 checked:after:block shadow-sm"
                                 checked={selectedQuoteIds.includes(quote.id)}
                                 onClick={(e) => toggleSelect(e, quote.id)}
                                 onChange={() => { }} // Controlled
@@ -337,6 +411,33 @@ export const QuotesList = ({ quotes, investors = [], onViewQuote, onUpdateStatus
                                 )}
                             </div>
                         </div>
+
+                        <div className="flex flex-col gap-1 w-full mb-4 bg-surface p-3 rounded-2xl border border-white/5 shadow-inner">
+                            <span className="text-muted font-medium text-xs px-1">Campaign</span>
+                            <div className="relative w-full">
+                                <select
+                                    className={`appearance-none w-full text-xs font-bold outline-none transition-all duration-200 pl-4 pr-10 py-2.5 rounded-xl border shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${subscriptions.find(s => s.lead_id === quote.id)?.campaign_id
+                                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20 cursor-pointer'
+                                        : 'bg-white text-slate-700 dark:bg-slate-500/5 dark:text-slate-400 border-slate-200 dark:border-slate-500/20 cursor-pointer'
+                                        }`}
+                                    value={subscriptions.find(s => s.lead_id === quote.id)?.campaign_id || ''}
+                                    disabled={isEnrollingLeads}
+                                    onChange={(e) => {
+                                        if (onEnrollLead) onEnrollLead(quote.id, e.target.value || null);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <option value="" className="bg-surface">No Campaign</option>
+                                    {campaigns.map(c => (
+                                        <option key={c.id} value={c.id} className="bg-surface">{c.name}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none">
+                                    <Icons.ChevronDown className={`w-4 h-4 ${subscriptions.find(s => s.lead_id === quote.id)?.campaign_id ? 'text-indigo-500' : 'text-slate-400'}`} />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="flex items-end justify-between border-t border-white/5 pt-4" onClick={() => onViewQuote(quote.id)}>
                             <div>
                                 <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Vector Volume</p>

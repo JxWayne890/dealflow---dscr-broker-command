@@ -45,7 +45,8 @@ import {
   Tag,
   Layers,
   Globe,
-  ExternalLink
+  ExternalLink,
+  Video
 } from 'lucide-react';
 
 export const Icons = {
@@ -120,5 +121,6 @@ export const Icons = {
   Tag,
   Layers,
   Globe,
-  ExternalLink
+  ExternalLink,
+  Video
 };

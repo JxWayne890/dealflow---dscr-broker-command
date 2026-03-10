@@ -12,6 +12,7 @@ import { Investors } from './pages/Investors';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { PublicSchedule } from './pages/PublicSchedule';
+import { Education } from './pages/Education';
 import { Inquiry } from './pages/Inquiry';
 import { Campaigns } from './pages/Campaigns';
 import { CampaignEditor } from './pages/CampaignEditor';
@@ -21,6 +22,7 @@ import { AuthModal } from './components/AuthModal';
 import { QuoteService } from './services/quoteService';
 import { InvestorService } from './services/investorService';
 import { ProfileService } from './services/profileService';
+import { campaignService, Campaign, CampaignSubscription } from './services/campaignService';
 import { useToast } from './contexts/ToastContext';
 import { BrokerProfile } from './types';
 import { EmailConfirmation } from './pages/EmailConfirmation';
@@ -101,7 +103,10 @@ export default function App() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [profile, setProfile] = useState<BrokerProfile | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [subscriptions, setSubscriptions] = useState<CampaignSubscription[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [isEnrollingLeads, setIsEnrollingLeads] = useState(false);
 
   // Fetch Data on Session Change
   useEffect(() => {
@@ -112,10 +117,14 @@ export default function App() {
       Promise.all([
         QuoteService.getQuotes(),
         InvestorService.getInvestors(),
-        ProfileService.getProfile()
-      ]).then(([fetchedQuotes, fetchedInvestors, fetchedProfile]) => {
+        ProfileService.getProfile(),
+        campaignService.getCampaigns().catch(() => []),
+        campaignService.getAllSubscriptions().catch(() => [])
+      ]).then(([fetchedQuotes, fetchedInvestors, fetchedProfile, fetchedCampaigns, fetchedSubs]) => {
         setQuotes(fetchedQuotes);
         setInvestors(fetchedInvestors);
+        setCampaigns(fetchedCampaigns);
+        setSubscriptions(fetchedSubs);
 
         // Apply theme from profile if available
         if (fetchedProfile?.theme) {
@@ -157,6 +166,8 @@ export default function App() {
     } else {
       setQuotes([]);
       setInvestors([]);
+      setCampaigns([]);
+      setSubscriptions([]);
       // If we signed out, data is "initialized" (as empty)
       setDataInitializationComplete(true);
       initialNavigationDone.current = false;
@@ -260,6 +271,59 @@ export default function App() {
     } catch (e) {
       console.error("Failed to bulk delete quotes", e);
       showToast("Failed to bulk delete quotes", 'error');
+    }
+  };
+
+  const handleEnrollLead = async (quoteId: string, campaignId: string | null) => {
+    setIsEnrollingLeads(true);
+    try {
+      if (campaignId) {
+        // Unsubscribe from any existing active campaigns first to be safe
+        await campaignService.unsubscribeLead(quoteId);
+        await campaignService.subscribeLead(campaignId, quoteId);
+        showToast('Lead enrolled in campaign', 'success');
+      } else {
+        await campaignService.unsubscribeLead(quoteId);
+        showToast('Lead removed from campaign', 'success');
+      }
+
+      // Refresh subscriptions
+      const updatedSubs = await campaignService.getAllSubscriptions();
+      setSubscriptions(updatedSubs);
+    } catch (error: any) {
+      console.error('Failed to change campaign', error);
+      showToast(error?.message || 'Failed to update campaign', 'error');
+    } finally {
+      setIsEnrollingLeads(false);
+    }
+  };
+
+  const handleBulkEnrollLeads = async (quoteIds: string[], campaignId: string) => {
+    setIsEnrollingLeads(true);
+    try {
+      let successCount = 0;
+      for (const id of quoteIds) {
+        try {
+          // If enrolling in a campaign, remove from old one first
+          await campaignService.unsubscribeLead(id);
+          if (campaignId) {
+            await campaignService.subscribeLead(campaignId, id);
+          }
+          successCount++;
+        } catch (e) {
+          console.error(`Failed to enroll ${id}`, e);
+        }
+      }
+      showToast(`Updated campaign for ${successCount} leads`, 'success');
+
+      // Refresh subscriptions
+      const updatedSubs = await campaignService.getAllSubscriptions();
+      setSubscriptions(updatedSubs);
+    } catch (error) {
+      console.error('Failed bulk enroll', error);
+      showToast('Failed to update campaigns', 'error');
+    } finally {
+      setIsEnrollingLeads(false);
     }
   };
 
@@ -388,7 +452,19 @@ export default function App() {
       case 'dashboard':
         return <Dashboard quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onNewQuote={handleNewQuote} onNavigate={handleNavigate} profile={profile} isDark={isDark} />;
       case 'quotes':
-        return <QuotesList quotes={quotes} investors={investors} onViewQuote={handleViewQuote} onUpdateStatus={handleUpdateStatus} onBulkDelete={handleBulkDeleteQuotes} initialFilter={currentQuoteFilter} />;
+        return <QuotesList
+          quotes={quotes}
+          investors={investors}
+          campaigns={campaigns}
+          subscriptions={subscriptions}
+          onViewQuote={handleViewQuote}
+          onUpdateStatus={handleUpdateStatus}
+          onBulkDelete={handleBulkDeleteQuotes}
+          onEnrollLead={handleEnrollLead}
+          onBulkEnrollLeads={handleBulkEnrollLeads}
+          isEnrollingLeads={isEnrollingLeads}
+          initialFilter={currentQuoteFilter}
+        />;
       case 'new_quote':
         return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
@@ -424,8 +500,8 @@ export default function App() {
         return <Team profile={profile} />;
       case 'dev':
         return <DevDashboard />;
-      case 'website_builder':
-        return <WebsiteBuilder profile={profile} onProfileUpdate={setProfile} />;
+      case 'education':
+        return <Education profile={profile} />;
       default:
         return (
           <Dashboard

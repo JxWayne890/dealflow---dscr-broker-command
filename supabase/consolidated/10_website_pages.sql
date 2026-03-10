@@ -21,26 +21,31 @@ CREATE TABLE IF NOT EXISTS public.website_pages (
 ALTER TABLE public.website_pages ENABLE ROW LEVEL SECURITY;
 
 -- Public can read published pages
+DROP POLICY IF EXISTS "Public can view published pages" ON public.website_pages;
 CREATE POLICY "Public can view published pages"
 ON public.website_pages FOR SELECT
 USING (is_published = true);
 
 -- Owners can verify their own pages
+DROP POLICY IF EXISTS "Users can view own pages" ON public.website_pages;
 CREATE POLICY "Users can view own pages"
 ON public.website_pages FOR SELECT
 USING (auth.uid() = profile_id);
 
 -- Owners can insert their own pages
+DROP POLICY IF EXISTS "Users can insert own pages" ON public.website_pages;
 CREATE POLICY "Users can insert own pages"
 ON public.website_pages FOR INSERT
 WITH CHECK (auth.uid() = profile_id);
 
 -- Owners can update their own pages
+DROP POLICY IF EXISTS "Users can update own pages" ON public.website_pages;
 CREATE POLICY "Users can update own pages"
 ON public.website_pages FOR UPDATE
 USING (auth.uid() = profile_id);
 
 -- Owners can delete their own pages
+DROP POLICY IF EXISTS "Users can delete own pages" ON public.website_pages;
 CREATE POLICY "Users can delete own pages"
 ON public.website_pages FOR DELETE
 USING (auth.uid() = profile_id);

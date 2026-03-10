@@ -83,8 +83,13 @@ export const QuoteDetail = ({
         }
 
         const scheduleUrl = `${BASE_URL}/?view=schedule&quoteId=${quote.id}`;
+        // Combine primary quote with comparison quotes for resend to ensure all options are visible
         const quoteWithUrl = { ...quote, scheduleUrl };
-        const html = quote.emailHtml || generateHtmlEmail(quoteWithUrl, profile, quote.emailBody || '');
+        const allQuotes = comparisonQuotes.length > 0 ? [quoteWithUrl, ...comparisonQuotes] : quoteWithUrl;
+
+        // CRITICAL: We ignore quote.emailHtml here because it might be a stale cache from creation.
+        // Regenerating ensures that any updates to rate, fees, etc. are reflected in the resend.
+        const html = generateHtmlEmail(allQuotes, profile, quote.emailBody || '');
         const result = await sendQuoteEmail(quote, html, profile);
 
         if (result.success) {
@@ -92,6 +97,31 @@ export const QuoteDetail = ({
             showToast('Email resent successfully!', 'success');
         } else {
             showToast(`Resend failed: ${result.error}`, 'error');
+        }
+        setIsResending(false);
+    };
+
+    const handleEmailTermSheet = async () => {
+        setIsResending(true);
+
+        // Check trial limit
+        const trialCheck = await ProfileService.canSendEmail();
+        if (!trialCheck.allowed) {
+            setTrialInfo({ emailsSent: trialCheck.emailsSent, limit: trialCheck.limit });
+            setShowTrialLimitModal(true);
+            setIsResending(false);
+            return;
+        }
+
+        const allQuotes = comparisonQuotes.length > 0 ? [quote, ...comparisonQuotes] : quote;
+        const html = generateTermSheetHtml(allQuotes, profile);
+        const result = await sendQuoteEmail(quote, html, profile);
+
+        if (result.success) {
+            await ProfileService.incrementEmailCount();
+            showToast('Term Sheet emailed successfully!', 'success');
+        } else {
+            showToast(`Failed to email Term Sheet: ${result.error}`, 'error');
         }
         setIsResending(false);
     };
@@ -375,6 +405,20 @@ export const QuoteDetail = ({
                                 <div>
                                     <div className="text-sm font-semibold text-foreground">Resend Email</div>
                                     <div className="text-[10px] text-muted">Send latest terms again</div>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={handleEmailTermSheet}
+                                disabled={isResending}
+                                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/10 hover:bg-banana-400/10 hover:border-banana-400/30 transition-all group text-left"
+                            >
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 group-hover:bg-banana-400 group-hover:text-slate-900 transition-colors">
+                                    {isResending ? <Icons.RefreshCw className="w-4 h-4 animate-spin" /> : <Icons.Send className="w-4 h-4" />}
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-foreground">Email Term Sheet</div>
+                                    <div className="text-[10px] text-muted">Send professional PDF view</div>
                                 </div>
                             </button>
 

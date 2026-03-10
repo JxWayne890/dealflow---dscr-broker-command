@@ -31,15 +31,59 @@ const calculateAmortizationSchedule = (loanAmount: number, annualRate: number, t
   return schedule;
 };
 
-// Helper for professional HTML (Ported from emailTemplates.ts)
-const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
+// Helper for professional HTML (Ported and enhanced from emailTemplates.ts)
+const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => {
+  const isComparison = quotes.length > 1;
+  const firstQuote = quotes[0];
+
   const bodyParagraphs = (messageBody || '').split('\n').filter(line => line.trim()).map(line =>
     `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#374151;">${line}</p>`
   ).join('');
-  const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here is the quote for your scenario.</p>`;
+  const finalBody = bodyParagraphs || `<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#374151;">Great connecting with you. Here are the latest terms for your scenario.</p>`;
 
-  const schedule = calculateAmortizationSchedule(quote.loan_amount || 0, quote.rate || 0, quote.term_years || 30);
-  const firstYearPrincipal = schedule.slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0);
+  const renderQuoteBlock = (quote: any, index: number) => {
+    const schedule = calculateAmortizationSchedule(quote.loan_amount || 0, quote.rate || 0, quote.term_years || 30);
+    const firstYearPrincipal = schedule.slice(0, 12).reduce((acc, curr) => acc + curr.principal, 0);
+
+    return `
+      <div style="margin-bottom: 32px; ${isComparison ? 'border-top: 2px solid #e5e7eb; padding-top: 24px;' : ''}">
+        ${isComparison ? `<h2 style="margin:0 0 16px 0;color:#111827;font-size:18px;font-weight:700;">Option ${index + 1}: ${quote.deal_type || 'Loan Terms'}</h2>` : ''}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;">
+          <tr>
+            <td style="padding:24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="50%" style="padding-bottom:16px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Loan Amount</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">$${(quote.loan_amount || 0).toLocaleString()}</div>
+                  </td>
+                  <td width="50%" style="padding-bottom:16px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">LTV</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${quote.ltv}%</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="50%">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Interest Rate</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${quote.rate}%</div>
+                  </td>
+                  <td width="50%">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Term</div>
+                    <div style="font-size:18px;font-weight:700;color:#111827;">${quote.term_years || 30}-Year ${quote.rate_type || 'Fixed'}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);border:1px solid #a7f3d0;border-radius:8px;padding:14px 18px;margin-top:12px;">
+          <span style="font-size:14px;color:#166534;">📈 Year 1 equity build: <strong style="color:#15803d;">$${firstYearPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></span>
+        </div>
+      </div>
+    `;
+  };
 
   return `<!DOCTYPE html>
 <html>
@@ -49,47 +93,32 @@ const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
     <tr><td align="center" style="padding:32px 16px;">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
           <tr><td style="padding:40px;">
-              ${profile.logo_url ? `<img src="${profile.logo_url}" alt="${profile.name}" height="40" style="height:40px;display:block;" />` : `<div style="font-size:20px;font-weight:bold;color:#111827;">${profile.name || 'DealFlow'}</div>`}
+              ${profile.logo_url ? `<img src="${profile.logo_url}" alt="${profile.name}" height="40" style="height:40px;display:block;" />` : `<div style="font-size:20px;font-weight:bold;color:#111827;">${profile.name || 'The OfferHero'}</div>`}
+              
               <h1 style="margin:24px 0 12px 0;color:#111827;font-size:24px;font-weight:700;line-height:1.3;">
-                Quote for ${quote.property_address ? `${quote.property_address} (${quote.property_state})` : quote.property_state || 'Your Deal'} - ${quote.deal_type || 'Loan'}
+                ${isComparison ? 'Comparison of Loan Options' : `Updated Quote: ${firstQuote.property_address ? `${firstQuote.property_address} (${firstQuote.property_state})` : firstQuote.property_state || 'Your Deal'}`}
               </h1>
-              ${finalBody}
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-                <tr><td style="padding:24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td width="50%" style="padding-bottom:16px;">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Loan Amount</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">$${(quote.loan_amount || 0).toLocaleString()}</div>
-                        </td>
-                        <td width="50%" style="padding-bottom:16px;">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">LTV</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.ltv}%</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td width="50%">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Interest Rate</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.rate}%</div>
-                        </td>
-                        <td width="50%">
-                          <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Term</div>
-                          <div style="font-size:18px;font-weight:700;color:#111827;">${quote.term_years || 30}-Year ${quote.rate_type || 'Fixed'}</div>
-                        </td>
-                      </tr>
-                    </table></td></tr>
-              </table>
-              <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;margin-top:24px;border:1px dashed #d1d5db;">
-                <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Amortization Highlights</h3>
-                <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;line-height:1.5;">
-                  The first year of your loan will build approximately <strong>$${firstYearPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
-                </p>
-                <div style="font-size:13px;color:#6b7280;text-align:center;">
-                  <a href="${Deno.env.get("BASE_URL") || "https://theofferhero.com"}/?view=schedule&quoteId=${quote.id}" style="display:inline-block;padding:10px 24px;background:#4f46e5;border-radius:6px;color:#ffffff;font-weight:600;text-decoration:none;">
-                    View Full Amortization Schedule
-                  </a>
-                </div>
+
+              ${firstQuote.property_address ? `
+              <div style="background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px;border:1px solid #e2e8f0;">
+                <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:600;letter-spacing:0.5px;margin-bottom:6px;">Subject Property</div>
+                <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">${firstQuote.property_address}</div>
+                <div style="font-size:14px;color:#475569;">${[firstQuote.property_city, firstQuote.property_state, firstQuote.property_zip].filter(Boolean).join(', ')}</div>
               </div>
-              <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+              ` : ''}
+
+              ${finalBody}
+              
+              ${quotes.map((q, i) => renderQuoteBlock(q, i)).join('')}
+
+              <div style="font-size:13px;color:#6b7280;text-align:center;margin-top:32px;">
+                <a href="${Deno.env.get("BASE_URL") || "https://theofferhero.com"}/?view=schedule&quoteId=${firstQuote.id}" style="display:inline-block;padding:12px 32px;background:#4f46e5;border-radius:8px;color:#ffffff;font-weight:700;text-decoration:none;box-shadow:0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+                  View Full Interactive Schedule
+                </a>
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+              
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   ${profile.headshot_url ? `<td width="72" valign="top"><img src="${profile.headshot_url}" alt="${profile.name}" width="60" height="60" style="border-radius:50%;display:block;border:2px solid #e5e7eb;object-fit:cover;" /></td>` : ''}
@@ -104,6 +133,11 @@ const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
                   </td>
                 </tr>
               </table>
+              
+              <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
+                © ${new Date().getFullYear()} ${profile.company || profile.name || 'The OfferHero'}. All rights reserved.<br />
+                Rates and terms subject to change based on market conditions.
+              </div>
             </td></tr>
         </table>
       </td></tr>
@@ -111,6 +145,7 @@ const generateHtmlEmail = (quote: any, profile: any, messageBody: string) => {
 </body>
 </html>`;
 };
+
 
 const calculateNextRunAt = (delayDays: number, preferredTime: string = '09:00', timezone: string = 'UTC'): string => {
   const nextDate = new Date();
@@ -192,6 +227,14 @@ serve(async (req) => {
         continue;
       }
 
+      // 2b. Fetch Comparison Quotes
+      const { data: comparisons } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('parent_quote_id', sub.lead_id);
+
+      const allQuotes = [lead, ...(comparisons || [])];
+
       // 3. Fetch Broker Profile
       const { data: profile } = await supabase
         .from('profiles')
@@ -232,7 +275,7 @@ serve(async (req) => {
         subject = subject.replace(regex, value);
       }
 
-      const html = generateHtmlEmail(lead, profile || {}, body);
+      const html = generateHtmlEmail(allQuotes, profile || {}, body);
 
       // 6. Send Email
       const fromName = profile?.name || 'The OfferHero';

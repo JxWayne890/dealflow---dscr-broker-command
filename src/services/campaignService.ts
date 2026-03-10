@@ -268,6 +268,15 @@ export const campaignService = {
         if (error) throw error;
     },
 
+    async unsubscribeLead(leadId: string) {
+        const { error } = await supabase
+            .from('campaign_subscriptions')
+            .delete()
+            .eq('lead_id', leadId);
+
+        if (error) throw error;
+    },
+
     async getLeadEvents(leadId: string) {
         const { data, error } = await supabase
             .from('campaign_events')
@@ -277,6 +286,16 @@ export const campaignService = {
 
         if (error) throw error;
         return data as CampaignEvent[];
+    },
+
+    async getAllSubscriptions() {
+        const { data, error } = await supabase
+            .from('campaign_subscriptions')
+            .select('*')
+            .eq('status', 'active');
+
+        if (error) throw error;
+        return data as CampaignSubscription[];
     },
 
     async getCampaignSubscriptions(campaignId: string) {
@@ -388,30 +407,41 @@ export const campaignService = {
             subjectTemplate = subjectTemplate.replace(regex, value);
         }
 
-        // 4. Map database quote row back to Quote type for generator
-        const quoteObj = {
-            id: sub.quotes.id,
-            investorName: sub.quotes.investor_name,
-            investorEmail: sub.quotes.investor_email,
-            propertyAddress: sub.quotes.property_address,
-            propertyState: sub.quotes.property_state,
-            loanAmount: sub.quotes.loan_amount,
-            ltv: sub.quotes.ltv,
-            rate: sub.quotes.rate,
-            termYears: sub.quotes.term_years,
-            rateType: sub.quotes.rate_type,
-            monthlyPayment: sub.quotes.monthly_payment,
-            closingFees: sub.quotes.closing_fees,
-            originationFee: sub.quotes.origination_fee,
-            uwFee: sub.quotes.uw_fee,
-            dealType: sub.quotes.deal_type,
-            scheduleUrl: `${BASE_URL}/?view=schedule&quoteId=${sub.quotes.id}`
-        };
+        // 3.5 Fetch comparison quotes to include all options
+        const { data: compData } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('parent_quote_id', sub.quotes.id)
+            .order('created_at', { ascending: true });
 
-        const html = generateHtmlEmail(quoteObj, profile, bodyTemplate);
+        // 4. Map database quote row back to Quote type for generator
+        const mapToQuoteObj = (q: any) => ({
+            id: q.id || q.quotes?.id,
+            investorName: q.investor_name || q.quotes?.investor_name,
+            investorEmail: q.investor_email || q.quotes?.investor_email,
+            propertyAddress: q.property_address || q.quotes?.property_address,
+            propertyState: q.property_state || q.quotes?.property_state,
+            loanAmount: q.loan_amount || q.quotes?.loan_amount,
+            ltv: q.ltv || q.quotes?.ltv,
+            rate: q.rate || q.quotes?.rate,
+            termYears: q.term_years || q.quotes?.term_years,
+            rateType: q.rate_type || q.quotes?.rate_type,
+            monthlyPayment: q.monthly_payment || q.quotes?.monthly_payment,
+            closingFees: q.closing_fees || q.quotes?.closing_fees,
+            originationFee: q.origination_fee || q.quotes?.origination_fee,
+            uwFee: q.uw_fee || q.quotes?.uw_fee,
+            dealType: q.deal_type || q.quotes?.deal_type,
+            scheduleUrl: `${BASE_URL}/?view=schedule&quoteId=${q.id || q.quotes?.id}`
+        });
+
+        const mainQuoteObj = mapToQuoteObj(sub.quotes);
+        const comparisonQuoteObjs = (compData || []).map(mapToQuoteObj);
+        const allOptions = [mainQuoteObj, ...comparisonQuoteObjs];
+
+        const html = generateHtmlEmail(allOptions as any, profile, bodyTemplate);
 
         // 5. Send using the established email service (invokes Supabase 'send-email' function)
-        const result = await sendQuoteEmail(quoteObj as any, html, profile);
+        const result = await sendQuoteEmail(mainQuoteObj as any, html, profile);
 
         if (!result.success) {
             throw new Error(result.error || 'Failed to send email');
