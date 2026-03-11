@@ -1000,15 +1000,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 <div className="w-10"></div>
                             </div>
 
-                            <div className="flex-1 bg-white overflow-hidden relative">
+                            <div className="flex-1 bg-[#f3f4f6] overflow-y-auto overflow-x-hidden relative flex justify-center">
                                 {emailFormat === 'html' ? (
-                                    <iframe
-                                        srcDoc={htmlPreview}
-                                        className="w-full h-full border-none"
-                                        title="Email Preview"
+                                    <div 
+                                        className="origin-top scale-[0.6] min-[400px]:scale-[0.65] sm:scale-[0.8] md:scale-100 lg:scale-[0.55] xl:scale-[0.7] 2xl:scale-[0.85] w-[600px] flex-shrink-0"
+                                        dangerouslySetInnerHTML={{ __html: htmlPreview }} 
                                     />
                                 ) : (
-                                    <div className="w-full h-full p-8 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-gray-800 bg-white">
+                                    <div className="w-full h-full p-6 overflow-y-auto whitespace-pre-wrap font-mono text-sm text-gray-800 bg-white text-left">
                                         {generatePlainText(allQuotes, profile, formData.emailBody || '')}
                                     </div>
                                 )}
