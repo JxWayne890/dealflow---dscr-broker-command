@@ -48,6 +48,7 @@ export interface Quote {
   rateType?: 'Fixed' | 'ARM'; // Default to Fixed if missing
   termYears: number;
   originationFee?: number;
+  originationFeePercent?: number;
   uwFee?: number;
   monthlyPayment?: number;
   brokerFee?: number;

@@ -61,6 +61,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
         emailBody: '', // This will store the *custom message* part, not the full HTML
         brokerFee: 0,
         brokerFeePercent: 1.0,
+        originationFeePercent: 1.0,
     });
 
     const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('%');
@@ -105,6 +106,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
             setFormData(prev => ({ ...prev, brokerFee: Math.round(fee * 100) / 100 }));
         }
     }, [formData.loanAmount, formData.brokerFeePercent, brokerFeeType]);
+
+    // Recalculate Origination Fee from percentage when Loan Amount or percentage changes
+    useEffect(() => {
+        if (formData.loanAmount && formData.originationFeePercent) {
+            const fee = (formData.loanAmount * formData.originationFeePercent) / 100;
+            setFormData(prev => ({ ...prev, originationFee: Math.round(fee * 100) / 100 }));
+        }
+    }, [formData.loanAmount, formData.originationFeePercent]);
 
 
     const handleGenerateEmail = () => {
@@ -427,12 +436,32 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                             </Field>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Field label="Lender Origination ($)">
-                                    <CurrencyInput
-                                        value={formData.originationFee || 0}
-                                        onChange={val => setFormData({ ...formData, originationFee: val })}
-                                        placeholder="0.00"
-                                    />
+                                <Field label="Lender Origination (%)">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <input
+                                            type="number"
+                                            step="0.125"
+                                            className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
+                                            placeholder="1.0"
+                                            value={formData.originationFeePercent || ''}
+                                            onChange={e => {
+                                                const val = parseFloat(e.target.value);
+                                                setFormData({
+                                                    ...formData,
+                                                    originationFeePercent: val,
+                                                    originationFee: formData.loanAmount ? (formData.loanAmount * val) / 100 : 0
+                                                });
+                                            }}
+                                        />
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <span className="text-muted sm:text-sm">%</span>
+                                        </div>
+                                    </div>
+                                    {(formData.originationFee || 0) > 0 && (
+                                        <p className="text-sm font-semibold text-banana-600 dark:text-banana-400 mt-2 bg-banana-50 dark:bg-banana-900/20 px-3 py-1.5 rounded-lg border border-banana-200 dark:border-banana-800/30 inline-block shadow-sm">
+                                            Calculated: ${formData.originationFee?.toLocaleString()}
+                                        </p>
+                                    )}
                                 </Field>
                                 <Field label="Underwriting Fee ($)">
                                     <CurrencyInput
@@ -722,11 +751,35 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                         </Field>
                                                     </div>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <Field label="Origination ($)">
-                                                            <CurrencyInput
-                                                                value={cq.originationFee || 0}
-                                                                onChange={val => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, originationFee: val } : q))}
-                                                            />
+                                                        <Field label="Origination (%)">
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.125"
+                                                                    className="block w-full rounded-lg bg-surface border-border/10 border px-3 py-2.5 shadow-sm text-foreground placeholder:text-muted/50 focus:border-banana-400 focus:ring-banana-400 sm:text-sm"
+                                                                    placeholder="1.0"
+                                                                    value={cq.originationFeePercent || ''}
+                                                                    onChange={e => {
+                                                                        const val = parseFloat(e.target.value);
+                                                                        setComparisonQuotes(prev => prev.map((q, i) => {
+                                                                            if (i !== idx) return q;
+                                                                            return {
+                                                                                ...q,
+                                                                                originationFeePercent: val,
+                                                                                originationFee: q.loanAmount ? (q.loanAmount * val) / 100 : 0
+                                                                            };
+                                                                        }));
+                                                                    }}
+                                                                />
+                                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                                    <span className="text-muted sm:text-sm">%</span>
+                                                                </div>
+                                                            </div>
+                                                            {(cq.originationFee || 0) > 0 && (
+                                                                <p className="text-xs font-semibold text-banana-600 dark:text-banana-400 mt-1.5 bg-banana-50 dark:bg-banana-900/20 px-2 py-1 rounded-md border border-banana-200 dark:border-banana-800/30 inline-block">
+                                                                    = ${cq.originationFee?.toLocaleString()}
+                                                                </p>
+                                                            )}
                                                         </Field>
                                                         <Field label="UW Fee ($)">
                                                             <CurrencyInput

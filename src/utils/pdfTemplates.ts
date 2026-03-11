@@ -56,7 +56,7 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                 <div class="terms-col">
                     <div class="section-header">Estimated Costs & Fees</div>
                     <table class="terms-table">
-                        <tr><td class="label">Lender Origination Fee</td><td class="value">$${(q.originationFee || 0).toLocaleString()}</td></tr>
+                        <tr><td class="label">Lender Origination Fee</td><td class="value">${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${(q.originationFee || 0).toLocaleString()}`}</td></tr>
                         <tr><td class="label">Underwriting Fee</td><td class="value">$${(q.uwFee || 0).toLocaleString()}</td></tr>
                         <tr><td class="label">Broker Fee</td><td class="value">${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${calculatedBrokerFee.toLocaleString()}`}</td></tr>
                         <tr><td class="label">Other Closing Fees</td><td class="value">$${(q.closingFees || 0).toLocaleString()}</td></tr>

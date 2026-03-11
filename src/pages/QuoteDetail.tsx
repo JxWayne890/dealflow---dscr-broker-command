@@ -318,7 +318,7 @@ export const QuoteDetail = ({
                                             Loan Breakdown
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
-                                            <DetailRow label="Origination Fee" value={`$${quote.originationFee?.toLocaleString()}`} />
+                                            <DetailRow label="Origination Fee" value={quote.originationFeePercent ? `${quote.originationFeePercent}% ($${quote.originationFee?.toLocaleString()})` : `$${quote.originationFee?.toLocaleString()}`} />
                                             <DetailRow label="Underwriting Fee" value={`$${quote.uwFee?.toLocaleString()}`} />
                                             {quote.brokerFee && <DetailRow label="Broker Fee" value={`$${quote.brokerFee.toLocaleString()}`} />}
                                             <DetailRow label="Other Closing Fees" value={`$${quote.closingFees?.toLocaleString()}`} />

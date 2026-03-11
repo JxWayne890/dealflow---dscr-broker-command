@@ -69,7 +69,7 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
                           ${q.originationFee ? `
                           <td width="33%" valign="top">
                             <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Origination</div>
-                            <div style="font-size:18px;font-weight:700;color:#111827;">$${q.originationFee.toLocaleString()}</div>
+                            <div style="font-size:18px;font-weight:700;color:#111827;">${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${q.originationFee.toLocaleString()}`}</div>
                           </td>` : ''}
                           ${q.uwFee ? `
                           <td width="33%" valign="top">
@@ -185,7 +185,7 @@ ${isComparison ? `OPTION ${i + 1}:` : 'DEAL TERMS:'}
 - LTV: ${q.ltv}%
 - Rate: ${q.rate}%
 - Term: ${q.termYears} Years (${q.rateType || 'Fixed'})
-${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: $${q.originationFee.toLocaleString()}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
+${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: ${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${q.originationFee.toLocaleString()}`}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
   }).join('\n----------------------------------------\n');
 
   return `Subject: ${isComparison ? 'DSCR Loan Comparison' : `DSCR Loan Quote - ${quotes[0].propertyAddress ? `${quotes[0].propertyAddress} (${quotes[0].propertyState})` : quotes[0].propertyState || 'Property'}`}

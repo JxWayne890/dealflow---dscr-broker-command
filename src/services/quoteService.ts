@@ -232,6 +232,7 @@ const mapDbToQuote = (row: any): Quote => ({
     rateType: row.rate_type,
     termYears: row.term_years,
     originationFee: row.origination_fee,
+    originationFeePercent: row.origination_fee_percent,
     uwFee: row.uw_fee,
     monthlyPayment: row.monthly_payment,
     closingFees: row.closing_fees,
@@ -280,6 +281,7 @@ const mapQuoteToDb = (quote: Partial<Quote>): any => {
     if (quote.rateType !== undefined) db.rate_type = quote.rateType;
     if (quote.termYears !== undefined) db.term_years = cleanNum(quote.termYears);
     if (quote.originationFee !== undefined) db.origination_fee = cleanNum(quote.originationFee);
+    if (quote.originationFeePercent !== undefined) db.origination_fee_percent = cleanNum(quote.originationFeePercent);
     if (quote.uwFee !== undefined) db.uw_fee = cleanNum(quote.uwFee);
     if (quote.monthlyPayment !== undefined) db.monthly_payment = cleanNum(quote.monthlyPayment);
     if (quote.closingFees !== undefined) db.closing_fees = cleanNum(quote.closingFees);
