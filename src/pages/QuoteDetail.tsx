@@ -13,6 +13,7 @@ import { Campaign } from '../services/campaignService';
 import { ProfileService } from '../services/profileService';
 import { QuoteService } from '../services/quoteService';
 import { TrialLimitModal } from '../components/TrialLimitModal';
+import { createSafePdfContainer } from '../utils/safeHtml';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 const activeColor = "text-banana-600 dark:text-banana-400";
@@ -428,8 +429,7 @@ export const QuoteDetail = ({
                                     const allQuotesForPdf = comparisonQuotes.length > 0
                                         ? [quote, ...comparisonQuotes]
                                         : quote;
-                                    const element = document.createElement('div');
-                                    element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
+                                    const element = createSafePdfContainer(generateTermSheetHtml(allQuotesForPdf, profile));
 
                                     const opt = {
                                         margin: 0,

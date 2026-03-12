@@ -6,7 +6,7 @@ import { supabase } from './src/lib/supabase';
 async function cleanupDuplicates() {
     console.log('Fetching quotes...');
     const quotes = await QuoteService.getQuotes();
-    console.log(`Found ${quotes.length} total quotes.`);
+    console.log('Found total quotes', { count: quotes.length });
 
     const seen = new Set();
     const toDelete = [];
@@ -24,13 +24,13 @@ async function cleanupDuplicates() {
         }
     }
 
-    console.log(`Identified ${toDelete.length} duplicates to remove.`);
+    console.log('Identified duplicates to remove', { count: toDelete.length });
 
     if (toDelete.length > 0) {
         for (const id of toDelete) {
-            console.log(`Deleting quote ${id}...`);
+            console.log('Deleting duplicate quote', { quoteId: id });
             const { error } = await supabase.from('quotes').delete().eq('id', id);
-            if (error) console.error(`Error deleting ${id}:`, error);
+            if (error) console.error('Error deleting duplicate quote', { quoteId: id, error });
         }
         console.log('Cleanup complete.');
     } else {
@@ -38,4 +38,6 @@ async function cleanupDuplicates() {
     }
 }
 
-cleanupDuplicates().catch(console.error);
+cleanupDuplicates().catch((error) => {
+    console.error('Cleanup script failed', error);
+});

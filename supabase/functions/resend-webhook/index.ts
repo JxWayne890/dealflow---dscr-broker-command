@@ -23,7 +23,7 @@ serve(async (req) => {
         const stepId = getTag("step_id");
         const leadId = getTag("lead_id") || getTag("quote_id"); // Fallback to legacy quote_id
 
-        console.log(`Received event ${type} for lead ${leadId}`);
+        console.log("Received resend webhook event", { type, leadId });
 
         // 1. Log to Campaign Events (The "Journey")
         if (campaignId && leadId) {

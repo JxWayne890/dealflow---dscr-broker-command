@@ -57,7 +57,7 @@ app.post('/api/send-email', async (req, res) => {
   const fromAddress = `${safeName} <${safePrefix}@theofferhero.com>`;
 
   console.log('--- EMAIL SEND ATTEMPT ---');
-  console.log(`FROM: ${fromAddress}`);
+  console.log('FROM:', fromAddress);
   console.log('TO:', to);
 
   try {
@@ -83,5 +83,5 @@ app.post('/api/send-email', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Email server running at http://127.0.0.1:${port}`);
+  console.log('Email server running', { url: `http://127.0.0.1:${port}` });
 });

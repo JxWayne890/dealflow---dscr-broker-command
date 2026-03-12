@@ -222,7 +222,7 @@ serve(async (req) => {
         .single();
 
       if (leadError || !lead) {
-        console.error(`Lead not found for sub ${sub.id}`);
+        console.error('Lead not found for campaign subscription', { subscriptionId: sub.id });
         await supabase.from('campaign_subscriptions').update({ status: 'failed', last_email_sent_at: now }).eq('id', sub.id);
         continue;
       }
@@ -305,7 +305,10 @@ serve(async (req) => {
       });
 
       if (!res.ok) {
-        console.error(`Failed to send email for sub ${sub.id}`, await res.text());
+        console.error('Failed to send campaign email', {
+          subscriptionId: sub.id,
+          responseBody: await res.text(),
+        });
         continue;
       }
 

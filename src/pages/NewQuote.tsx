@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
 import { QuoteService } from '../services/quoteService';
 import { generateTermSheetHtml } from '../utils/pdfTemplates';
+import { createSafePdfContainer } from '../utils/safeHtml';
 import { TrialLimitModal } from '../components/TrialLimitModal';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
@@ -1044,8 +1045,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     const allQuotesForPdf = comparisonQuotes.length > 0
                                         ? [formData, ...comparisonQuotes]
                                         : formData;
-                                    const element = document.createElement('div');
-                                    element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
+                                    const element = createSafePdfContainer(generateTermSheetHtml(allQuotesForPdf, profile));
 
                                     const opt = {
                                         margin: 0,
@@ -1131,8 +1131,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         const allQuotesForPdf = comparisonQuotes.length > 0
                                             ? [formData, ...comparisonQuotes]
                                             : formData;
-                                        const element = document.createElement('div');
-                                        element.innerHTML = generateTermSheetHtml(allQuotesForPdf, profile);
+                                        const element = createSafePdfContainer(generateTermSheetHtml(allQuotesForPdf, profile));
 
                                         const opt = {
                                             margin: 0,
@@ -1520,4 +1519,3 @@ const CustomSelect = ({
         </div>
     );
 };
-

@@ -171,7 +171,10 @@ export const QuoteService = {
         const orgId = await ProfileService.getOrganizationId();
         if (!orgId) throw new Error('User not authenticated');
 
-        console.log(`Saving ${comparisonQuotes.length} comparison quotes for parent: ${parentQuoteId}`);
+        console.log('Saving comparison quotes', {
+            comparisonQuoteCount: comparisonQuotes.length,
+            parentQuoteId,
+        });
 
         const dbQuotes = comparisonQuotes.map(q => {
             // Ensure each comparison quote has a new unique ID

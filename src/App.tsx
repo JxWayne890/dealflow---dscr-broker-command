@@ -311,7 +311,7 @@ export default function App() {
           }
           successCount++;
         } catch (e) {
-          console.error(`Failed to enroll ${id}`, e);
+          console.error('Failed to enroll lead', { leadId: id, error: e });
         }
       }
       showToast(`Updated campaign for ${successCount} leads`, 'success');
@@ -359,7 +359,7 @@ export default function App() {
         const success = await QuoteService.deleteQuote(id);
         if (success) deletedCount++;
       } catch (e) {
-        console.error(`Failed to delete duplicate ${id}`, e);
+        console.error('Failed to delete duplicate quote', { quoteId: id, error: e });
       }
     }
 
