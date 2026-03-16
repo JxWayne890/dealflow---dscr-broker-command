@@ -551,7 +551,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </Field>
                             </div>
 
-                            <Field label="Total Estimated Costs">
+                            <Field label="Total Estimated Costs (Internal Only)">
                                 <div className="bg-banana-400/10 border border-banana-400/20 rounded-xl px-4 py-3 shadow-inner text-banana-900 dark:text-banana-100 font-extrabold text-xl flex items-center justify-between">
                                     <span className="text-xs uppercase tracking-widest opacity-60">Total sum of all fees:</span>
                                     <span>${((formData.originationFee || 0) + (formData.uwFee || 0) + (formData.brokerFee || 0) + (formData.closingFees || 0)).toLocaleString()}</span>
@@ -576,9 +576,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                     <input
                                         type="text"
                                         value={formData.lenderCode || ''}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, lenderCode: e.target.value }))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, lenderCode: e.target.value.toUpperCase() }))}
                                         className="block w-full pl-10 pr-4 py-2.5 bg-surface border border-border/10 rounded-lg focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50"
                                         placeholder="e.g. VISIO-2024-Q1"
+                                        autoCapitalize="characters"
                                     />
                                 </div>
                             </Field>
@@ -622,6 +623,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                             closingFees: undefined,
                                             prepayPenalty: undefined,
                                             notes: '',
+                                            lenderCode: '',
                                             parentQuoteId: formData.id,
                                         };
                                         setComparisonQuotes(prev => [...prev, newQuote]);
@@ -874,7 +876,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <div className="text-xs text-muted uppercase font-semibold mb-1">Total Est. Closing Costs</div>
+                                                            <div className="text-xs text-muted uppercase font-semibold mb-1">Total Est. Closing Costs (Internal)</div>
                                                             <div className="text-xl font-bold text-foreground">
                                                                 ${((cq.originationFee || 0) + (cq.uwFee || 0) + (cq.brokerFee || 0) + (cq.closingFees || 0)).toLocaleString()}
                                                             </div>
@@ -889,6 +891,22 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                             value={cq.notes || ''}
                                                             onChange={e => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, notes: e.target.value } : q))}
                                                         />
+                                                    </Field>
+
+                                                    <Field label="Lender Code (Internal Tag)">
+                                                        <div className="relative group">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted group-focus-within:text-banana-500 transition-colors">
+                                                                <Icons.Tag className="h-4 w-4" />
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                value={cq.lenderCode || ''}
+                                                                onChange={(e) => setComparisonQuotes(prev => prev.map((q, i) => i === idx ? { ...q, lenderCode: e.target.value.toUpperCase() } : q))}
+                                                                className="block w-full pl-10 pr-4 py-2.5 bg-surface border border-border/10 rounded-lg focus:ring-2 focus:ring-banana-400/20 focus:border-banana-400 transition-all text-sm text-foreground placeholder:text-muted/50"
+                                                                placeholder="e.g. VISIO-2024-Q1"
+                                                                autoCapitalize="characters"
+                                                            />
+                                                        </div>
                                                     </Field>
                                                 </div>
                                             )}

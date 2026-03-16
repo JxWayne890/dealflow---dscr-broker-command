@@ -273,6 +273,7 @@ export function CampaignEditor({ campaignId, onBack }: CampaignEditorProps) {
                 closingFees: q.closing_fees || q.closingFees,
                 originationFee: q.origination_fee || q.originationFee,
                 uwFee: q.uw_fee || q.uwFee,
+                lenderCode: q.lender_code || q.lenderCode,
                 dealType: q.deal_type || q.dealType,
             });
 

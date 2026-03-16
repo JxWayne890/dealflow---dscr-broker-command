@@ -47,6 +47,13 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
                     <div style="font-size:18px;font-weight:700;color:#111827;">${q.termYears}-Year ${q.rateType || 'Fixed'}</div>
                   </td>
                 </tr>
+                ${q.lenderCode ? `
+                <tr>
+                  <td colspan="2" style="padding-top:14px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Code</div>
+                    <div style="font-size:16px;font-weight:700;color:#d97706;">#${q.lenderCode.toUpperCase()}</div>
+                  </td>
+                </tr>` : ''}
                 ${(q.monthlyPayment || q.closingFees || q.originationFee || q.uwFee) ? `
                 <tr>
                   <td colspan="2" style="padding-top:16px;">
@@ -185,7 +192,7 @@ ${isComparison ? `OPTION ${i + 1}:` : 'DEAL TERMS:'}
 - LTV: ${q.ltv}%
 - Rate: ${q.rate}%
 - Term: ${q.termYears} Years (${q.rateType || 'Fixed'})
-${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: ${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${q.originationFee.toLocaleString()}`}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
+${q.lenderCode ? `- Lender Code: #${q.lenderCode.toUpperCase()}\n` : ''}${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: ${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${q.originationFee.toLocaleString()}`}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
   }).join('\n----------------------------------------\n');
 
   return `Subject: ${isComparison ? 'DSCR Loan Comparison' : `DSCR Loan Quote - ${quotes[0].propertyAddress ? `${quotes[0].propertyAddress} (${quotes[0].propertyState})` : quotes[0].propertyState || 'Property'}`}
@@ -208,4 +215,3 @@ ${profile.website || ''}
 Rates and terms subject to change based on market conditions. Quote based on ${quotes[0].creditScore || '_____'} credit score.
 `;
 };
-

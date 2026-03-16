@@ -73,6 +73,13 @@ const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => 
                     <div style="font-size:18px;font-weight:700;color:#111827;">${quote.term_years || 30}-Year ${quote.rate_type || 'Fixed'}</div>
                   </td>
                 </tr>
+                ${quote.lender_code ? `
+                <tr>
+                  <td colspan="2" style="padding-top:14px;">
+                    <div style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;margin-bottom:4px;">Lender Code</div>
+                    <div style="font-size:16px;font-weight:700;color:#d97706;">#${quote.lender_code.toUpperCase()}</div>
+                  </td>
+                </tr>` : ''}
               </table>
             </td>
           </tr>

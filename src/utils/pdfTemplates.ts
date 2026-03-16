@@ -51,6 +51,7 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                         <tr><td class="label">Rate Type</td><td class="value">${q.rateType || 'Fixed'}</td></tr>
                         <tr><td class="label">Est. Monthly P&I</td><td class="value highlight-value">$${calculatedMonthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
                         <tr><td class="label">Prepayment Penalty</td><td class="value">${q.prepayPenalty || 'None'}</td></tr>
+                        <tr><td class="label">Lender Code</td><td class="value">${q.lenderCode ? `#${q.lenderCode.toUpperCase()}` : '—'}</td></tr>
                     </table>
                 </div>
                 <div class="terms-col">
@@ -60,12 +61,6 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                         <tr><td class="label">Underwriting Fee</td><td class="value">$${(q.uwFee || 0).toLocaleString()}</td></tr>
                         <tr><td class="label">Broker Fee</td><td class="value">${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${calculatedBrokerFee.toLocaleString()}`}</td></tr>
                         <tr><td class="label">Other Closing Fees</td><td class="value">$${(q.closingFees || 0).toLocaleString()}</td></tr>
-                        <tr class="total-row">
-                            <td class="label">Est. Closing Costs</td>
-                            <td class="value total-value">
-                                $${((q.originationFee || 0) + (q.uwFee || 0) + calculatedBrokerFee + (q.closingFees || 0)).toLocaleString()}
-                            </td>
-                        </tr>
                     </table>
                 </div>
             </div>
@@ -196,10 +191,6 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
         .terms-table .label { font-weight: 500; color: #475569; font-size: 13px; }
         .terms-table .value { font-weight: 700; color: #0f172a; text-align: right; font-size: 14px; }
         .terms-table .highlight-value { color: #059669; font-size: 16px; }
-        .terms-table .total-row { border-top: 2px solid #e2e8f0; }
-        .terms-table .total-row td { padding-top: 14px; }
-        .terms-table .total-value { font-size: 18px; font-weight: 800; color: #0f172a; }
-
         /* Highlight Box */
         .highlight-box {
             background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
@@ -270,7 +261,7 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
                 </td>
                 <td style="width: 25%; vertical-align: top; text-align: right; padding-left: 20px;">
                     <div class="property-label">Lender Code</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #d97706; margin-top: 4px;">${firstQuote.lenderCode ? `#${firstQuote.lenderCode}` : '—'}</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #d97706; margin-top: 4px;">${firstQuote.lenderCode ? `#${firstQuote.lenderCode.toUpperCase()}` : '—'}</div>
                 </td>
             </tr>
         </table>
@@ -295,4 +286,3 @@ export const generateTermSheetHtml = (quoteInput: Partial<Quote> | Partial<Quote
 </body>
 </html>`;
 };
-

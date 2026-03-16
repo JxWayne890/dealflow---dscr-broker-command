@@ -430,6 +430,7 @@ export const campaignService = {
             closingFees: q.closing_fees || q.quotes?.closing_fees,
             originationFee: q.origination_fee || q.quotes?.origination_fee,
             uwFee: q.uw_fee || q.quotes?.uw_fee,
+            lenderCode: q.lender_code || q.quotes?.lender_code,
             dealType: q.deal_type || q.quotes?.deal_type,
             scheduleUrl: `${BASE_URL}/?view=schedule&quoteId=${q.id || q.quotes?.id}`
         });
