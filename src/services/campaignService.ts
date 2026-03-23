@@ -255,6 +255,37 @@ export const campaignService = {
             profile?.timezone || 'UTC'
         );
 
+        // Reuse an existing subscription so repeated enroll actions do not create duplicates.
+        const { data: existingSubscriptions, error: existingError } = await supabase
+            .from('campaign_subscriptions')
+            .select('id, status')
+            .eq('campaign_id', campaignId)
+            .eq('lead_id', leadId)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (existingError) throw existingError;
+
+        const existingSubscription = existingSubscriptions?.[0];
+        if (existingSubscription?.status === 'active') {
+            return;
+        }
+
+        if (existingSubscription) {
+            const { error: updateError } = await supabase
+                .from('campaign_subscriptions')
+                .update({
+                    current_step_index: 0,
+                    status: 'active',
+                    last_email_sent_at: null,
+                    next_run_at: nextRun
+                })
+                .eq('id', existingSubscription.id);
+
+            if (updateError) throw updateError;
+            return;
+        }
+
         const { error } = await supabase
             .from('campaign_subscriptions')
             .insert({
@@ -265,6 +296,7 @@ export const campaignService = {
                 next_run_at: nextRun
             });
 
+        if (error?.code === '23505') return;
         if (error) throw error;
     },
 

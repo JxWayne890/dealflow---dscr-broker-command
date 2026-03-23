@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_campaign_steps_campaign_id ON public.campaign_ste
 CREATE INDEX IF NOT EXISTS idx_campaign_subscriptions_campaign_id ON public.campaign_subscriptions(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_subscriptions_status ON public.campaign_subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_campaign_subscriptions_next_run_at ON public.campaign_subscriptions(next_run_at);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_campaign_subscription_idx ON public.campaign_subscriptions(campaign_id, lead_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_events_campaign_id ON public.campaign_events(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_events_lead_id ON public.campaign_events(lead_id);
 
