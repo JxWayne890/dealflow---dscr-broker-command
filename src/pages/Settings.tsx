@@ -16,7 +16,7 @@ interface SettingsProps {
 }
 
 export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => {
-    const [activeTab, setActiveTab] = useState<'profile' | 'team'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'team' | 'security'>('profile');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState<BrokerProfile>(currentProfile || {
@@ -41,6 +41,9 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
     const [checkingPrefix, setCheckingPrefix] = useState(false);
 
     // Password state
+    const [oldPassword, setOldPassword] = useState('');
+    const [isOldPasswordVerified, setIsOldPasswordVerified] = useState<boolean | null>(null);
+    const [verifyingOldPassword, setVerifyingOldPassword] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [updatingPassword, setUpdatingPassword] = useState(false);
@@ -107,8 +110,52 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
         }
     };
 
+    // Debounced old password checking
+    useEffect(() => {
+        if (!oldPassword || oldPassword.length < 6) {
+            setIsOldPasswordVerified(null);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setVerifyingOldPassword(true);
+            try {
+                // Attempt to sign in with the old password to verify it
+                // Using the current user's email
+                if (!profile.email) {
+                    setIsOldPasswordVerified(false);
+                    return;
+                }
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: profile.email,
+                    password: oldPassword,
+                });
+
+                if (error || !data.user) {
+                    setIsOldPasswordVerified(false);
+                } else {
+                    setIsOldPasswordVerified(true);
+                }
+            } catch (e) {
+                console.error('Password verification failed:', e);
+                setIsOldPasswordVerified(false);
+            } finally {
+                setVerifyingOldPassword(false);
+            }
+        }, 800);
+
+        return () => clearTimeout(timer);
+    }, [oldPassword, profile.email]);
+
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!isOldPasswordVerified) {
+            showToast('Please verify your current password first', 'error');
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
             showToast('Passwords do not match', 'error');
             return;
@@ -123,9 +170,16 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
             const { error } = await supabase.auth.updateUser({ password: newPassword });
             if (error) throw error;
 
-            showToast('Password updated successfully', 'success');
+            showToast('Password updated successfully. Please log in with your new password.', 'success');
+            setOldPassword('');
             setNewPassword('');
             setConfirmPassword('');
+            setIsOldPasswordVerified(null);
+            
+            // Sign out to force re-login with the new password
+            setTimeout(() => {
+                supabase.auth.signOut();
+            }, 1500);
         } catch (error: any) {
             console.error('Failed to update password:', error);
             showToast(error.message || 'Failed to update password', 'error');
@@ -243,9 +297,16 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
                         Team Management
                     </button>
                 )}
+                <button
+                    onClick={() => setActiveTab('security')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'security' ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground hover:bg-foreground/5'}`}
+                >
+                    <Icons.Lock className="w-4 h-4" />
+                    Security
+                </button>
             </div>
 
-            {activeTab === 'profile' ? (
+            {activeTab === 'profile' && (
                 <>
                     {/* Assistant joining team is always in profile/general settings */}
                     {profile.role === 'assistant' && (
@@ -576,69 +637,6 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
                             </div>
                         </div>
 
-                        {/* Security Section */}
-                        <div className="p-8 pt-0 space-y-8">
-                            <div className="pt-8 border-t border-border/10">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="h-10 w-1 rounded-full bg-red-400" />
-                                    <div>
-                                        <h2 className="text-xl font-bold text-foreground">Security</h2>
-                                        <p className="text-sm text-muted">Manage your password and account security.</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                                    <div className="sm:col-span-3">
-                                        <label htmlFor="newPassword" className="block text-sm font-medium text-muted">New Password</label>
-                                        <div className="mt-1 relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Icons.Lock className="h-4 w-4 text-muted/50" />
-                                            </div>
-                                            <input
-                                                type="password"
-                                                name="newPassword"
-                                                id="newPassword"
-                                                value={newPassword}
-                                                onChange={e => setNewPassword(e.target.value)}
-                                                className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-3">
-                                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted">Confirm Password</label>
-                                        <div className="mt-1 relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Icons.Lock className="h-4 w-4 text-muted/50" />
-                                            </div>
-                                            <input
-                                                type="password"
-                                                name="confirmPassword"
-                                                id="confirmPassword"
-                                                value={confirmPassword}
-                                                onChange={e => setConfirmPassword(e.target.value)}
-                                                className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-6 flex justify-end">
-                                        <Button
-                                            type="button"
-                                            onClick={(e) => { handleUpdatePassword(e); }}
-                                            disabled={updatingPassword || !newPassword}
-                                            variant="secondary"
-                                            className="px-6"
-                                        >
-                                            {updatingPassword ? 'Updating...' : 'Update Password'}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="px-8 py-6 bg-foreground/5 border-t border-border/10 flex justify-end">
                             <Button type="submit" disabled={saving} className="px-10">
                                 {saving ? 'Saving...' : 'Save Changes'}
@@ -672,9 +670,118 @@ export const Settings = ({ onProfileUpdate, currentProfile }: SettingsProps) => 
                         </div>
                     )}
                 </>
-            ) : (
+            )}
+
+            {activeTab === 'team' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <Team profile={profile} />
+                </div>
+            )}
+
+            {activeTab === 'security' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto mt-8">
+                    <div className="bg-surface/30 backdrop-blur-xl shadow-sm rounded-2xl border border-border/10 p-8 space-y-8">
+                        <div>
+                            <h2 className="text-xl font-bold text-foreground flex items-center gap-3">
+                                <Icons.Lock className="w-6 h-6 text-red-400" />
+                                Update Password
+                            </h2>
+                            <p className="mt-1 text-sm text-muted">Choose a strong password to protect your account. You will be signed out universally after a successful password change.</p>
+                        </div>
+
+                        <form onSubmit={handleUpdatePassword} className="space-y-6">
+                            <div>
+                                <label htmlFor="oldPassword" className="block text-sm font-medium text-muted">Current Password</label>
+                                <div className="mt-1 relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Icons.Lock className="h-4 w-4 text-muted/50" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        name="oldPassword"
+                                        id="oldPassword"
+                                        value={oldPassword}
+                                        onChange={e => setOldPassword(e.target.value)}
+                                        className={`pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border ${isOldPasswordVerified === false ? 'border-red-500' : isOldPasswordVerified === true ? 'border-emerald-500' : 'border-border/10'}`}
+                                        placeholder="••••••••"
+                                        autoComplete="current-password"
+                                    />
+                                    {verifyingOldPassword && (
+                                        <div className="absolute inset-y-0 right-3 flex items-center">
+                                            <Icons.RefreshCw className="w-4 h-4 text-muted animate-spin" />
+                                        </div>
+                                    )}
+                                    {!verifyingOldPassword && isOldPasswordVerified === true && (
+                                        <div className="absolute inset-y-0 right-3 flex items-center">
+                                            <Icons.CheckCircle className="w-4 h-4 text-emerald-500" />
+                                        </div>
+                                    )}
+                                    {!verifyingOldPassword && isOldPasswordVerified === false && (
+                                        <div className="absolute inset-y-0 right-3 flex items-center">
+                                            <Icons.XCircle className="w-4 h-4 text-red-500" />
+                                        </div>
+                                    )}
+                                </div>
+                                {isOldPasswordVerified === false && !verifyingOldPassword && (
+                                    <p className="mt-2 text-sm text-red-500 flex items-center gap-1.5">
+                                        <Icons.AlertCircle className="w-4 h-4" />
+                                        This password is incorrect. Please try again.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="pt-4 border-t border-border/10">
+                                <label htmlFor="newPassword" className="block text-sm font-medium text-muted">New Password</label>
+                                <div className="mt-1 relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Icons.Lock className="h-4 w-4 text-muted/50" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        id="newPassword"
+                                        value={newPassword}
+                                        onChange={e => setNewPassword(e.target.value)}
+                                        className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
+                                        placeholder="••••••••"
+                                        autoComplete="new-password"
+                                        disabled={isOldPasswordVerified !== true}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted">Confirm Password</label>
+                                <div className="mt-1 relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Icons.Lock className="h-4 w-4 text-muted/50" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        id="confirmPassword"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        className="pl-10 shadow-sm focus:ring-banana-400 focus:border-banana-400 block w-full sm:text-sm bg-surface border-border/10 text-foreground placeholder:text-muted/50 rounded-md px-3 py-2 border"
+                                        placeholder="••••••••"
+                                        autoComplete="new-password"
+                                        disabled={isOldPasswordVerified !== true}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-4 border-t border-border/10">
+                                <Button
+                                    type="submit"
+                                    disabled={!isOldPasswordVerified || updatingPassword || !newPassword || newPassword.length < 6}
+                                    variant="primary"
+                                    className="px-6"
+                                >
+                                    {updatingPassword ? 'Updating Password...' : 'Update Password'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>
