@@ -27,7 +27,9 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
     };
 
     const NavItem = ({ view, icon: Icon, label, color = 'banana' }: { view: View, icon: any, label: string, color?: string }) => {
-        const isActive = currentView === view || (view === 'campaigns' && currentView === 'campaign_editor');
+        const isActive = currentView === view
+            || (view === 'campaigns' && currentView === 'campaign_editor')
+            || (view === 'admin' && (currentView === 'admin' || currentView === 'dev'));
 
         const activeStyles = {
             banana: 'bg-banana-400/10 text-banana-600 dark:text-banana-400 shadow-[0_0_15px_-3px_rgba(250,204,21,0.15)] border-banana-400/20',
@@ -129,10 +131,16 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                         <NavItem view="education" icon={Icons.Video} label="Education" color="banana" />
                     </NavSection>
 
+                    {profile?.isPlatformAdmin && (
+                        <NavSection title="Platform">
+                            <NavItem view="admin" icon={Icons.Lock} label="Admin" color="banana" />
+                        </NavSection>
+                    )}
+
                 </div>
 
                 <div className={`p-4 mt-auto border-t border-border/5 space-y-3 bg-gradient-to-b from-transparent via-surface/30 to-surface/60 transition-all duration-300 ${isCollapsed ? 'items-center px-4' : ''}`}>
-                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && (
+                    {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && currentView !== 'admin' && currentView !== 'dev' && (
                         <div className="px-2">
                             <Button
                                 onClick={onNewQuote}
@@ -230,7 +238,7 @@ export const Layout = ({ children, currentView, onViewChange, onNewQuote, profil
                             <Icons.FileText className="w-6 h-6" />
                         </button>
 
-                        {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && (
+                        {(!profile?.role || profile.role === 'admin' || profile.permissions?.quotes) && currentView !== 'admin' && currentView !== 'dev' && (
                             <div className="relative -top-6">
                                 <button
                                     onClick={onNewQuote}

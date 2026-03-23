@@ -122,6 +122,7 @@ export interface BrokerProfile {
   autoSendQuoteEmail?: boolean;
   emailsSent?: number;
   subscriptionStatus?: 'trial' | 'active' | 'expired';
+  isPlatformAdmin?: boolean;
   websiteSubdomain?: string;
   websiteSettings?: {
     theme?: 'modern' | 'classic' | 'bold';
@@ -145,4 +146,4 @@ export interface EducationTutorial {
   createdAt: string;
 }
 
-export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev' | 'education';
+export type View = 'dashboard' | 'quotes' | 'new_quote' | 'detail' | 'investors' | 'analytics' | 'settings' | 'public_schedule' | 'campaigns' | 'campaign_editor' | 'team' | 'confirmation' | 'dev' | 'admin' | 'education';

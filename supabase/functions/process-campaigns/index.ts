@@ -85,9 +85,9 @@ const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => 
           </tr>
         </table>
         
-        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);border:1px solid #a7f3d0;border-radius:8px;padding:14px 18px;margin-top:12px;">
-          <span style="font-size:14px;color:#166534;">📈 Year 1 equity build: <strong style="color:#15803d;">$${firstYearPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></span>
-        </div>
+        <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#4b5563;">
+          The first year of your loan will build approximately <strong>$${firstYearPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
+        </p>
       </div>
     `;
   };
@@ -117,12 +117,6 @@ const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => 
               ${finalBody}
               
               ${quotes.map((q, i) => renderQuoteBlock(q, i)).join('')}
-
-              <div style="font-size:13px;color:#6b7280;text-align:center;margin-top:32px;">
-                <a href="${Deno.env.get("BASE_URL") || "https://theofferhero.com"}/?view=schedule&quoteId=${firstQuote.id}" style="display:inline-block;padding:12px 32px;background:#4f46e5;border-radius:8px;color:#ffffff;font-weight:700;text-decoration:none;box-shadow:0 4px 6px -1px rgba(79, 70, 229, 0.2);">
-                  View Full Interactive Schedule
-                </a>
-              </div>
 
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
               

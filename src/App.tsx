@@ -149,15 +149,13 @@ export default function App() {
           } else if (viewParam === 'settings') {
             // Support direct linking to settings if needed
             setCurrentView('settings');
-          } else if (viewParam === 'dev') {
-            // Hidden dev dashboard
-            setCurrentView('dev');
+          } else if (viewParam === 'dev' || viewParam === 'admin') {
+            setCurrentView('admin');
           }
 
           initialNavigationDone.current = true;
         }
 
-        setProfile(fetchedProfile);
         setProfile(fetchedProfile);
       }).finally(() => {
         setLoadingData(false);
@@ -498,6 +496,7 @@ export default function App() {
         />;
       case 'team':
         return <Team profile={profile} />;
+      case 'admin':
       case 'dev':
         return <DevDashboard />;
       case 'education':

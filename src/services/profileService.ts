@@ -212,6 +212,7 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     onboardingStatus: row.onboarding_status,
     emailsSent: row.emails_sent || 0,
     subscriptionStatus: row.subscription_status || 'trial',
+    isPlatformAdmin: row.is_platform_admin || false,
     websiteSubdomain: row.website_subdomain,
     websiteSettings: row.website_settings || {}
 });

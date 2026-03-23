@@ -98,10 +98,9 @@ export const generateHtmlEmail = (quoteInput: Partial<Quote> | Partial<Quote>[],
           </tr>
         </table>
         
-        <!-- Equity Build for THIS option -->
-        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);border:1px solid #a7f3d0;border-radius:8px;padding:14px 18px;margin-top:12px;">
-          <span style="font-size:14px;color:#166534;">📈 Year 1 equity build: <strong style="color:#15803d;">$${equityBuild.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></span>
-        </div>
+        <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#4b5563;">
+          The first year of your loan will build approximately <strong>$${equityBuild.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in equity through principal paydown.
+        </p>
         
         ${q.notes ? `<p style="margin:12px 0 0 0;font-size:14px;color:#4b5563;font-style:italic;">Note: ${q.notes}</p>` : ''}
       </div>
