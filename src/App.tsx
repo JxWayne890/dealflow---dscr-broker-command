@@ -464,7 +464,7 @@ export default function App() {
           initialFilter={currentQuoteFilter}
         />;
       case 'new_quote':
-        return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
+        return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onUpdateInvestor={handleUpdateInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
         if (!selectedQuote) return null; // Should ideally handle 404
         return <QuoteDetail quote={selectedQuote} onBack={() => setCurrentView('dashboard')} onUpdateStatus={handleUpdateStatus} onUpdateQuote={handleUpdateQuote} />;

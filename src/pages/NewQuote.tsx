@@ -12,14 +12,16 @@ import { QuoteService } from '../services/quoteService';
 import { generateTermSheetHtml } from '../utils/pdfTemplates';
 import { createSafePdfContainer } from '../utils/safeHtml';
 import { TrialLimitModal } from '../components/TrialLimitModal';
+import { formatPhoneNumber } from '../utils/formatters';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
-export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
+export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateInvestor }: {
     onCancel: () => void,
     onSave: (quote: Quote, shouldRedirect?: boolean) => Promise<Quote | null>,
     investors: Investor[],
-    onAddInvestor: (investor: Investor) => void
+    onAddInvestor: (investor: Investor) => void,
+    onUpdateInvestor?: (id: string, updates: Partial<Investor>) => void
 }) => {
     const { showToast } = useToast();
 
@@ -73,6 +75,9 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
 
     // Available properties for the selected investor
     const [availableProperties, setAvailableProperties] = useState<string[]>([]);
+
+    // Phone number for the investor on this quote (kept separate — not stored on Quote)
+    const [investorPhone, setInvestorPhone] = useState<string>('');
 
     // When investor changes, update available properties
     useEffect(() => {
@@ -208,11 +213,11 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                 id: Math.random().toString(36).substr(2, 9),
                 name: formData.investorName,
                 email: formData.investorEmail,
-
+                phone: investorPhone || undefined,
             };
-            // We can trigger this silent update
-            // onAddInvestor(newInv); 
             onAddInvestor(newInv);
+        } else if (existingParams && onUpdateInvestor && investorPhone !== (existingParams.phone || '')) {
+            onUpdateInvestor(existingParams.id, { phone: investorPhone || undefined });
         }
 
         setIsSending(false);
@@ -285,6 +290,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                         onChange={(selectedId) => {
                                             if (selectedId === 'new') {
                                                 setFormData({ ...formData, investorId: '', investorName: '', investorEmail: '' });
+                                                setInvestorPhone('');
                                             } else {
                                                 const inv = investors.find(i => i.id === selectedId);
                                                 if (inv) {
@@ -294,6 +300,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                                         investorName: inv.name,
                                                         investorEmail: inv.email
                                                     });
+                                                    setInvestorPhone(inv.phone || '');
                                                 }
                                             }
                                         }}
@@ -312,6 +319,15 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor }: {
                                 </Field>
                                 <Field label="Investor Email">
                                     <Input type="email" placeholder="john@example.com" value={formData.investorEmail || ''} onChange={e => setFormData({ ...formData, investorEmail: e.target.value })} />
+                                </Field>
+                                <Field label="Investor Phone (Optional)">
+                                    <Input
+                                        type="tel"
+                                        placeholder="(555) 123-4567"
+                                        value={investorPhone}
+                                        onChange={e => setInvestorPhone(formatPhoneNumber(e.target.value))}
+                                        maxLength={14}
+                                    />
                                 </Field>
                             </div>
                         </div>
