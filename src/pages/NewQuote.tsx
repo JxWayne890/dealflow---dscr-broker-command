@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Quote, QuoteStatus, DealType, BrokerProfile, EmailFormat, Investor } from '../types';
 import { generateQuoteEmail } from '../services/geminiService';
 import { sendQuoteEmail } from '../services/emailService';
-import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
+import { generateHtmlEmail, generatePlainText, plainTextToHtml } from '../utils/emailTemplates';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { ProfileService } from '../services/profileService';
@@ -151,13 +151,14 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
             ? [formDataWithUrl, ...comparisonQuotes]
             : formDataWithUrl;
 
-        // Generate the FINAL payload based on format
-        let finalContent = '';
-        if (emailFormat === 'html') {
-            finalContent = generateHtmlEmail(quotesForEmail, profile, formData.emailBody || '');
-        } else {
-            finalContent = generatePlainText(quotesForEmail, profile, formData.emailBody || '');
-        }
+        // Build BOTH html and text bodies. Sending only one (or the same content
+        // in both fields) was the bug behind Gmail collapsing plain text into a
+        // single mashed paragraph: it preferred the HTML body, where \n is just
+        // whitespace.
+        const plainTextBody = generatePlainText(quotesForEmail, profile, formData.emailBody || '');
+        const htmlBody = emailFormat === 'html'
+            ? generateHtmlEmail(quotesForEmail, profile, formData.emailBody || '')
+            : plainTextToHtml(plainTextBody);
 
         // Always send — user-explicit "Create & Send Now" action.
         // No-send paths exist as separate buttons (Save as Draft / Download Term Sheet).
@@ -172,7 +173,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                 return;
             }
 
-            result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
+            result = await sendQuoteEmail(formDataWithUrl as Quote, { html: htmlBody, text: plainTextBody }, profile);
 
             if (result.success) {
                 await ProfileService.incrementEmailCount();
@@ -184,7 +185,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
             id: formData.id || crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             status: result.success ? QuoteStatus.SENT : QuoteStatus.DRAFT,
-            emailHtml: emailFormat === 'html' ? finalContent : undefined,
+            emailHtml: htmlBody,
             followUpSchedule: [
                 { id: crypto.randomUUID(), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
                 { id: crypto.randomUUID(), dayOffset: 5, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },

@@ -1,7 +1,11 @@
 import { Quote, BrokerProfile } from '../types';
 import { supabase } from '../lib/supabase';
 
-export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderProfile?: BrokerProfile): Promise<{ success: boolean; error?: string }> => {
+export const sendQuoteEmail = async (
+    quote: Quote,
+    body: { html: string; text: string },
+    senderProfile?: BrokerProfile
+): Promise<{ success: boolean; error?: string }> => {
     try {
         // Single fixed mailbox; broker identity stays in display name only.
         const fromName = senderProfile?.name || 'The OfferHero';
@@ -11,8 +15,8 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
             body: {
                 to: quote.investorEmail,
                 subject: `Deal Quote: ${quote.propertyState} - ${quote.dealType}`,
-                html: emailContent,
-                text: emailContent, // Consider removing this or stripping HTML if possible
+                html: body.html,
+                text: body.text,
                 fromName,
                 replyTo,
                 quoteId: quote.id // IMPORTANT: Pass ID for webhook tracking

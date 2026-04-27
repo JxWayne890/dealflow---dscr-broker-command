@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Quote, QuoteStatus, BrokerProfile } from '../types';
-import { generateHtmlEmail } from '../utils/emailTemplates';
+import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
 import { sendQuoteEmail } from '../services/emailService';
 import { generateTermSheetHtml } from '../utils/pdfTemplates';
 import { DEFAULT_BROKER_PROFILE, BASE_URL } from '../constants';
@@ -91,7 +91,8 @@ export const QuoteDetail = ({
         // CRITICAL: We ignore quote.emailHtml here because it might be a stale cache from creation.
         // Regenerating ensures that any updates to rate, fees, etc. are reflected in the resend.
         const html = generateHtmlEmail(allQuotes, profile, quote.emailBody || '');
-        const result = await sendQuoteEmail(quote, html, profile);
+        const text = generatePlainText(allQuotes, profile, quote.emailBody || '');
+        const result = await sendQuoteEmail(quote, { html, text }, profile);
 
         if (result.success) {
             await ProfileService.incrementEmailCount();
@@ -116,7 +117,10 @@ export const QuoteDetail = ({
 
         const allQuotes = comparisonQuotes.length > 0 ? [quote, ...comparisonQuotes] : quote;
         const html = generateTermSheetHtml(allQuotes, profile);
-        const result = await sendQuoteEmail(quote, html, profile);
+        // Term-sheet email is HTML-first; the text companion is the structured
+        // plain-text view of the same numbers, so non-HTML clients still see it.
+        const text = generatePlainText(allQuotes, profile, quote.emailBody || '');
+        const result = await sendQuoteEmail(quote, { html, text }, profile);
 
         if (result.success) {
             await ProfileService.incrementEmailCount();

@@ -1,6 +1,6 @@
 
 import { supabase } from '../lib/supabase';
-import { generateHtmlEmail } from '../utils/emailTemplates';
+import { generateHtmlEmail, generatePlainText } from '../utils/emailTemplates';
 import { ProfileService } from './profileService';
 import { BASE_URL } from '../constants';
 import { sendQuoteEmail } from './emailService';
@@ -472,9 +472,10 @@ export const campaignService = {
         const allOptions = [mainQuoteObj, ...comparisonQuoteObjs];
 
         const html = generateHtmlEmail(allOptions as any, profile, bodyTemplate);
+        const text = generatePlainText(allOptions as any, profile, bodyTemplate);
 
         // 5. Send using the established email service (invokes Supabase 'send-email' function)
-        const result = await sendQuoteEmail(mainQuoteObj as any, html, profile);
+        const result = await sendQuoteEmail(mainQuoteObj as any, { html, text }, profile);
 
         if (!result.success) {
             throw new Error(result.error || 'Failed to send email');

@@ -194,9 +194,7 @@ ${isComparison ? `OPTION ${i + 1}:` : 'DEAL TERMS:'}
 ${q.lenderCode ? `- Lender Code: #${q.lenderCode.toUpperCase()}\n` : ''}${q.monthlyPayment ? `- Monthly P&I: $${q.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` : ''}${q.originationFee ? `- Lender Origination: ${q.originationFeePercent ? `${q.originationFeePercent}%` : `$${q.originationFee.toLocaleString()}`}\n` : ''}${q.uwFee ? `- UW Fee: $${q.uwFee.toLocaleString()}\n` : ''}${q.brokerFee ? `- Broker Fee: ${q.brokerFeePercent ? `${q.brokerFeePercent}%` : `$${q.brokerFee.toLocaleString()}`}\n` : ''}${q.closingFees ? `- Est. Closing Fees: $${q.closingFees.toLocaleString()}\n` : ''}${q.notes ? `- Notes: ${q.notes}\n` : ''}`;
   }).join('\n----------------------------------------\n');
 
-  return `Subject: ${isComparison ? 'DSCR Loan Comparison' : `DSCR Loan Quote - ${quotes[0].propertyAddress ? `${quotes[0].propertyAddress} (${quotes[0].propertyState})` : quotes[0].propertyState || 'Property'}`}
-
-${messageBody}
+  return `${messageBody}
 
 ----------------------------------------
 ${quoteSummaries}
@@ -213,4 +211,20 @@ ${profile.website || ''}
 
 Rates and terms subject to change based on market conditions. Quote based on ${quotes[0].creditScore || '_____'} credit score.
 `;
+};
+
+// Wraps plain-text content in a minimal HTML shell so it renders with the same
+// line breaks and structure when shown by an HTML-preferring email client.
+// Without this, Gmail collapses every \n into a single space.
+export const plainTextToHtml = (text: string): string => {
+  const escaped = String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#1a1a1a;background:#ffffff;">
+<div style="white-space:pre-wrap;word-wrap:break-word;max-width:680px;">${escaped}</div>
+</body></html>`;
 };
