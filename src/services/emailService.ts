@@ -7,15 +7,10 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
         const fromName = senderProfile?.name || 'The OfferHero';
         const replyTo = senderProfile?.email;
 
-        // Conversational subject — avoids "Deal" / generic marketing patterns that
-        // push Gmail to classify as Promotions instead of Primary.
-        const subjectTarget = quote.propertyAddress || quote.propertyState || 'your scenario';
-        const subject = `Quote for ${subjectTarget}`;
-
         const { data, error } = await supabase.functions.invoke('send-email', {
             body: {
                 to: quote.investorEmail,
-                subject,
+                subject: `Deal Quote: ${quote.propertyState} - ${quote.dealType}`,
                 html: emailContent,
                 text: emailContent, // Consider removing this or stripping HTML if possible
                 fromName,
