@@ -118,7 +118,6 @@ export interface BrokerProfile {
   permissions?: Permissions;
   inviteCode?: string;
   onboardingStatus?: 'joined' | 'pending_setup' | 'pending_payment' | 'active';
-  autoSendQuoteEmail?: boolean;
   emailsSent?: number;
   subscriptionStatus?: 'trial' | 'active' | 'expired';
   isPlatformAdmin?: boolean;

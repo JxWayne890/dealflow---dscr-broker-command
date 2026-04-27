@@ -159,36 +159,31 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
             finalContent = generatePlainText(quotesForEmail, profile, formData.emailBody || '');
         }
 
-        // Attempt real email send ONLY if auto-send is enabled
-        let result: { success: boolean; error?: string } = { success: true }; // Default to true if not sending
+        // Always send — user-explicit "Create & Send Now" action.
+        // No-send paths exist as separate buttons (Save as Draft / Download Term Sheet).
+        let result: { success: boolean; error?: string } = { success: true };
 
-        if (profile.autoSendQuoteEmail) {
-            if (formData.investorEmail) {
-                // Check trial limit before sending
-                const trialCheck = await ProfileService.canSendEmail();
-                if (!trialCheck.allowed) {
-                    setTrialInfo({ emailsSent: trialCheck.emailsSent, limit: trialCheck.limit });
-                    setShowTrialLimitModal(true);
-                    setIsSending(false);
-                    return;
-                }
-
-                result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
-
-                // Increment email count on successful send
-                if (result.success) {
-                    await ProfileService.incrementEmailCount();
-                }
+        if (formData.investorEmail) {
+            const trialCheck = await ProfileService.canSendEmail();
+            if (!trialCheck.allowed) {
+                setTrialInfo({ emailsSent: trialCheck.emailsSent, limit: trialCheck.limit });
+                setShowTrialLimitModal(true);
+                setIsSending(false);
+                return;
             }
-        } else {
-            console.log("Auto-send disabled, skipping email dispatch.");
+
+            result = await sendQuoteEmail(formDataWithUrl as Quote, finalContent, profile);
+
+            if (result.success) {
+                await ProfileService.incrementEmailCount();
+            }
         }
 
         const newQuote: Quote = {
             ...formDataWithUrl as Quote,
             id: formData.id || crypto.randomUUID(),
             createdAt: new Date().toISOString(),
-            status: result.success ? (profile.autoSendQuoteEmail ? QuoteStatus.SENT : QuoteStatus.ACTIVE) : QuoteStatus.DRAFT,
+            status: result.success ? QuoteStatus.SENT : QuoteStatus.DRAFT,
             emailHtml: emailFormat === 'html' ? finalContent : undefined,
             followUpSchedule: [
                 { id: crypto.randomUUID(), dayOffset: 2, status: 'pending', scheduledDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() },
@@ -1154,10 +1149,10 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                             <Button
                                 onClick={handleSubmit}
                                 className="w-full md:w-auto px-8"
-                                icon={profile.autoSendQuoteEmail ? Icons.Send : Icons.CheckCircle}
+                                icon={Icons.Send}
                                 disabled={isSending}
                             >
-                                {isSending ? 'Processing...' : (profile.autoSendQuoteEmail ? 'Send Quote Now' : 'Create Quote')}
+                                {isSending ? 'Sending...' : 'Create Quote & Send Now'}
                             </Button>
                         </div>
                     </div>
@@ -1168,12 +1163,9 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Icons.CheckCircle className="w-10 h-10 text-emerald-500" />
                             </div>
-                            <h2 className="text-3xl font-bold text-foreground mb-2">Quote Created Successfully!</h2>
+                            <h2 className="text-3xl font-bold text-foreground mb-2">Quote Sent!</h2>
                             <p className="text-muted mb-8 text-lg">
-                                {profile.autoSendQuoteEmail
-                                    ? <span>Your quote has been emailed to <strong>{formData.investorName}</strong>.</span>
-                                    : <span>Quote saved for <strong>{formData.investorName}</strong>. Ready to share.</span>
-                                }
+                                Your quote has been emailed to <strong>{formData.investorName}</strong>.
                             </p>
                             <div className="grid grid-cols-1 gap-3 mb-6">
                                 <Button
@@ -1276,26 +1268,6 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                                 <Field label="Website">
                                     <Input value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
                                 </Field>
-
-                                <div className="pt-4 border-t border-border/10">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-medium text-foreground">Auto-Send Emails</span>
-                                            <span className="text-xs text-muted">Send email automatically when created</span>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                const newVal = !profile.autoSendQuoteEmail;
-                                                setProfile({ ...profile, autoSendQuoteEmail: newVal });
-                                                // Ideally, we should save this preference to the backend immediately
-                                                ProfileService.updateProfile({ autoSendQuoteEmail: newVal }).catch(err => console.error("Failed to save pref", err));
-                                            }}
-                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${profile.autoSendQuoteEmail ? 'bg-banana-400' : 'bg-foreground/10'}`}
-                                        >
-                                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${profile.autoSendQuoteEmail ? 'translate-x-5' : 'translate-x-0'}`} />
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-100">
@@ -1325,7 +1297,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                             icon={Icons.Send}
                             disabled={isSending}
                         >
-                            {isSending ? 'Processing...' : (profile.autoSendQuoteEmail ? 'Send Quote' : 'Create Quote')}
+                            {isSending ? 'Sending...' : 'Create & Send Now'}
                         </Button>
                     )}
                 </div>
