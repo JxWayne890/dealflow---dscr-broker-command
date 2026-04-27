@@ -955,36 +955,38 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                         <div className="flex flex-col gap-6 h-full">
                             {/* Format Toggle */}
                             <div className="bg-surface/30 backdrop-blur-xl p-4 rounded-xl border border-border/10 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="font-semibold text-foreground">Email Format</span>
-                                    <div className="bg-foreground/5 p-1 rounded-lg flex">
-                                        <button
-                                            onClick={() => setEmailFormat('text')}
-                                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'text' ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}
-                                        >
-                                            Text
-                                        </button>
-                                        <button
-                                            onClick={() => setEmailFormat('html')}
-                                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'html' ? 'bg-surface text-banana-600 dark:text-banana-400 shadow-sm' : 'text-muted hover:text-foreground'}`}
-                                        >
-                                            Professional HTML
-                                        </button>
+                                <div className="flex items-start justify-between gap-4">
+                                    <span className="font-semibold text-foreground pt-1.5">Email Format</span>
+                                    <div className="flex flex-col items-stretch gap-2">
+                                        {/* Toggle — 2-col grid so each button shares geometry with its chip */}
+                                        <div className="bg-foreground/5 p-1 rounded-lg grid grid-cols-2 gap-1">
+                                            <button
+                                                onClick={() => setEmailFormat('text')}
+                                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'text' ? 'bg-surface text-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}
+                                            >
+                                                Text
+                                            </button>
+                                            <button
+                                                onClick={() => setEmailFormat('html')}
+                                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${emailFormat === 'html' ? 'bg-surface text-banana-600 dark:text-banana-400 shadow-sm' : 'text-muted hover:text-foreground'}`}
+                                            >
+                                                Professional HTML
+                                            </button>
+                                        </div>
+                                        {/* Chips — same grid → each chip lines up under its button */}
+                                        <div className="grid grid-cols-2 gap-1 text-[11px] leading-tight">
+                                            <div className="relative px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-center">
+                                                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-emerald-500/10 border-l border-t border-emerald-500/30"></span>
+                                                <span className="font-semibold">Recommended</span> for first contact
+                                            </div>
+                                            <div className="relative px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-center">
+                                                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-amber-500/10 border-l border-t border-amber-500/30"></span>
+                                                May land in Gmail's <span className="font-semibold">Promotions tab</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="mt-3 flex justify-end">
-                                    <div className="flex items-stretch gap-1.5 text-[11px] leading-tight">
-                                        <div className="relative px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 max-w-[140px]">
-                                            <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-emerald-500/10 border-l border-t border-emerald-500/30"></span>
-                                            <span className="font-semibold">Recommended</span> for first contact
-                                        </div>
-                                        <div className="relative px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 max-w-[180px]">
-                                            <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-amber-500/10 border-l border-t border-amber-500/30"></span>
-                                            May land in Gmail's <span className="font-semibold">Promotions tab</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="mt-2 text-xs text-muted text-right">
+                                <p className="mt-3 text-xs text-muted text-right">
                                     Tip: Text reads as a personal email; Professional HTML is best for follow-ups and side-by-side comparisons.
                                 </p>
                             </div>
