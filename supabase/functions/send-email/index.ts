@@ -15,6 +15,7 @@ interface EmailRequest {
     text: string;
     fromName?: string;
     fromPrefix?: string;
+    replyTo?: string;
     quoteId?: string; // For tracking
 }
 
@@ -25,7 +26,7 @@ serve(async (req) => {
     }
 
     try {
-        const { to, subject, html, text, fromName = "The OfferHero", fromPrefix = "deals", quoteId }: EmailRequest = await req.json();
+        const { to, subject, html, text, fromName = "The OfferHero", fromPrefix = "deals", replyTo, quoteId }: EmailRequest = await req.json();
 
         if (!RESEND_API_KEY) {
             throw new Error("Missing RESEND_API_KEY");
@@ -51,6 +52,7 @@ serve(async (req) => {
                 subject: subject,
                 html: html,
                 text: text,
+                reply_to: replyTo || undefined,
                 tags: quoteId ? [{ name: "quote_id", value: quoteId }] : undefined,
             }),
         });

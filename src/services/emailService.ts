@@ -3,19 +3,11 @@ import { supabase } from '../lib/supabase';
 
 export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderProfile?: BrokerProfile): Promise<{ success: boolean; error?: string }> => {
     try {
-        // Create a safe prefix from the user's custom setting, or fall back to auto-generated from name
-        let fromPrefix = 'deals'; // Default
-        let fromName = 'The OfferHero';
-
-        if (senderProfile) {
-            fromName = senderProfile.name || fromName;
-            // Use custom senderEmailPrefix if set, otherwise generate from name
-            if (senderProfile.senderEmailPrefix) {
-                fromPrefix = senderProfile.senderEmailPrefix;
-            } else if (senderProfile.name) {
-                fromPrefix = senderProfile.name.toLowerCase().replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$|\.+$/g, '');
-            }
-        }
+        // Stable mailbox per domain — broker name lives in display name only.
+        // Per-broker prefixes (john.smith@) splinter the domain's sending reputation.
+        const fromName = senderProfile?.name || 'The OfferHero';
+        const fromPrefix = senderProfile?.senderEmailPrefix || 'deals';
+        const replyTo = senderProfile?.email;
 
         const { data, error } = await supabase.functions.invoke('send-email', {
             body: {
@@ -25,6 +17,7 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
                 text: emailContent, // Consider removing this or stripping HTML if possible
                 fromName,
                 fromPrefix,
+                replyTo,
                 quoteId: quote.id // IMPORTANT: Pass ID for webhook tracking
             }
         });

@@ -16,13 +16,14 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { to, subject, html, text, fromName = 'DealFlow', fromPrefix = 'deals' } = req.body;
+    const { to, subject, html, text, fromName = 'DealFlow', fromPrefix = 'deals', replyTo } = req.body;
 
     if (!to || !subject) {
         return res.status(400).json({ error: 'Missing required fields: to, subject' });
     }
 
-    const fromAddress = `${fromName} <${fromPrefix}@theofferhero.com>`;
+    const fromDomain = process.env.FROM_EMAIL_DOMAIN || 'theofferhero.com';
+    const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
 
     try {
         const { data, error } = await resend.emails.send({
@@ -31,6 +32,7 @@ export default async function handler(req, res) {
             subject,
             html: html || text,
             text: text || html,
+            reply_to: replyTo || undefined,
         });
 
         if (error) {

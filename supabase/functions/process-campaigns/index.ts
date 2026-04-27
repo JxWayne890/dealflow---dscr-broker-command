@@ -31,8 +31,37 @@ const calculateAmortizationSchedule = (loanAmount: number, annualRate: number, t
   return schedule;
 };
 
+// Plain-text companion of the HTML email — multipart MIME is a deliverability signal
+const generateTextEmail = (quotes: any[], profile: any, messageBody: string, unsubscribeUrl: string) => {
+  const lines: string[] = [];
+  lines.push(messageBody?.trim() || 'Great connecting with you. Here are the latest terms for your scenario.');
+  lines.push('');
+
+  quotes.forEach((q, i) => {
+    if (quotes.length > 1) lines.push(`Option ${i + 1}: ${q.deal_type || 'Loan Terms'}`);
+    if (q.property_address) {
+      lines.push(`Property: ${[q.property_address, q.property_city, q.property_state, q.property_zip].filter(Boolean).join(', ')}`);
+    }
+    lines.push(`Loan Amount: $${(q.loan_amount || 0).toLocaleString()}`);
+    lines.push(`LTV: ${q.ltv}%`);
+    lines.push(`Rate: ${q.rate}% (${q.term_years || 30}-Year ${q.rate_type || 'Fixed'})`);
+    if (q.lender_code) lines.push(`Lender Code: #${String(q.lender_code).toUpperCase()}`);
+    lines.push('');
+  });
+
+  lines.push('--');
+  lines.push(profile?.name || 'DealFlow Team');
+  if (profile?.title) lines.push(profile.title);
+  if (profile?.phone) lines.push(profile.phone);
+  if (profile?.website) lines.push(profile.website);
+  lines.push('');
+  lines.push(`Unsubscribe from these emails: ${unsubscribeUrl}`);
+
+  return lines.join('\n');
+};
+
 // Helper for professional HTML (Ported and enhanced from emailTemplates.ts)
-const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => {
+const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string, unsubscribeUrl: string) => {
   const isComparison = quotes.length > 1;
   const firstQuote = quotes[0];
 
@@ -137,7 +166,8 @@ const generateHtmlEmail = (quotes: any[], profile: any, messageBody: string) => 
               
               <div style="margin-top:24px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
                 © ${new Date().getFullYear()} ${profile.company || profile.name || 'The OfferHero'}. All rights reserved.<br />
-                Rates and terms subject to change based on market conditions.
+                Rates and terms subject to change based on market conditions.<br />
+                <a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline;">Unsubscribe from these emails</a>
               </div>
             </td></tr>
         </table>
@@ -276,25 +306,39 @@ serve(async (req) => {
         subject = subject.replace(regex, value);
       }
 
-      const html = generateHtmlEmail(allQuotes, profile || {}, body);
+      const fromDomain = Deno.env.get("FROM_EMAIL_DOMAIN") || "theofferhero.com";
+      const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe?id=${sub.id}`;
+      const unsubscribeMailto = `mailto:unsubscribe@${fromDomain}?subject=unsubscribe-${sub.id}`;
+
+      const html = generateHtmlEmail(allQuotes, profile || {}, body, unsubscribeUrl);
+      const text = generateTextEmail(allQuotes, profile || {}, body, unsubscribeUrl);
 
       // 6. Send Email
-      const fromName = profile?.name || 'The OfferHero';
-      // Use custom sender_email_prefix if set, otherwise generate from name
-      const fromPrefix = profile?.sender_email_prefix || (profile?.name ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '.') : 'deals');
-      const fromAddress = `${fromName} <${fromPrefix}@theofferhero.com>`;
+      // Stable sender identity protects domain reputation: a single mailbox per domain
+      // (e.g. deals@) with the broker's name in the display name. Per-broker prefixes
+      // (john.smith@, jane.doe@) look like spoofing to spam filters.
+      const fromName = (profile?.name || 'The OfferHero').replace(/[<>"]/g, '');
+      const fromPrefix = profile?.sender_email_prefix || 'deals';
+      const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
+      const replyTo = profile?.email || undefined;
 
-      const emailPayload = {
+      const emailPayload: Record<string, unknown> = {
         from: fromAddress,
         to: [lead.investor_email],
         subject: subject,
         html: html,
+        text: text,
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl}>, <${unsubscribeMailto}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
         tags: [
           { name: "campaign_id", value: sub.campaign_id },
           { name: "lead_id", value: sub.lead_id },
           { name: "step_id", value: step.id }
         ]
       };
+      if (replyTo) emailPayload.reply_to = replyTo;
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -312,6 +356,9 @@ serve(async (req) => {
         });
         continue;
       }
+
+      // Throttle batch — protects domain reputation against burst-send patterns
+      await new Promise((r) => setTimeout(r, 250));
 
       // 7. Update Subscription for NEXT step
       const nextNextStepOrder = nextStepOrder + 1;
