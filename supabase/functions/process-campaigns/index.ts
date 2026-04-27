@@ -314,12 +314,11 @@ serve(async (req) => {
       const text = generateTextEmail(allQuotes, profile || {}, body, unsubscribeUrl);
 
       // 6. Send Email
-      // Stable sender identity protects domain reputation: a single mailbox per domain
-      // (e.g. deals@) with the broker's name in the display name. Per-broker prefixes
-      // (john.smith@, jane.doe@) look like spoofing to spam filters.
+      // Single fixed mailbox for the whole platform — broker identity lives only in
+      // the display name. Per-broker prefixes splinter domain reputation and trip
+      // spoofing heuristics.
       const fromName = (profile?.name || 'The OfferHero').replace(/[<>"]/g, '');
-      const fromPrefix = profile?.sender_email_prefix || 'deals';
-      const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
+      const fromAddress = `${fromName} <deals@${fromDomain}>`;
       const replyTo = profile?.email || undefined;
 
       const emailPayload: Record<string, unknown> = {

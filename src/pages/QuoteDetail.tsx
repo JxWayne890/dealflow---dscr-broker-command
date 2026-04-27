@@ -45,7 +45,7 @@ export const QuoteDetail = ({
     // Comparison quotes linked to this primary quote
     const [comparisonQuotes, setComparisonQuotes] = useState<Quote[]>([]);
 
-    // Load user's profile with senderEmailPrefix
+    // Load user's profile (used for sender display name and reply-to)
     useEffect(() => {
         const loadProfile = async () => {
             try {

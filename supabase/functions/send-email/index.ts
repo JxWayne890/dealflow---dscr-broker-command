@@ -14,7 +14,6 @@ interface EmailRequest {
     html: string;
     text: string;
     fromName?: string;
-    fromPrefix?: string;
     replyTo?: string;
     quoteId?: string; // For tracking
 }
@@ -26,17 +25,16 @@ serve(async (req) => {
     }
 
     try {
-        const { to, subject, html, text, fromName = "The OfferHero", fromPrefix = "deals", replyTo, quoteId }: EmailRequest = await req.json();
+        const { to, subject, html, text, fromName = "The OfferHero", replyTo, quoteId }: EmailRequest = await req.json();
 
         if (!RESEND_API_KEY) {
             throw new Error("Missing RESEND_API_KEY");
         }
 
-        // Construct "From" address
-        // e.g. "John Doe <john.doe@theofferhero.com>"
-        // NOTE: This domain must be verified in Resend.
+        // Single fixed mailbox for the whole platform — only the display name varies.
+        // Domain must be verified in Resend.
         const fromDomain = Deno.env.get("FROM_EMAIL_DOMAIN") || "theofferhero.com";
-        const fromAddress = `${fromName} <${fromPrefix}@${fromDomain}>`;
+        const fromAddress = `${fromName} <deals@${fromDomain}>`;
 
         console.log("[SEND-EMAIL] Sending from:", fromAddress, "to:", to);
 

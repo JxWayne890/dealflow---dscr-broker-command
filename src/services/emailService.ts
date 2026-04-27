@@ -3,10 +3,8 @@ import { supabase } from '../lib/supabase';
 
 export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderProfile?: BrokerProfile): Promise<{ success: boolean; error?: string }> => {
     try {
-        // Stable mailbox per domain — broker name lives in display name only.
-        // Per-broker prefixes (john.smith@) splinter the domain's sending reputation.
+        // Single fixed mailbox; broker identity stays in display name only.
         const fromName = senderProfile?.name || 'The OfferHero';
-        const fromPrefix = senderProfile?.senderEmailPrefix || 'deals';
         const replyTo = senderProfile?.email;
 
         const { data, error } = await supabase.functions.invoke('send-email', {
@@ -16,7 +14,6 @@ export const sendQuoteEmail = async (quote: Quote, emailContent: string, senderP
                 html: emailContent,
                 text: emailContent, // Consider removing this or stripping HTML if possible
                 fromName,
-                fromPrefix,
                 replyTo,
                 quoteId: quote.id // IMPORTANT: Pass ID for webhook tracking
             }
@@ -73,8 +70,7 @@ export const sendInquiryEmail = async (data: { name: string, email: string, phon
                 subject: `New Inquiry (${data.inquiryType}): ${data.name}`,
                 html: html,
                 text: `New Inquiry (${data.inquiryType}) from ${data.name}. Phone: ${data.phone}. Email: ${data.email}. Best Time: ${data.contactTime}`,
-                fromName: 'The OfferHero Inquiry',
-                fromPrefix: 'inquiries'
+                fromName: 'The OfferHero Inquiry'
             }
         });
 

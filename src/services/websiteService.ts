@@ -168,7 +168,6 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     title: row.title || '',
     timezone: row.timezone || 'UTC',
     theme: row.theme || 'light',
-    senderEmailPrefix: row.sender_email_prefix,
     role: row.role || 'admin',
     parentId: row.parent_id,
     permissions: row.permissions,

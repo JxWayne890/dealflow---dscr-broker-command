@@ -86,24 +86,6 @@ export const ProfileService = {
         return profile.parentId || user.id;
     },
 
-    async checkEmailPrefixAvailable(prefix: string): Promise<{ available: boolean; suggestions: string[] }> {
-        const { data, error } = await supabase.rpc('check_email_prefix_available', {
-            prefix_to_check: prefix
-        });
-
-        if (error) {
-            console.error('Error checking email prefix:', error);
-            return { available: false, suggestions: [] };
-        }
-
-        // RPC returns array of rows, we want the first one
-        const result = data?.[0] || { available: false, suggestions: [] };
-        return {
-            available: result.available ?? false,
-            suggestions: result.suggestions ?? []
-        };
-    },
-
     async getAllProfiles(): Promise<(BrokerProfile & { id: string; createdAt: string })[]> {
         const { data, error } = await supabase
             .from('profiles')
@@ -204,7 +186,6 @@ const mapDbToProfile = (row: any): BrokerProfile => ({
     title: row.title || '',
     timezone: row.timezone || 'UTC',
     theme: row.theme || 'light',
-    senderEmailPrefix: row.sender_email_prefix,
     role: row.role || 'admin',
     parentId: row.parent_id,
     permissions: row.permissions,
@@ -228,7 +209,6 @@ const mapProfileToDb = (profile: Partial<BrokerProfile>): any => {
     if (profile.title !== undefined) db.title = profile.title;
     if (profile.timezone !== undefined) db.timezone = profile.timezone;
     if (profile.theme !== undefined) db.theme = profile.theme;
-    if (profile.senderEmailPrefix !== undefined) db.sender_email_prefix = profile.senderEmailPrefix;
     if (profile.role !== undefined) db.role = profile.role;
     if (profile.parentId !== undefined) db.parent_id = profile.parentId;
     if (profile.permissions !== undefined) db.permissions = profile.permissions;
