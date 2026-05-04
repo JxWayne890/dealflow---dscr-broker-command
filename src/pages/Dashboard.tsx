@@ -5,6 +5,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { MetricCard } from '../components/MetricCard';
 import { Logo } from '../components/Logo';
 import { Quote, QuoteStatus, View, Investor, BrokerProfile } from '../types';
+import { getActiveQuotedDeals, getUniquePrimaryDeals } from '../utils/quoteMetrics';
 
 export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onNavigate, profile, isDark = false }: { quotes: Quote[], investors?: Investor[], onViewQuote: (id: string) => void, onNewQuote: () => void, onNavigate?: (view: View, filter?: string) => void, profile?: BrokerProfile | null, isDark?: boolean }) => {
     const initials = profile?.name
@@ -14,8 +15,10 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
     const stats = useMemo(() => {
         const today = new Date().toISOString().split('T')[0];
 
-        // Active Pipeline (Active + Follow-up)
-        const activeQuotes = quotes.filter(q => q.status === QuoteStatus.ACTIVE || q.status === QuoteStatus.FOLLOW_UP);
+        const primaryDeals = getUniquePrimaryDeals(quotes);
+
+        // Active Quoted Pipeline: real primary deals that have been quoted and are still open.
+        const activeQuotes = getActiveQuotedDeals(quotes);
         const activeVolume = activeQuotes.reduce((acc, q) => acc + q.loanAmount, 0);
 
         // Projected Revenue (Commission)
@@ -33,12 +36,12 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
         }, 0);
 
         // Closed Won
-        const wonQuotes = quotes.filter(q => q.status === QuoteStatus.WON);
+        const wonQuotes = primaryDeals.filter(q => q.status === QuoteStatus.WON);
         const closedVolume = wonQuotes.reduce((acc, q) => acc + q.loanAmount, 0);
         const closedWonCount = wonQuotes.length;
 
         // Active/Lost for Win Rate
-        const lostQuotes = quotes.filter(q => q.status === QuoteStatus.LOST);
+        const lostQuotes = primaryDeals.filter(q => q.status === QuoteStatus.LOST);
         const lostVolume = lostQuotes.reduce((acc, q) => acc + q.loanAmount, 0);
 
         // Win Rate = Won / (Won + Lost) -- ignoring active for now as they are TBD
@@ -55,7 +58,8 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
             projectedRevenue,
             winRate,
             lostVolume,
-            closedWonCount
+            closedWonCount,
+            activeDealCount: activeQuotes.length
         };
     }, [quotes]);
 
@@ -124,7 +128,7 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
                         </h1>
                         <p className="text-muted text-sm mt-3 flex items-center gap-2">
                             <Icons.Sparkles className="w-4 h-4 text-banana-400" />
-                            Your pipeline is healthy with <span className="text-foreground font-semibold">{quotes.filter(q => q.status === QuoteStatus.ACTIVE).length} active deals</span> in queue.
+                            Your pipeline is healthy with <span className="text-foreground font-semibold">{stats.activeDealCount} active quoted deals</span> in queue.
                         </p>
                     </div>
                 </div>
@@ -151,7 +155,7 @@ export const Dashboard = ({ quotes, investors = [], onViewQuote, onNewQuote, onN
                     value={formatCurrency(stats.activeVolume)}
                     icon={Icons.TrendingUp}
                     color="text-emerald-400"
-                    subtext={`${quotes.filter(q => q.status === QuoteStatus.ACTIVE || q.status === QuoteStatus.FOLLOW_UP).length} deals active`}
+                    subtext={`${stats.activeDealCount} deals active`}
                     onClick={() => onNavigate?.('quotes', 'active')}
                 />
                 <MetricCard

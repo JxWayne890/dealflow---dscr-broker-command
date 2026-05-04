@@ -5,6 +5,7 @@ import { MetricCard } from '../components/MetricCard';
 import { Modal } from '../components/Modal';
 import { Quote, Investor, QuoteStatus } from '../types';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { getActiveQuotedDeals, getUniquePrimaryDeals } from '../utils/quoteMetrics';
 
 interface AnalyticsProps {
     quotes: Quote[];
@@ -27,11 +28,14 @@ export const Analytics = ({ quotes, investors, onViewQuote }: AnalyticsProps) =>
     const [chartView, setChartView] = useState<ChartView>('month');
     const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
 
-    // Calculate simple metrics
-    const totalVolume = quotes.reduce((acc, q) => acc + q.loanAmount, 0);
-    const avgLtv = quotes.length > 0 ? quotes.reduce((acc, q) => acc + q.ltv, 0) / quotes.length : 0;
-    const closedDeals = quotes.filter(q => q.status === QuoteStatus.WON).length;
-    const conversionRate = quotes.length > 0 ? (closedDeals / quotes.length) * 100 : 0;
+    const primaryDeals = getUniquePrimaryDeals(quotes);
+    const activeQuotedDeals = getActiveQuotedDeals(quotes);
+
+    // Calculate simple metrics from unique primary deals so duplicate rows and comparison options don't inflate totals.
+    const activeVolume = activeQuotedDeals.reduce((acc, q) => acc + q.loanAmount, 0);
+    const avgLtv = primaryDeals.length > 0 ? primaryDeals.reduce((acc, q) => acc + q.ltv, 0) / primaryDeals.length : 0;
+    const closedDeals = primaryDeals.filter(q => q.status === QuoteStatus.WON).length;
+    const conversionRate = primaryDeals.length > 0 ? (closedDeals / primaryDeals.length) * 100 : 0;
 
     // Dynamic Chart Data Calculation
     const getChartData = () => {
@@ -74,7 +78,7 @@ export const Analytics = ({ quotes, investors, onViewQuote }: AnalyticsProps) =>
         }
 
         return data.map(item => {
-            const volume = quotes
+            const volume = activeQuotedDeals
                 .filter(q => {
                     const qDate = new Date(q.createdAt);
                     return qDate >= item.range.start && qDate <= item.range.end;
@@ -116,7 +120,7 @@ export const Analytics = ({ quotes, investors, onViewQuote }: AnalyticsProps) =>
 
     const getSelectedPointDeals = () => {
         if (!selectedPoint) return [];
-        return quotes.filter(q => {
+        return activeQuotedDeals.filter(q => {
             const qDate = new Date(q.createdAt);
             return qDate >= selectedPoint.range.start && qDate <= selectedPoint.range.end;
         }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -133,7 +137,7 @@ export const Analytics = ({ quotes, investors, onViewQuote }: AnalyticsProps) =>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                     label="Active Volume"
-                    value={`$${(totalVolume / 1000000).toFixed(1)}M`}
+                    value={`$${(activeVolume / 1000000).toFixed(1)}M`}
                     icon={Icons.TrendingUp}
                     color="text-emerald-500"
                 />

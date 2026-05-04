@@ -16,12 +16,47 @@ import { formatPhoneNumber } from '../utils/formatters';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
-export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateInvestor }: {
+const buildInitialQuoteForm = (initialQuote?: Quote | null): Partial<Quote> => ({
+    id: initialQuote?.id || crypto.randomUUID(),
+    dealType: initialQuote?.dealType || DealType.PURCHASE,
+    propertyState: initialQuote?.propertyState || '',
+    propertyCity: initialQuote?.propertyCity || '',
+    propertyZip: initialQuote?.propertyZip || '',
+    propertyAddress: initialQuote?.propertyAddress || '',
+    ltv: initialQuote?.ltv ?? 75,
+    termYears: initialQuote?.termYears ?? 30,
+    status: initialQuote?.status || QuoteStatus.DRAFT,
+    followUpsEnabled: initialQuote?.followUpsEnabled ?? true,
+    followUpSchedule: initialQuote?.followUpSchedule || [],
+    notes: initialQuote?.notes || '',
+    rate: initialQuote?.rate ?? 7.5,
+    emailBody: initialQuote?.emailBody || '',
+    brokerFee: initialQuote?.brokerFee ?? 0,
+    brokerFeePercent: initialQuote?.brokerFeePercent ?? 1.0,
+    originationFee: initialQuote?.originationFee,
+    originationFeePercent: initialQuote?.originationFeePercent ?? 1.0,
+    uwFee: initialQuote?.uwFee,
+    monthlyPayment: initialQuote?.monthlyPayment,
+    closingFees: initialQuote?.closingFees,
+    investorId: initialQuote?.investorId,
+    investorName: initialQuote?.investorName,
+    investorEmail: initialQuote?.investorEmail,
+    rateType: initialQuote?.rateType || 'Fixed',
+    lenderCode: initialQuote?.lenderCode,
+    prepayPenalty: initialQuote?.prepayPenalty,
+    creditScore: initialQuote?.creditScore,
+    scheduleUrl: initialQuote?.scheduleUrl,
+    emailHtml: initialQuote?.emailHtml,
+    createdAt: initialQuote?.createdAt,
+});
+
+export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateInvestor, initialQuote = null }: {
     onCancel: () => void,
     onSave: (quote: Quote, shouldRedirect?: boolean) => Promise<Quote | null>,
     investors: Investor[],
     onAddInvestor: (investor: Investor) => void,
-    onUpdateInvestor?: (id: string, updates: Partial<Investor>) => void
+    onUpdateInvestor?: (id: string, updates: Partial<Investor>) => void,
+    initialQuote?: Quote | null
 }) => {
     const { showToast } = useToast();
 
@@ -50,24 +85,12 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
         loadProfile();
     }, []);
 
-    const [formData, setFormData] = useState<Partial<Quote>>({
-        id: crypto.randomUUID(), // Pre-generate ID for stable links
-        dealType: DealType.PURCHASE,
-        propertyState: '',
-        ltv: 75,
-        termYears: 30,
-        status: QuoteStatus.DRAFT,
-        followUpsEnabled: true,
-        // Initial "Intro" message (not the full email anymore, just the custom part)
-        notes: '',
-        rate: 7.5,
-        emailBody: '', // This will store the *custom message* part, not the full HTML
-        brokerFee: 0,
-        brokerFeePercent: 1.0,
-        originationFeePercent: 1.0,
-    });
+    const [formData, setFormData] = useState<Partial<Quote>>(() => buildInitialQuoteForm(initialQuote));
 
-    const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>('%');
+    const [brokerFeeType, setBrokerFeeType] = useState<'$' | '%'>(
+        initialQuote?.brokerFee && !initialQuote?.brokerFeePercent ? '$' : '%'
+    );
+    const isEditingDraft = initialQuote?.status === QuoteStatus.DRAFT;
 
     // Comparison Quotes State (for multi-quote feature)
     const [comparisonQuotes, setComparisonQuotes] = useState<Partial<Quote>[]>([]);
@@ -78,6 +101,21 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
 
     // Phone number for the investor on this quote (kept separate — not stored on Quote)
     const [investorPhone, setInvestorPhone] = useState<string>('');
+
+    useEffect(() => {
+        if (!initialQuote) return;
+
+        setFormData(buildInitialQuoteForm(initialQuote));
+        setBrokerFeeType(initialQuote?.brokerFee && !initialQuote?.brokerFeePercent ? '$' : '%');
+        setStep(1);
+
+        if (initialQuote?.investorId) {
+            const investor = investors.find(i => i.id === initialQuote.investorId);
+            setInvestorPhone(investor?.phone || '');
+        } else {
+            setInvestorPhone('');
+        }
+    }, [initialQuote?.id]);
 
     // When investor changes, update available properties
     useEffect(() => {
@@ -139,6 +177,25 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
         }, 500);
     };
 
+    const handleSaveDraft = async () => {
+        setIsSending(true);
+        const draftQuote = {
+            ...formData,
+            id: formData.id || crypto.randomUUID(),
+            createdAt: formData.createdAt || new Date().toISOString(),
+            status: QuoteStatus.DRAFT,
+            emailHtml: formData.emailBody
+                ? generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl } as Quote, profile, formData.emailBody || '')
+                : formData.emailHtml,
+            followUpSchedule: formData.followUpSchedule || []
+        };
+        const saved = await onSave(draftQuote as Quote, false);
+        if (saved) {
+            setFormData(saved);
+        }
+        setIsSending(false);
+    };
+
     const handleSubmit = async () => {
         setIsSending(true);
 
@@ -183,7 +240,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
         const newQuote: Quote = {
             ...formDataWithUrl as Quote,
             id: formData.id || crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
+            createdAt: formData.createdAt || new Date().toISOString(),
             status: result.success ? QuoteStatus.SENT : QuoteStatus.DRAFT,
             emailHtml: htmlBody,
             followUpSchedule: [
@@ -256,9 +313,19 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                         <Icons.ChevronLeft className="w-6 h-6" />
                     </button>
                     <h1 className="text-xl font-bold ml-2 text-foreground">
-                        {step === 1 ? 'New Deal Quote' : 'Review & Send'}
+                        {step === 1 ? (isEditingDraft ? 'Edit Draft Quote' : 'New Deal Quote') : 'Review & Send'}
                     </h1>
                 </div>
+                {step === 1 && (
+                    <Button
+                        onClick={handleSaveDraft}
+                        variant="secondary"
+                        className="px-4 py-2"
+                        disabled={isSending || !formData.investorName || !formData.loanAmount}
+                    >
+                        {isSending ? 'Saving...' : 'Save Draft'}
+                    </Button>
+                )}
                 {step === 2 && (
                     <button
                         onClick={() => setShowSettings(!showSettings)}
@@ -1067,20 +1134,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                         {/* Send Button Block (Desktop) */}
                         <div className="col-span-1 lg:col-span-2 hidden md:flex justify-end pt-4 gap-3">
                             <Button
-                                onClick={async () => {
-                                    setIsSending(true);
-                                    const draftQuote = {
-                                        ...formData,
-                                        id: formData.id || crypto.randomUUID(),
-                                        createdAt: new Date().toISOString(),
-                                        status: QuoteStatus.DRAFT,
-                                        emailHtml: emailFormat === 'html' ? generateHtmlEmail({ ...formData, scheduleUrl: previewScheduleUrl } as Quote, profile, formData.emailBody || '') : undefined,
-                                        followUpSchedule: [] // No follow ups for drafts usually, or paused
-                                    };
-                                    const saved = await onSave(draftQuote as Quote, false);
-                                    if (saved) setFormData(saved);
-                                    setIsSending(false);
-                                }}
+                                onClick={handleSaveDraft}
                                 variant="secondary"
                                 className="px-6"
                                 disabled={isSending}
@@ -1117,7 +1171,7 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
                                     const newQuote: Quote = {
                                         ...formDataWithUrl as Quote,
                                         id: formData.id || crypto.randomUUID(),
-                                        createdAt: new Date().toISOString(),
+                                        createdAt: formData.createdAt || new Date().toISOString(),
                                         status: QuoteStatus.DOWNLOADED,
                                         emailHtml: finalContent,
                                         followUpSchedule: [
@@ -1285,14 +1339,24 @@ export const NewQuote = ({ onCancel, onSave, investors, onAddInvestor, onUpdateI
             <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border/10 p-4 pb-8 z-10 md:hidden">
                 <div className="max-w-md mx-auto flex gap-3">
                     {step === 1 ? (
-                        <Button
-                            onClick={handleGenerateEmail}
-                            className="w-full"
-                            disabled={isGenerating || !formData.investorEmail || !formData.loanAmount}
-                            icon={Icons.FileText}
-                        >
-                            {isGenerating ? 'Drafting...' : 'Review Email'}
-                        </Button>
+                        <>
+                            <Button
+                                onClick={handleSaveDraft}
+                                variant="secondary"
+                                className="w-1/3"
+                                disabled={isSending || !formData.investorName || !formData.loanAmount}
+                            >
+                                Save
+                            </Button>
+                            <Button
+                                onClick={handleGenerateEmail}
+                                className="flex-1"
+                                disabled={isGenerating || !formData.investorEmail || !formData.loanAmount}
+                                icon={Icons.FileText}
+                            >
+                                {isGenerating ? 'Drafting...' : 'Review Email'}
+                            </Button>
+                        </>
                     ) : (
                         <Button
                             onClick={handleSubmit}

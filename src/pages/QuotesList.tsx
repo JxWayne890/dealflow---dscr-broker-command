@@ -5,6 +5,7 @@ import { Quote, QuoteStatus, View, Investor } from '../types';
 import { Campaign, CampaignSubscription } from '../services/campaignService';
 
 import { StatusDropdown } from '../components/StatusDropdown';
+import { isOpenQuotedDeal, isPrimaryQuote } from '../utils/quoteMetrics';
 
 type SortConfig = {
     key: 'investorName' | 'loanAmount' | 'createdAt' | 'status';
@@ -77,14 +78,14 @@ export const QuotesList = ({
             let matchTab = false;
             switch (activeTab) {
                 case 'draft': matchTab = q.status === QuoteStatus.DRAFT; break;
-                case 'active': matchTab = q.status === QuoteStatus.ACTIVE; break;
+                case 'active': matchTab = isPrimaryQuote(q) && isOpenQuotedDeal(q); break;
                 case 'won': matchTab = q.status === QuoteStatus.WON; break;
                 case 'lost': matchTab = q.status === QuoteStatus.LOST; break;
                 case 'downloaded': matchTab = q.status === QuoteStatus.DOWNLOADED; break;
                 case 'follow_up': matchTab = q.status === QuoteStatus.FOLLOW_UP; break;
                 case 'all':
                 default:
-                    matchTab = q.status !== QuoteStatus.DRAFT;
+                    matchTab = isPrimaryQuote(q) && q.status !== QuoteStatus.DRAFT;
             }
 
             // Search filtering

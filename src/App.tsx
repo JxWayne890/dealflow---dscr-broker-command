@@ -195,13 +195,22 @@ export default function App() {
 
   // Navigation Handlers
   const handleNewQuote = () => {
+    setSelectedQuoteId(null);
+    setSelectedQuote(null);
     setNewQuoteKey(Date.now());
     setCurrentView('new_quote');
   };
   const handleViewQuote = (id: string) => {
     setSelectedQuoteId(id);
     const quote = quotes.find(q => q.id === id);
-    if (quote) setSelectedQuote(quote);
+    if (quote) {
+      setSelectedQuote(quote);
+      if (quote.status === QuoteStatus.DRAFT) {
+        setNewQuoteKey(Date.now());
+        setCurrentView('new_quote');
+        return;
+      }
+    }
     setCurrentView('detail');
   };
 
@@ -235,6 +244,8 @@ export default function App() {
       if (shouldRedirect) {
         setCurrentView('dashboard');
       }
+      setSelectedQuote(saved);
+      setSelectedQuoteId(saved.id);
       showToast('Quote saved successfully', 'success');
       return saved;
     } catch (e) {
@@ -464,7 +475,7 @@ export default function App() {
           initialFilter={currentQuoteFilter}
         />;
       case 'new_quote':
-        return <NewQuote key={newQuoteKey} investors={investors} onAddInvestor={handleAddInvestor} onUpdateInvestor={handleUpdateInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
+        return <NewQuote key={newQuoteKey} investors={investors} initialQuote={selectedQuote?.status === QuoteStatus.DRAFT ? selectedQuote : null} onAddInvestor={handleAddInvestor} onUpdateInvestor={handleUpdateInvestor} onCancel={() => setCurrentView('dashboard')} onSave={handleSaveQuote} />;
       case 'detail':
         if (!selectedQuote) return null; // Should ideally handle 404
         return <QuoteDetail quote={selectedQuote} onBack={() => setCurrentView('dashboard')} onUpdateStatus={handleUpdateStatus} onUpdateQuote={handleUpdateQuote} />;
