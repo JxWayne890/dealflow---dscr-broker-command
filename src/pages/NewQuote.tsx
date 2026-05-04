@@ -33,6 +33,7 @@ const buildInitialQuoteForm = (initialQuote?: Quote | null): Partial<Quote> => (
     emailBody: initialQuote?.emailBody || '',
     brokerFee: initialQuote?.brokerFee ?? 0,
     brokerFeePercent: initialQuote?.brokerFeePercent ?? 1.0,
+    loanAmount: initialQuote?.loanAmount,
     originationFee: initialQuote?.originationFee,
     originationFeePercent: initialQuote?.originationFeePercent ?? 1.0,
     uwFee: initialQuote?.uwFee,
